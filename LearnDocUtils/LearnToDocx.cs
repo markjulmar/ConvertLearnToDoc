@@ -64,7 +64,10 @@ namespace LearnDocUtils
 
             Console.WriteLine($"Converting \"{module.Title}\" to {outputFile}");
 
-            var tempFolder = @"C:\Users\Mark\OneDrive\Desktop\Temp" + (new Random().Next()).ToString(); //Path.GetTempPath();
+            var tempFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "temp" + new Random().Next()); //Path.GetTempPath();
+
             var includeFolder = Path.Combine(tempFolder, "includes");
             Directory.CreateDirectory(includeFolder);
             var localMarkdown = Path.Combine(includeFolder, "generated-temp.md");

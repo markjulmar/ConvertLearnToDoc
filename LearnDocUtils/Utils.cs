@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -11,11 +12,19 @@ namespace LearnDocUtils
 {
     public static class Utils
     {
+        private const string WinDownload = "windows-x86_64";
+        private const string MacDownload = "macOS";
         private const string LatestPandocVersion = "2.16.2";
 
         private static async Task DownloadPandoc()
         {
-            string downloadUrl = $"https://github.com/jgm/pandoc/releases/download/{LatestPandocVersion}/pandoc-{LatestPandocVersion}-windows-x86_64.zip";
+            // https://github.com/jgm/pandoc/releases/download/2.16.2/pandoc-2.16.2-macOS.zip
+            // https://github.com/jgm/pandoc/releases/download/2.16.2/pandoc-2.16.2-windows-x86_64.zip
+
+            string os = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                ? MacDownload : WinDownload;
+
+            string downloadUrl = $"https://github.com/jgm/pandoc/releases/download/{LatestPandocVersion}/pandoc-{LatestPandocVersion}-{os}.zip";
             string binFolder = BinFolder;
             string zipFile = Path.Combine(binFolder, "pandoc.zip");
 
@@ -29,13 +38,16 @@ namespace LearnDocUtils
 
             System.IO.Compression.ZipFile.ExtractToDirectory(zipFile, binFolder, true);
 
-            string pandocExe = PanDocExe;
-            string folder = Path.GetDirectoryName(pandocExe);
-
-            if (!string.IsNullOrEmpty(folder))
+            if (os == MacDownload)
             {
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
+                string pandocExe = PanDocExe;
+                Console.WriteLine($"Making pandoc executable: sudo chmod +x {pandocExe}");
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "sudo",
+                    Arguments = $"chmod +x \"{pandocExe}\"",
+                    CreateNoWindow = true
+                }).WaitForExit();
             }
         }
 
@@ -81,7 +93,8 @@ namespace LearnDocUtils
                 if (string.IsNullOrEmpty(folder))
                     throw new Exception("Failed to locate pandoc.exe");
 
-                return Path.Combine(folder, $"pandoc-{LatestPandocVersion}", "pandoc.exe");
+                return Path.Combine(folder, $"pandoc-{LatestPandocVersion}",
+                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "bin/pandoc" : "pandoc.exe");
             }
         }
 
@@ -95,16 +108,14 @@ namespace LearnDocUtils
 
             var process = Process.Start(new ProcessStartInfo
             {
-                FileName = PanDocExe,
-                Arguments = $"-i {inputFile} -o {outputFile} " + string.Join(' ', arguments),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
+                FileName = pandocExe,
+                Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
                 WorkingDirectory = workingFolder,
+                CreateNoWindow = true
             });
 
             if (process == null)
-                throw new Exception("Unable to launch pandoc.exe");
+                throw new Exception("Unable to launch pandoc");
 
             await process.WaitForExitAsync();
         }
