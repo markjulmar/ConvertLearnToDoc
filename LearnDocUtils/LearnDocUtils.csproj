@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="templates\index.yml" />
+    <None Remove="templates\unit.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="templates\index.yml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="templates\unit.yml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Julmar.DxPlus" Version="1.0.2-prerelease" />
+    <PackageReference Include="Julmar.MSLearnRepos" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+﻿### YamlMime:ModuleUnit
+uid: {module-uid}.{unit-uid}
+title: {title}
+metadata:
+  title: {title}
+  description: {title}
+  ms.date: 09/24/2018
+  author: {author}
+  ms.author: {author}
+  ms.topic: {mstopic}
+  ms.prod: {msproduct}
+durationInMinutes: 0
+content: {unit-content}
+{quizText}
