@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31729.503
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc", "src\ConvertLearnToDoc.csproj", "{13787258-BA5C-4104-83FE-DEC2F633E85E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDocWeb", "ConvertLearnToDocWeb\ConvertLearnToDocWeb.csproj", "{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{448F0B25-0590-4626-B96F-0F8478403DE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{448F0B25-0590-4626-B96F-0F8478403DE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{448F0B25-0590-4626-B96F-0F8478403DE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
