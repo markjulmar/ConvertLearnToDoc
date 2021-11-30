@@ -11,7 +11,9 @@ namespace LearnDocUtils
 {
     public static class LearnToDocx
     {
-        public static async Task ConvertAsync(string repo, string branch, string folder, string outputFile)
+        private static string _accessToken;
+
+        public static async Task ConvertAsync(string repo, string branch, string folder, string outputFile, string accessToken = null)
         {
             if (string.IsNullOrEmpty(repo))
                 throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
@@ -20,7 +22,11 @@ namespace LearnDocUtils
             if (string.IsNullOrEmpty(folder))
                 throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
 
-            await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch), folder, outputFile);
+            _accessToken = string.IsNullOrEmpty(accessToken)
+                ? GithubHelper.ReadDefaultSecurityToken()
+                : accessToken;
+
+            await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch, _accessToken), folder, outputFile);
         }
 
         public static async Task ConvertAsync(string learnFolder, string outputFile)
@@ -111,7 +117,7 @@ namespace LearnDocUtils
             }
 
             // Convert the file.
-            await Utils.RunPandocAsync(localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown), "-f markdown-fenced_divs", "-t docx");
+            await Utils.ConvertFileAsync(localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown), "-f markdown-fenced_divs", "-t docx");
 
             // Do some post processing
             using var doc = Document.Load(outputFile);
@@ -156,7 +162,7 @@ namespace LearnDocUtils
                 string imagePath = match.Groups[2].Value;
 
                 if (imagePath.StartsWith(@"../") || imagePath.StartsWith(@"..\"))
-                    imagePath = imagePath.Substring(3);
+                    imagePath = imagePath[3..];
 
                 string remotePath = moduleFolder + "/" + imagePath;
                 string localPath = Path.Combine(tempFolder, imagePath);
@@ -181,7 +187,7 @@ namespace LearnDocUtils
                     // Image > 1Mb in size, switch to the Git Data API and download based on the sha.
                     var remote = (IRemoteTripleCrownGitHubService) gitHub;
                     await GitHelper.GetAndWriteBlobAsync(Constants.Organization,
-                        gitHub.Repository, remotePath, localPath, branch: remote.Branch);
+                        gitHub.Repository, remotePath, localPath, _accessToken,remote.Branch);
                 }
             }
         }

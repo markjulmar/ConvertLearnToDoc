@@ -100,17 +100,18 @@ namespace LearnDocUtils
             {
                 string folder = BinFolder;
                 if (string.IsNullOrEmpty(folder))
-                    throw new Exception("Failed to locate pandoc.exe");
+                    throw new Exception("Failed to locate runtime bin folder.");
 
                 return Path.Combine(folder, $"pandoc-{LatestPandocVersion}",
                     RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "bin/pandoc" : "pandoc.exe");
             }
         }
 
-        public static async Task RunPandocAsync(string inputFile, string outputFile, string workingFolder, params string[] arguments)
+        public static async Task ConvertFileAsync(string inputFile, string outputFile, string workingFolder, params string[] arguments)
         {
-            string pandocExe = PanDocExe;
-            if (!File.Exists(pandocExe))
+            const int timeout = 90; // wait up to 90s
+            string executable = PanDocExe;
+            if (!File.Exists(executable))
             {
                 await DownloadPandoc();
             }
@@ -125,28 +126,35 @@ namespace LearnDocUtils
                 File.Delete(outputFile);
             }
 
-            var process = Process.Start(new ProcessStartInfo
+            Process process;
+            try
             {
-                FileName = pandocExe,
-                Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
-                WorkingDirectory = workingFolder,
-                CreateNoWindow = true
-            });
+                process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = executable,
+                    Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
+                    WorkingDirectory = workingFolder,
+                    CreateNoWindow = true
+                });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to launch {executable}", ex);
+            }
 
             if (process == null)
-                throw new Exception("Unable to launch pandoc");
+                throw new Exception($"Failed to launch {executable}");
 
             try
             {
                 await process.WaitForExitAsync(
-                    new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
+                    new CancellationTokenSource(TimeSpan.FromSeconds(timeout)).Token);
             }
             catch (TaskCanceledException)
             {
                 process.Kill(true);
-                throw new Exception($"Failed to convert {inputFile} to {outputFile}, timeout after 30s");
+                throw new Exception($"Failed to convert {inputFile} to {outputFile}, timeout after {timeout} sec.");
             }
         }
-
     }
 }

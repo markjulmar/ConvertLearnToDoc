@@ -14,6 +14,7 @@ new Parser(cfg => { cfg.HelpWriter = Console.Error; })
 if (options == null)
     return; // bad arguments or help.
 
+// Input is a Learn module URL
 if (options.InputFileOrFolder.StartsWith("http"))
 {
     var (repo, branch, folder) = await Utils.RetrieveLearnLocationFromUrlAsync(options.InputFileOrFolder);
@@ -21,8 +22,17 @@ if (options.InputFileOrFolder.StartsWith("http"))
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
         options.OutputFileOrFolder = Path.ChangeExtension(folder.Split('/').Last(), "docx");
 
-    await LearnToDocx.ConvertAsync(repo, branch, folder, options.OutputFileOrFolder);
+    await LearnToDocx.ConvertAsync(repo, branch, folder, options.OutputFileOrFolder, options.AccessToken);
 }
+// Input is a repo + folder + branch
+else if (!string.IsNullOrEmpty(options.GitHubRepo))
+{
+    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
+        options.OutputFileOrFolder = Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.InputFileOrFolder), "docx");
+
+    await LearnToDocx.ConvertAsync(options.GitHubRepo, options.GitHubBranch, options.InputFileOrFolder, options.OutputFileOrFolder, options.AccessToken);
+}
+// Input is a local folder containing a Learn module
 else if (Directory.Exists(options.InputFileOrFolder))
 {
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
@@ -30,6 +40,7 @@ else if (Directory.Exists(options.InputFileOrFolder))
 
     await LearnToDocx.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder);
 }
+// Input is a docx file
 else
 {
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))

@@ -36,7 +36,7 @@ namespace LearnDocUtils
 
             // Convert to Markdown.
             string tempFile = Path.Combine(outputFolder, "temp.md");
-            await Utils.RunPandocAsync(docxFile, tempFile, outputFolder, 
+            await Utils.ConvertFileAsync(docxFile, tempFile, outputFolder, 
                 "--extract-media=.", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
 
             // Now pick off title metadata.
