@@ -145,6 +145,8 @@ namespace LearnDocUtils
             captions.ForEach(p => p.SetText(""));
 
             doc.Save();
+
+            Directory.Delete(tempFolder, true);
         }
 
         private static async Task DownloadAllImagesForUnit(string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
@@ -166,10 +168,17 @@ namespace LearnDocUtils
                         Directory.CreateDirectory(localFolder);
                 }
 
-                var result = await gitHub.ReadFileForPathAsync(remotePath);
-                if (result.binary != null)
+                try
                 {
-                    await File.WriteAllBytesAsync(localPath, result.binary);
+                    var result = await gitHub.ReadFileForPathAsync(remotePath);
+                    if (result.binary != null)
+                    {
+                        await File.WriteAllBytesAsync(localPath, result.binary);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to download image {remotePath} -- likely too large.", ex);
                 }
             }
         }

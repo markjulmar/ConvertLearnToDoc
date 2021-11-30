@@ -1,41 +1,53 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using CommandLine;
+using ConvertLearnToDoc;
 using LearnDocUtils;
 
 Console.WriteLine("Learn/Docx converter");
 
-if (args.Length < 1 || args.Length > 2)
+CommandLineOptions options = null;
+new Parser(cfg => { cfg.HelpWriter = Console.Error; })
+    .ParseArguments<CommandLineOptions>(args)
+    .WithParsed(clo => options = clo);
+if (options == null)
+    return; // bad arguments or help.
+
+if (options.InputFileOrFolder.StartsWith("http"))
 {
-    Console.WriteLine("Missing: [input] [output]");
-    Console.WriteLine("Where input/output can be a Learn source folder, or Word doc.");
-    return;
+    var (repo, branch, folder) = await Utils.RetrieveLearnLocationFromUrlAsync(options.InputFileOrFolder);
+
+    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
+        options.OutputFileOrFolder = Path.ChangeExtension(folder.Split('/').Last(), "docx");
+
+    await LearnToDocx.ConvertAsync(repo, branch, folder, options.OutputFileOrFolder);
 }
-
-string inputFile = args[0];
-string outputFile;
-
-if (inputFile.StartsWith("http"))
+else if (Directory.Exists(options.InputFileOrFolder))
 {
-    (string repo, string branch, string folder) = await Utils.RetrieveLearnLocationFromUrlAsync(inputFile);
+    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
+        options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "docx");
 
-    if (args.Length == 1)
-    {
-        outputFile = Path.ChangeExtension(folder.Split('/').Last(), "docx");
-        await LearnToDocx.ConvertAsync(repo, branch, folder, outputFile);
-
-    }
-    else outputFile = args[1];
-}
-else if (Directory.Exists(inputFile))
-{
-    outputFile = args.Length == 1 ? Path.ChangeExtension(args[0], "docx") : args[1];
-    await LearnToDocx.ConvertAsync(inputFile, outputFile);
+    await LearnToDocx.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder);
 }
 else
 {
-    outputFile = args.Length == 1 ? Path.ChangeExtension(args[0], "") : args[1];
-    await DocxToLearn.ConvertAsync(inputFile, outputFile);
+    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
+        options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
+    
+    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder);
+
+    if (options.ZipOutput)
+    {
+        string baseFolder = Path.GetDirectoryName(options.OutputFileOrFolder);
+        if (string.IsNullOrEmpty(baseFolder))
+            baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+        string zipFile = Path.Combine(baseFolder, 
+            Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.OutputFileOrFolder), "zip"));
+
+        Utils.CompressFolder(options.OutputFileOrFolder, zipFile);
+    }
 }
 
-Console.WriteLine($"Converted {inputFile} to {outputFile}.");
+Console.WriteLine($"Converted {options.InputFileOrFolder} to {options.OutputFileOrFolder}.");

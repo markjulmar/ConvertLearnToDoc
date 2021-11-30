@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ConvertDocToLearn
+namespace LearnDocUtils
 {
     internal class ModuleMetadata
     {

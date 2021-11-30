@@ -42,14 +42,22 @@ namespace LearnDocUtils
             {
                 string pandocExe = PanDocExe;
                 Console.WriteLine($"Making pandoc executable: sudo chmod +x {pandocExe}");
-                Process.Start(new ProcessStartInfo
+                var process = Process.Start(new ProcessStartInfo
                 {
                     FileName = "sudo",
                     Arguments = $"chmod +x \"{pandocExe}\"",
                     CreateNoWindow = true
-                }).WaitForExit();
+                });
+
+                if (process != null)
+                {
+                    await process.WaitForExitAsync();
+                }
             }
         }
+
+        public static void CompressFolder(string folder, string zipFile) =>
+            System.IO.Compression.ZipFile.CreateFromDirectory(folder, zipFile);
 
         public static async Task<(string repo, string branch, string folder)> RetrieveLearnLocationFromUrlAsync(string moduleUrl)
         {

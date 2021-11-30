@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using ConvertDocToLearn;
 using DXPlus;
 using System.Reflection;
 using System.IO;
@@ -112,6 +111,8 @@ namespace LearnDocUtils
             };
 
             await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), PopulateTemplate("index.yml", moduleValues));
+
+            File.Delete(tempFile);
         }
 
         private static string PopulateTemplate(string templateKey, Dictionary<string, string> values)
