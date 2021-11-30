@@ -111,7 +111,7 @@ namespace LearnDocUtils
             }
 
             // Convert the file.
-            await Utils.RunPandocAsync(localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown), "-f markdown", "-t docx");
+            await Utils.RunPandocAsync(localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown), "-f markdown-fenced_divs", "-t docx");
 
             // Do some post processing
             using var doc = Document.Load(outputFile);
@@ -142,7 +142,7 @@ namespace LearnDocUtils
                 captions.AddRange(from _ in paragraph.Pictures where paragraph.Runs.Count() == 1 select doc.Paragraphs[i + 1]);
             }
 
-            captions.ForEach(p => p.SetText(""));
+            captions.ForEach(p => p.SetText(string.Empty));
 
             doc.Save();
 
@@ -176,9 +176,12 @@ namespace LearnDocUtils
                         await File.WriteAllBytesAsync(localPath, result.binary);
                     }
                 }
-                catch (Exception ex)
+                catch (Octokit.ForbiddenException)
                 {
-                    throw new Exception($"Failed to download image {remotePath} -- likely too large.", ex);
+                    // Image > 1Mb in size, switch to the Git Data API and download based on the sha.
+                    var remote = (IRemoteTripleCrownGitHubService) gitHub;
+                    await GitHelper.GetAndWriteBlobAsync(Constants.Organization,
+                        gitHub.Repository, remotePath, localPath, branch: remote.Branch);
                 }
             }
         }

@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LearnDocUtils
@@ -114,6 +115,16 @@ namespace LearnDocUtils
                 await DownloadPandoc();
             }
 
+            if (!File.Exists(inputFile))
+            {
+                throw new ArgumentException($"{inputFile} does not exist.", nameof(inputFile));
+            }
+
+            if (File.Exists(outputFile))
+            {
+                File.Delete(outputFile);
+            }
+
             var process = Process.Start(new ProcessStartInfo
             {
                 FileName = pandocExe,
@@ -125,7 +136,16 @@ namespace LearnDocUtils
             if (process == null)
                 throw new Exception("Unable to launch pandoc");
 
-            await process.WaitForExitAsync();
+            try
+            {
+                await process.WaitForExitAsync(
+                    new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
+            }
+            catch (TaskCanceledException)
+            {
+                process.Kill(true);
+                throw new Exception($"Failed to convert {inputFile} to {outputFile}, timeout after 30s");
+            }
         }
 
     }
