@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ConvertLearnToDocWeb.Models
+﻿namespace ConvertLearnToDocWeb.Models
 {
     public class ErrorViewModel
     {

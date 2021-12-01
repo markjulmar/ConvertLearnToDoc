@@ -16,22 +16,21 @@ namespace ConvertLearnToDocWeb.Controllers
     {
         const string WordMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         private readonly ILogger<HomeController> _logger;
-        private readonly IConfiguration configuration;
+        private readonly IConfiguration _configuration;
 
         public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
         {
             _logger = logger;
-            this.configuration = configuration;
+            _configuration = configuration;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
 
         [HttpPost]
         public async Task<IActionResult> ConvertLearnToDoc(LearnToDocViewModel model)
         {
+            using var scope = _logger.BeginScope($"ConvertLearnToDoc(Url: {model.ModuleUrl}, Repo: {model.GithubRepo}, Branch: {model.GithubBranch}, Folder: \"{model.GithubFolder}\")");
+
             if (!ModelState.IsValid)
             {
                 return View(nameof(Index));
@@ -60,22 +59,23 @@ namespace ConvertLearnToDocWeb.Controllers
                 return View(nameof(Index));
             }
 
-            outputFile = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(folder.Split('/').Where(s => !string.IsNullOrWhiteSpace(s)).Last(), "docx"));
+            outputFile = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(folder.Split('/').Last(s => !string.IsNullOrWhiteSpace(s)), "docx"));
 
             try
             {
-                await LearnToDocx.ConvertAsync(repo, branch, folder, outputFile, configuration.GetValue<string>("GitHub:Token"));
+                _logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder}: outputFile={outputFile})");
+                await LearnToDocx.ConvertAsync(repo, branch, folder, outputFile, _configuration.GetValue<string>("GitHub:Token"));
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.ToString());
                 ModelState.AddModelError(string.Empty, ex.Message);
             }
 
-            if (outputFile != null && System.IO.File.Exists(outputFile))
+            if (System.IO.File.Exists(outputFile))
             {
                 var fs = new FileStream(outputFile, FileMode.Open, FileAccess.Read);
-                Response.RegisterForDispose(new TempFileRemover(fs, outputFile));
-
+                Response.RegisterForDispose(new TempFileRemover(_logger, fs, outputFile));
                 return File(fs, WordMimeType, Path.GetFileName(outputFile));
             }
 
@@ -85,6 +85,8 @@ namespace ConvertLearnToDocWeb.Controllers
         [HttpPost]
         public async Task<IActionResult> ConvertDocToLearn(IFormFile wordDoc)
         {
+            using var scope = _logger.BeginScope("ConvertDocToLearn");
+
             var contentType = wordDoc?.ContentType;
 
             if (string.IsNullOrEmpty(wordDoc?.FileName) || contentType != WordMimeType)
@@ -98,7 +100,7 @@ namespace ConvertLearnToDocWeb.Controllers
             string tempFile = Path.Combine(baseFolder, filename);
 
             // Copy the input file.
-            using (var stream = System.IO.File.Create(tempFile))
+            await using (var stream = System.IO.File.Create(tempFile))
             {
                 await wordDoc.CopyToAsync(stream);
             }
@@ -110,10 +112,12 @@ namespace ConvertLearnToDocWeb.Controllers
 
             try
             {
+                _logger.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
                 await DocxToLearn.ConvertAsync(tempFile, outputPath);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.ToString());
                 ModelState.AddModelError(string.Empty, ex.Message);
                 return View(nameof(Index));
             }
@@ -121,51 +125,52 @@ namespace ConvertLearnToDocWeb.Controllers
             string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(moduleFolder, "zip"));
             if (System.IO.File.Exists(zipFile))
             {
+                _logger.LogDebug($"DELETE {zipFile}");
                 System.IO.File.Delete(zipFile);
             }
+            _logger.LogDebug($"ZIP {outputPath} => {zipFile}");
             Utils.CompressFolder(outputPath, zipFile);
 
             // Delete the temp stuff.
+            _logger.LogDebug($"RMDIR {outputPath}");
             Directory.Delete(outputPath, true);
+            _logger.LogDebug($"DELETE {tempFile}");
             System.IO.File.Delete(tempFile);
 
-            // Send back the zip file.
-            if (System.IO.File.Exists(zipFile))
-            {
-                var fs = new FileStream(zipFile, FileMode.Open, FileAccess.Read);
-                Response.RegisterForDispose(new TempFileRemover(fs, zipFile));
-                return File(fs, "application/zip", Path.GetFileName(zipFile));
-            }
+            if (!System.IO.File.Exists(zipFile)) return View(nameof(Index));
 
-            return View(nameof(Index));
+            // Send back the zip file.
+            var fs = new FileStream(zipFile, FileMode.Open, FileAccess.Read);
+            Response.RegisterForDispose(new TempFileRemover(_logger, fs, zipFile));
+            return File(fs, "application/zip", Path.GetFileName(zipFile));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
     internal class TempFileRemover : IDisposable
     {
-        private readonly IDisposable innerDispoable;
-        private readonly string path;
+        private readonly ILogger _logger;
+        private readonly IDisposable _innerDispoable;
+        private readonly string _path;
 
-        public TempFileRemover(FileStream fs, string path)
+        public TempFileRemover(ILogger logger, IDisposable fs, string path)
         {
-            this.innerDispoable = fs;
-            this.path = path;
+            _logger = logger;
+            this._innerDispoable = fs;
+            this._path = path;
         }
 
         public void Dispose()
         {
-            innerDispoable?.Dispose();
-            if (File.Exists(path))
+            _innerDispoable?.Dispose();
+            if (File.Exists(_path))
             {
                 try
                 {
-                    File.Delete(path);
+                    _logger.LogDebug($"DELETE {_path}");
+                    File.Delete(_path);
                 }
                 catch
                 {
