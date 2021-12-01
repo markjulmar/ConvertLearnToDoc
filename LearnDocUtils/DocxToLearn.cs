@@ -11,8 +11,12 @@ namespace LearnDocUtils
 {
     public static class DocxToLearn
     {
-        public static async Task ConvertAsync(string docxFile, string outputFolder)
+        private static Action<string> _logger;
+
+        public static async Task ConvertAsync(string docxFile, string outputFolder, Action<string> logger = null)
         {
+            _logger = logger ?? Console.WriteLine;
+
             if (string.IsNullOrWhiteSpace(outputFolder))
             {
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or whitespace.", nameof(outputFolder));
@@ -25,18 +29,19 @@ namespace LearnDocUtils
 
             if (!File.Exists(docxFile))
             {
-                Console.WriteLine($"Error: {docxFile} does not exist.");
+                _logger?.Invoke($"Error: {docxFile} does not exist.");
                 return;
             }
 
             if (!Directory.Exists(outputFolder))
             {
+                logger?.Invoke($"MKDIR {outputFolder}");
                 Directory.CreateDirectory(outputFolder);
             }
 
             // Convert to Markdown.
             string tempFile = Path.Combine(outputFolder, "temp.md");
-            await Utils.ConvertFileAsync(docxFile, tempFile, outputFolder, 
+            await Utils.ConvertFileAsync(_logger, docxFile, tempFile, outputFolder, 
                 "--extract-media=.", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
 
             // Now pick off title metadata.
@@ -75,7 +80,9 @@ namespace LearnDocUtils
             foreach (var (title, value) in files)
             {
                 string baseFn = GenerateFilenameFromTitle(title);
-                string unitFileName = index.ToString() + "-" + baseFn;
+                string unitFileName = $"{index}-{baseFn}";
+
+                logger?.Invoke($"Creating {unitFileName}.yml");
 
                 var quizText = ExtractQuiz(value);
                 var values = new Dictionary<string, string>
@@ -98,7 +105,7 @@ namespace LearnDocUtils
             }
 
             // Write the index.yml file.
-            var moduleValues = new Dictionary<string, string>()
+            var moduleValues = new Dictionary<string, string>
             {
                 { "module-uid", moduleUid },
                 { "title", metadata.Title ?? "TBD" },
@@ -110,8 +117,10 @@ namespace LearnDocUtils
                 { "unit-uid-list", string.Join("\r\n", unitIds) }
             };
 
+            logger?.Invoke($"Creating index.yml");
             await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), PopulateTemplate("index.yml", moduleValues));
 
+            _logger?.Invoke($"DELETE {tempFile}");
             File.Delete(tempFile);
         }
 
@@ -128,6 +137,8 @@ namespace LearnDocUtils
 
         private static ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
+            _logger?.Invoke($"LoadDocumentMetadata({docxFile})");
+
             var doc = Document.Load(docxFile);
             var metadata = new ModuleMetadata();
 
@@ -244,7 +255,7 @@ namespace LearnDocUtils
                     var quiz = new List<string>(lines.GetRange(i, lastLine - i));
 
                     sb.AppendLine("quiz:");
-                    sb.AppendLine($"  title: {quiz[0].Substring(3)}");
+                    sb.AppendLine($"  title: {quiz[0][3..]}");
                     sb.AppendLine("  questions:");
 
                     for (int pos = 1; pos < quiz.Count; pos++)

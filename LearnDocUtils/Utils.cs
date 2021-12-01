@@ -106,12 +106,13 @@ namespace LearnDocUtils
             }
         }
 
-        public static async Task ConvertFileAsync(string inputFile, string outputFile, string workingFolder, params string[] arguments)
+        public static async Task ConvertFileAsync(Action<string> logger, string inputFile, string outputFile, string workingFolder, params string[] arguments)
         {
             const int timeout = 90; // wait up to 90s
             string executable = PanDocExe;
             if (!File.Exists(executable))
             {
+                logger?.Invoke("Downloading pandoc");
                 await DownloadPandoc();
             }
 
@@ -122,19 +123,23 @@ namespace LearnDocUtils
 
             if (File.Exists(outputFile))
             {
+                logger?.Invoke($"DELETE {outputFile}");
                 File.Delete(outputFile);
             }
 
             Process process;
             try
             {
-                process = Process.Start(new ProcessStartInfo
+                var processInfo = new ProcessStartInfo
                 {
                     FileName = executable,
                     Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
                     WorkingDirectory = workingFolder,
                     CreateNoWindow = true
-                });
+                };
+
+                logger?.Invoke($"EXEC \"{processInfo.FileName} {processInfo.Arguments}\" in {processInfo.WorkingDirectory}");
+                process = Process.Start(processInfo);
             }
             catch (Exception ex)
             {
