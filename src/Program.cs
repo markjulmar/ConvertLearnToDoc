@@ -22,7 +22,7 @@ if (options.InputFileOrFolder.StartsWith("http"))
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
         options.OutputFileOrFolder = Path.ChangeExtension(folder.Split('/').Last(), "docx");
 
-    await LearnToDocx.ConvertAsync(repo, branch, folder, options.OutputFileOrFolder, options.AccessToken);
+    await new LearnToDocx().ConvertAsync(repo, branch, folder, options.OutputFileOrFolder, options.AccessToken, debug: options.Debug);
 }
 // Input is a repo + folder + branch
 else if (!string.IsNullOrEmpty(options.GitHubRepo))
@@ -30,7 +30,7 @@ else if (!string.IsNullOrEmpty(options.GitHubRepo))
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
         options.OutputFileOrFolder = Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.InputFileOrFolder), "docx");
 
-    await LearnToDocx.ConvertAsync(options.GitHubRepo, options.GitHubBranch, options.InputFileOrFolder, options.OutputFileOrFolder, options.AccessToken);
+    await new LearnToDocx().ConvertAsync(options.GitHubRepo, options.GitHubBranch, options.InputFileOrFolder, options.OutputFileOrFolder, options.AccessToken, debug: options.Debug);
 }
 // Input is a local folder containing a Learn module
 else if (Directory.Exists(options.InputFileOrFolder))
@@ -38,7 +38,7 @@ else if (Directory.Exists(options.InputFileOrFolder))
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "docx");
 
-    await LearnToDocx.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder);
+    await new LearnToDocx().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, debug: options.Debug);
 }
 // Input is a docx file
 else
@@ -46,7 +46,7 @@ else
     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
     
-    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder);
+    await new DocxToLearn().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, debug: options.Debug);
 
     if (options.ZipOutput)
     {

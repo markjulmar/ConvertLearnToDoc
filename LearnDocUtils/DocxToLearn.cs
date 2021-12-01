@@ -9,119 +9,118 @@ using System.IO;
 
 namespace LearnDocUtils
 {
-    public static class DocxToLearn
+    public sealed class DocxToLearn
     {
-        private static Action<string> _logger;
+        private Action<string> _logger;
+        private bool _keepTempFiles;
 
-        public static async Task ConvertAsync(string docxFile, string outputFolder, Action<string> logger = null)
+        public async Task ConvertAsync(string docxFile, string outputFolder, Action<string> logger = null, bool debug = false)
         {
             _logger = logger ?? Console.WriteLine;
+            _keepTempFiles = debug;
 
             if (string.IsNullOrWhiteSpace(outputFolder))
-            {
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or whitespace.", nameof(outputFolder));
-            }
-
             if (string.IsNullOrWhiteSpace(docxFile))
-            {
                 throw new ArgumentException($"'{nameof(docxFile)}' cannot be null or whitespace.", nameof(docxFile));
-            }
-
             if (!File.Exists(docxFile))
-            {
-                _logger?.Invoke($"Error: {docxFile} does not exist.");
-                return;
-            }
+                throw new ArgumentException($"Error: {docxFile} does not exist.", nameof(docxFile));
 
             if (!Directory.Exists(outputFolder))
-            {
-                logger?.Invoke($"MKDIR {outputFolder}");
                 Directory.CreateDirectory(outputFolder);
-            }
 
             // Convert to Markdown.
             string tempFile = Path.Combine(outputFolder, "temp.md");
-            await Utils.ConvertFileAsync(_logger, docxFile, tempFile, outputFolder, 
-                "--extract-media=.", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
 
-            // Now pick off title metadata.
-            var metadata = LoadDocumentMetadata(docxFile);
-
-            string includeFolder = Path.Combine(outputFolder, "includes");
-            Directory.CreateDirectory(includeFolder);
-
-            // Read all the lines
-            var files = new Dictionary<string, List<string>>();
-            using (var reader = new StreamReader(tempFile))
+            try
             {
-                List<string> currentFile = null;
-                while (!reader.EndOfStream)
+                await Utils.ConvertFileAsync(_logger, docxFile, tempFile, outputFolder,
+                    "--extract-media=.", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
+
+                // Now pick off title metadata.
+                var metadata = LoadDocumentMetadata(docxFile);
+
+                string includeFolder = Path.Combine(outputFolder, "includes");
+                Directory.CreateDirectory(includeFolder);
+
+                // Read all the lines
+                var files = new Dictionary<string, List<string>>();
+                using (var reader = new StreamReader(tempFile))
                 {
-                    var line = await reader.ReadLineAsync();
-                    if (line == null) break;
-                    if (line.StartsWith("# "))
+                    List<string> currentFile = null;
+                    while (!reader.EndOfStream)
                     {
-                        currentFile = new List<string>();
-                        files.Add(line.Substring(2), currentFile);
-                    }
-                    else if (currentFile != null)
-                    {
-                        currentFile.Add(line);
+                        var line = await reader.ReadLineAsync();
+                        if (line == null) break;
+                        if (line.StartsWith("# "))
+                        {
+                            currentFile = new List<string>();
+                            files.Add(line.Substring(2), currentFile);
+                        }
+                        else if (currentFile != null)
+                        {
+                            currentFile.Add(line);
+                        }
                     }
                 }
-            }
 
-            string moduleUid = !string.IsNullOrEmpty(metadata.ModuleUid) ? metadata.ModuleUid : "learn." + GenerateFilenameFromTitle(metadata.Title ?? "");
+                string moduleUid = !string.IsNullOrEmpty(metadata.ModuleUid) ? metadata.ModuleUid : "learn." + GenerateFilenameFromTitle(metadata.Title ?? "");
 
-            int index = 1;
-            List<string> unitIds = new();
+                int index = 1;
+                List<string> unitIds = new();
 
-            // Write all the units.
-            foreach (var (title, value) in files)
-            {
-                string baseFn = GenerateFilenameFromTitle(title);
-                string unitFileName = $"{index}-{baseFn}";
+                // Write all the units.
+                foreach (var (title, value) in files)
+                {
+                    string baseFn = GenerateFilenameFromTitle(title);
+                    string unitFileName = $"{index}-{baseFn}";
 
-                logger?.Invoke($"Creating {unitFileName}.yml");
+                    var quizText = ExtractQuiz(value);
+                    var values = new Dictionary<string, string>
+                    {
+                        { "module-uid", moduleUid },
+                        { "unit-uid", baseFn },
+                        { "title", title },
+                        { "mstopic", metadata.MsTopic??"interactive-tutorial" },
+                        { "msproduct", metadata.MsProduct??"learning-azure" },
+                        { "author", metadata.MsAuthor ?? "TBD" },
+                        { "unit-content", $"  |\r\n  [!include[](includes/{unitFileName}.md)]" },
+                        { "quizText", quizText }
+                    };
 
-                var quizText = ExtractQuiz(value);
-                var values = new Dictionary<string, string>
+                    string unitYaml = PopulateTemplate("unit.yml", values);
+                    await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")), unitYaml);
+                    await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")), ProcessMarkdown(string.Join("\r\n", value)));
+                    unitIds.Add($"- {moduleUid}.{baseFn}");
+                    index++;
+                }
+
+                // Write the index.yml file.
+                var moduleValues = new Dictionary<string, string>
                 {
                     { "module-uid", moduleUid },
-                    { "unit-uid", baseFn },
-                    { "title", title },
+                    { "title", metadata.Title ?? "TBD" },
+                    { "summary", metadata.Summary ?? "TBD" },
+                    { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
                     { "mstopic", metadata.MsTopic??"interactive-tutorial" },
                     { "msproduct", metadata.MsProduct??"learning-azure" },
                     { "author", metadata.MsAuthor ?? "TBD" },
-                    { "unit-content", $"  |\r\n  [!include[](includes/{unitFileName}.md)]" },
-                    { "quizText", quizText }
+                    { "unit-uid-list", string.Join("\r\n", unitIds) }
                 };
 
-                string unitYaml = PopulateTemplate("unit.yml", values);
-                await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")), unitYaml);
-                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")), ProcessMarkdown(string.Join("\r\n", value)));
-                unitIds.Add($"- {moduleUid}.{baseFn}");
-                index++;
+                await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), PopulateTemplate("index.yml", moduleValues));
             }
-
-            // Write the index.yml file.
-            var moduleValues = new Dictionary<string, string>
+            finally
             {
-                { "module-uid", moduleUid },
-                { "title", metadata.Title ?? "TBD" },
-                { "summary", metadata.Summary ?? "TBD" },
-                { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
-                { "mstopic", metadata.MsTopic??"interactive-tutorial" },
-                { "msproduct", metadata.MsProduct??"learning-azure" },
-                { "author", metadata.MsAuthor ?? "TBD" },
-                { "unit-uid-list", string.Join("\r\n", unitIds) }
-            };
-
-            logger?.Invoke($"Creating index.yml");
-            await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), PopulateTemplate("index.yml", moduleValues));
-
-            _logger?.Invoke($"DELETE {tempFile}");
-            File.Delete(tempFile);
+                if (!_keepTempFiles)
+                {
+                    File.Delete(tempFile);
+                }
+                else
+                {
+                    _logger?.Invoke($"Consolidated Markdown file: {tempFile}");
+                }
+            }
         }
 
         private static string PopulateTemplate(string templateKey, Dictionary<string, string> values)
@@ -135,7 +134,7 @@ namespace LearnDocUtils
             return template;
         }
 
-        private static ModuleMetadata LoadDocumentMetadata(string docxFile)
+        private ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
             _logger?.Invoke($"LoadDocumentMetadata({docxFile})");
 

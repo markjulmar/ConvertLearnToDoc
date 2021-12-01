@@ -64,7 +64,7 @@ namespace ConvertLearnToDocWeb.Controllers
             try
             {
                 _logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder}: outputFile={outputFile})");
-                await LearnToDocx.ConvertAsync(repo, branch, folder, outputFile, 
+                await new LearnToDocx().ConvertAsync(repo, branch, folder, outputFile, 
                     _configuration.GetValue<string>("GitHub:Token"), s => _logger.LogDebug(s));
             }
             catch (Exception ex)
@@ -114,7 +114,7 @@ namespace ConvertLearnToDocWeb.Controllers
             try
             {
                 _logger.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
-                await DocxToLearn.ConvertAsync(tempFile, outputPath, s => _logger.LogDebug(s));
+                await new DocxToLearn().ConvertAsync(tempFile, outputPath, s => _logger.LogDebug(s));
             }
             catch (Exception ex)
             {

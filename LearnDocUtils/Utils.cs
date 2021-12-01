@@ -29,9 +29,11 @@ namespace LearnDocUtils
             string binFolder = BinFolder;
             string zipFile = Path.Combine(binFolder, "pandoc.zip");
 
-            if (!File.Exists(zipFile))
+            if (File.Exists(zipFile))
+                File.Delete(zipFile);
+
+            using (var client = new HttpClient())
             {
-                using var client = new HttpClient();
                 await using var downloadStream = await client.GetStreamAsync(downloadUrl);
                 await using var fsOut = File.OpenWrite(zipFile);
                 await downloadStream.CopyToAsync(fsOut);
@@ -112,42 +114,36 @@ namespace LearnDocUtils
             string executable = PanDocExe;
             if (!File.Exists(executable))
             {
-                logger?.Invoke("Downloading pandoc");
+                logger?.Invoke($"Downloading pandoc {LatestPandocVersion}");
                 await DownloadPandoc();
             }
 
             if (!File.Exists(inputFile))
-            {
                 throw new ArgumentException($"{inputFile} does not exist.", nameof(inputFile));
-            }
 
             if (File.Exists(outputFile))
-            {
-                logger?.Invoke($"DELETE {outputFile}");
                 File.Delete(outputFile);
-            }
+
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = executable,
+                Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
+                WorkingDirectory = workingFolder,
+                CreateNoWindow = true
+            };
 
             Process process;
             try
             {
-                var processInfo = new ProcessStartInfo
-                {
-                    FileName = executable,
-                    Arguments = $"-i \"{inputFile}\" -o \"{outputFile}\" " + string.Join(' ', arguments),
-                    WorkingDirectory = workingFolder,
-                    CreateNoWindow = true
-                };
-
-                logger?.Invoke($"EXEC \"{processInfo.FileName} {processInfo.Arguments}\" in {processInfo.WorkingDirectory}");
                 process = Process.Start(processInfo);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to launch {executable}", ex);
+                throw new Exception($"Error - {ex.Message}: \"{processInfo.FileName} {processInfo.Arguments}\" in {processInfo.WorkingDirectory}\"", ex);
             }
 
             if (process == null)
-                throw new Exception($"Failed to launch {executable}");
+                throw new Exception($"Failed to launch \"{processInfo.FileName} {processInfo.Arguments}\" in {processInfo.WorkingDirectory}\"");
 
             try
             {
@@ -157,7 +153,7 @@ namespace LearnDocUtils
             catch (TaskCanceledException)
             {
                 process.Kill(true);
-                throw new Exception($"Failed to convert {inputFile} to {outputFile}, timeout after {timeout} sec.");
+                throw new Exception($"Failed to convert {inputFile} to {outputFile}, timeout after {timeout} sec. Command was \"{processInfo.FileName} {processInfo.Arguments}\" in {processInfo.WorkingDirectory}\".");
             }
         }
     }

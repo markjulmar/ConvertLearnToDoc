@@ -9,14 +9,17 @@ using System.Linq;
 
 namespace LearnDocUtils
 {
-    public static class LearnToDocx
+    public sealed class LearnToDocx
     {
-        private static Action<string> _logger;
-        private static string _accessToken;
+        private Action<string> _logger;
+        private bool _keepTempFiles;
+        private string _accessToken;
 
-        public static async Task ConvertAsync(string repo, string branch, string folder, string outputFile, string accessToken = null, Action<string> logger = null)
+        public async Task ConvertAsync(string repo, string branch, string folder,
+            string outputFile, string accessToken = null, Action<string> logger = null, bool debug = false)
         {
             _logger = logger ?? Console.WriteLine;
+            _keepTempFiles = debug;
             
             if (string.IsNullOrEmpty(repo))
                 throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
@@ -32,9 +35,10 @@ namespace LearnDocUtils
             await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch, _accessToken), folder, outputFile);
         }
 
-        public static async Task ConvertAsync(string learnFolder, string outputFile, Action<string> logger = null)
+        public async Task ConvertAsync(string learnFolder, string outputFile, Action<string> logger = null, bool debug = false)
         {
             _logger = logger ?? Console.WriteLine;
+            _keepTempFiles = debug;
 
             if (string.IsNullOrWhiteSpace(learnFolder))
                 throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
@@ -45,7 +49,7 @@ namespace LearnDocUtils
             await Convert(TripleCrownGitHubService.CreateLocal(learnFolder), learnFolder, outputFile);
         }
 
-        private static async Task Convert(ITripleCrownGitHubService tcService, string learnFolder, string outputFile)
+        private async Task Convert(ITripleCrownGitHubService tcService, string learnFolder, string outputFile)
         {
             if (Directory.Exists(outputFile))
                 throw new ArgumentException($"'{nameof(outputFile)}' is a folder.", nameof(outputFile));
@@ -58,10 +62,7 @@ namespace LearnDocUtils
 
             var module = await tcService.GetModuleAsync(learnFolder);
             if (module == null)
-            {
-                _logger?.Invoke($"Unable to parse module from {learnFolder}.");
-                return;
-            }
+                throw new ArgumentException($"Failed to parse Learn module from {learnFolder}", nameof(learnFolder));
 
             await tcService.LoadUnitsAsync(module);
 
@@ -72,7 +73,7 @@ namespace LearnDocUtils
 
             _logger?.Invoke($"Converting \"{module.Title}\" to {outputFile}");
 
-            var rootTemp = Path.GetTempPath();
+            var rootTemp = _keepTempFiles ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
             var tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
             while (Directory.Exists(tempFolder))
             {
@@ -83,7 +84,6 @@ namespace LearnDocUtils
 
             try
             {
-                _logger?.Invoke($"MKDIR {includeFolder}");
                 Directory.CreateDirectory(includeFolder);
                 var localMarkdown = Path.Combine(includeFolder, "generated-temp.md");
 
@@ -131,7 +131,6 @@ namespace LearnDocUtils
                     "-f markdown-fenced_divs", "-t docx");
 
                 // Do some post processing
-                _logger?.Invoke($"Processing {outputFile}");
                 using var doc = Document.Load(outputFile);
 
                 // Add the metadata
@@ -169,12 +168,18 @@ namespace LearnDocUtils
             }
             finally
             {
-                _logger?.Invoke($"RMDIR {tempFolder}");
-                Directory.Delete(tempFolder, true);
+                if (!_keepTempFiles)
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+                else
+                {
+                    _logger?.Invoke($"Downloaded module folder: {tempFolder}");
+                }
             }
         }
 
-        private static async Task DownloadAllImagesForUnit(string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
+        private async Task DownloadAllImagesForUnit(string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
             foreach (Match match in Regex.Matches(markdownText, @"!\[(.*?)\]\((.*?)\)"))
             {
@@ -195,11 +200,14 @@ namespace LearnDocUtils
 
                 try
                 {
-                    _logger?.Invoke($"Download {remotePath} => {localPath}");
-                    var result = await gitHub.ReadFileForPathAsync(remotePath);
-                    if (result.binary != null)
+                    var (binary, _) = await gitHub.ReadFileForPathAsync(remotePath);
+                    if (binary != null)
                     {
-                        await File.WriteAllBytesAsync(localPath, result.binary);
+                        await File.WriteAllBytesAsync(localPath, binary);
+                    }
+                    else
+                    {
+                        throw new Exception($"{remotePath} did not return an image as expected.");
                     }
                 }
                 catch (Octokit.ForbiddenException)
@@ -221,5 +229,3 @@ namespace LearnDocUtils
         }
     }
 }
-
-

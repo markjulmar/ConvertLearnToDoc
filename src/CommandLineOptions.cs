@@ -21,5 +21,8 @@ namespace ConvertLearnToDoc
 
         [Option('t', "Token")]
         public string AccessToken { get; set; }
+
+        [Option('d', "Debug")]
+        public bool Debug { get; set; }
     }
 }
