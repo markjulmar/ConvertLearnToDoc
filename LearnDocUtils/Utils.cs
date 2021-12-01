@@ -42,11 +42,10 @@ namespace LearnDocUtils
             if (os == MacDownload)
             {
                 string pandocExe = PanDocExe;
-                Console.WriteLine($"Making pandoc executable: sudo chmod +x {pandocExe}");
                 var process = Process.Start(new ProcessStartInfo
                 {
-                    FileName = "sudo",
-                    Arguments = $"chmod +x \"{pandocExe}\"",
+                    FileName = "chmod",
+                    Arguments = $"+x \"{pandocExe}\"",
                     CreateNoWindow = true
                 });
 
