@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc", "src\Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDocWeb", "ConvertLearnToDocWeb\ConvertLearnToDocWeb.csproj", "{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDocWeb", "ConvertLearnToDocWeb\ConvertLearnToDocWeb.csproj", "{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Markdig.Renderer.Docx", "Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj", "{911F9FB9-3308-476F-BA71-E3A1BD63715D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{911F9FB9-3308-476F-BA71-E3A1BD63715D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{911F9FB9-3308-476F-BA71-E3A1BD63715D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{911F9FB9-3308-476F-BA71-E3A1BD63715D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{911F9FB9-3308-476F-BA71-E3A1BD63715D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

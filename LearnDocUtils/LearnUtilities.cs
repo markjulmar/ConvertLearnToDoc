@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MSLearnRepos;
 
-namespace ModuleToDoc
+namespace LearnDocUtils
 {
     public sealed class LearnUtilities
     {

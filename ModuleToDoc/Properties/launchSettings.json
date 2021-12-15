@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "ModuleToDoc": {
-      "commandName": "Project",
-      "commandLineArgs": "-i https://docs.microsoft.com/en-us/learn/modules/create-azure-storage-account/ -o C:\\users\\mark\\OneDrive\\desktop\\t"
-    }
-  }
-}

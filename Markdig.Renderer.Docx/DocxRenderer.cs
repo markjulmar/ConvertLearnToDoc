@@ -19,14 +19,16 @@ namespace Markdig.Renderer.Docx
         private readonly IDocument document;
         private readonly List<IDocxObjectRenderer> renderers;
         private readonly string moduleFolder;
+        private Action<string> logger;
 
         public string ZonePivot { get; }
 
-        public DocxObjectRenderer(IDocument document, string moduleFolder, string zonePivot)
+        public DocxObjectRenderer(IDocument document, string moduleFolder, string zonePivot, Action<string> logger = null)
         {
             this.moduleFolder = moduleFolder;
             this.document = document;
             this.ZonePivot = zonePivot;
+            this.logger = logger;
 
             renderers = new List<IDocxObjectRenderer>
             {
@@ -61,12 +63,8 @@ namespace Markdig.Renderer.Docx
         public IDocxObjectRenderer FindRenderer(MarkdownObject obj)
         {
             var renderer = renderers.FirstOrDefault(r => r.CanRender(obj));
-#if DEBUG
             if (renderer == null)
-            {
-                Console.WriteLine($"Missing renderer for {obj.GetType()}");
-            }
-#endif
+                logger?.Invoke($"Missing renderer for {obj.GetType()}");
             return renderer;
         }
 
@@ -91,7 +89,22 @@ namespace Markdig.Renderer.Docx
 
                 // Find the renderer and process.
                 var renderer = FindRenderer(block);
-                renderer?.Write(this, document, null, block);
+
+                try
+                {
+                    renderer?.Write(this, document, null, block);
+                }
+                catch (AggregateException aex)
+                {
+                    var ex = aex.Flatten();
+                    logger?.Invoke($"{ex.GetType().Name}: {ex.Message}");
+                    logger?.Invoke(ex.StackTrace);
+                }
+                catch (Exception ex)
+                {
+                    logger?.Invoke($"{ex.GetType().Name}: {ex.Message}");
+                    logger?.Invoke(ex.StackTrace);
+                }
             }
         }
 

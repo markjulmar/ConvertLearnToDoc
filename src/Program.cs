@@ -1,64 +1,67 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 using CommandLine;
-using ConvertLearnToDoc;
 using LearnDocUtils;
 
-Console.WriteLine("Learn/Docx converter");
-
-CommandLineOptions options = null;
-new Parser(cfg => { cfg.HelpWriter = Console.Error; })
-    .ParseArguments<CommandLineOptions>(args)
-    .WithParsed(clo => options = clo);
-if (options == null)
-    return; // bad arguments or help.
-
-// Input is a Learn module URL
-if (options.InputFileOrFolder.StartsWith("http"))
+namespace ConvertLearnToDoc
 {
-    var (repo, branch, folder) = await Utils.RetrieveLearnLocationFromUrlAsync(options.InputFileOrFolder);
-
-    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
-        options.OutputFileOrFolder = Path.ChangeExtension(folder.Split('/').Last(), "docx");
-
-    await new LearnToDocx().ConvertAsync(repo, branch, folder, options.OutputFileOrFolder, options.AccessToken, debug: options.Debug);
-}
-// Input is a repo + folder + branch
-else if (!string.IsNullOrEmpty(options.GitHubRepo))
-{
-    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
-        options.OutputFileOrFolder = Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.InputFileOrFolder), "docx");
-
-    await new LearnToDocx().ConvertAsync(options.GitHubRepo, options.GitHubBranch, options.InputFileOrFolder, options.OutputFileOrFolder, options.AccessToken, debug: options.Debug);
-}
-// Input is a local folder containing a Learn module
-else if (Directory.Exists(options.InputFileOrFolder))
-{
-    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
-        options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "docx");
-
-    await new LearnToDocx().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, debug: options.Debug);
-}
-// Input is a docx file
-else
-{
-    if (string.IsNullOrEmpty(options.OutputFileOrFolder))
-        options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
-    
-    await new DocxToLearn().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, debug: options.Debug);
-
-    if (options.ZipOutput)
+    public static class Program
     {
-        string baseFolder = Path.GetDirectoryName(options.OutputFileOrFolder);
-        if (string.IsNullOrEmpty(baseFolder))
-            baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        public static async Task Main(string[] args)
+        {
+            Console.WriteLine("Learn/Docx converter");
 
-        string zipFile = Path.Combine(baseFolder, 
-            Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.OutputFileOrFolder), "zip"));
+            CommandLineOptions options = null;
+            new Parser(cfg => { cfg.HelpWriter = Console.Error; })
+                .ParseArguments<CommandLineOptions>(args)
+                .WithParsed(clo => options = clo);
+            if (options == null)
+                return; // bad arguments or help.
 
-        Utils.CompressFolder(options.OutputFileOrFolder, zipFile);
+            // Input is a Learn module URL
+            if (options.InputFileOrFolder.StartsWith("http"))
+            {
+                await LearnToDocx.ConvertFromUrl(options.InputFileOrFolder,
+                    options.OutputFileOrFolder, options.ZonePivot,
+                    options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+            }
+
+            // Input is a repo + folder + branch
+            else if (!string.IsNullOrEmpty(options.GitHubRepo))
+            {
+                await LearnToDocx.ConvertFromRepo(options.GitHubRepo, options.GitHubBranch, options.InputFileOrFolder,
+                    options.OutputFileOrFolder, options.ZonePivot,
+                    options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+            }
+            // Input is a local folder containing a Learn module
+            else if (Directory.Exists(options.InputFileOrFolder))
+            {
+                await LearnToDocx.ConvertFromFolder(options.InputFileOrFolder, options.ZonePivot, options.OutputFileOrFolder,
+                    Console.WriteLine, options.Debug, options.UsePandoc);
+            }
+            // Input is a docx file
+            else
+            {
+                if (string.IsNullOrEmpty(options.OutputFileOrFolder))
+                    options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
+
+                await new DocxToLearn().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, debug: options.Debug);
+
+                if (options.ZipOutput)
+                {
+                    string baseFolder = Path.GetDirectoryName(options.OutputFileOrFolder);
+                    if (string.IsNullOrEmpty(baseFolder))
+                        baseFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+                    string zipFile = Path.Combine(baseFolder,
+                        Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.OutputFileOrFolder), "zip"));
+
+                    Utils.CompressFolder(options.OutputFileOrFolder, zipFile);
+                }
+            }
+
+            Console.WriteLine($"Converted {options.InputFileOrFolder} to {options.OutputFileOrFolder}.");
+        }
     }
 }
-
-Console.WriteLine($"Converted {options.InputFileOrFolder} to {options.OutputFileOrFolder}.");

@@ -38,6 +38,14 @@
                         <input asp-for="GithubFolder" type="text" class="form-control" id="githubFolder" aria-describedby="folderHelp" placeholder="MS Learn module folder from root of repo">
                         <small id="folderHelp" class="form-text text-muted">ex: /learn-pr/wwl-azure/configure-storage-accounts</small>
                     </div>
+                    
+                    <div class="form-group form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="UseLegacyConverter" id="useLegacyConverter" />
+                        <label class="form-check-label" for="useLegacyConverter">
+                            Use legacy converter
+                        </label>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary mt-2 mb-2">Convert</button>
                 </form>
             </div>

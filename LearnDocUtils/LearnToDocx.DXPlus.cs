@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,73 +9,49 @@ using Markdig.Renderer.Docx;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 using MSLearnRepos;
 
-namespace ModuleToDoc
+namespace LearnDocUtils
 {
-    public class ModuleProcessor
+    internal sealed class LearnToDocxDXPlus : ILearnToDocx
     {
         private TripleCrownModule moduleData;
-        private IDocument document;
         private string markdownFile;
-        private readonly ITripleCrownGitHubService tcService;
-        private readonly string accessToken;
-        private readonly string moduleFolder;
 
-        public static async Task<ModuleProcessor> CreateFromUrl(string url, string accessToken = null)
+        public async Task Convert(ITripleCrownGitHubService tcService, string accessToken, 
+            string moduleFolder, string outputFile, string zonePivot, 
+            Action<string> logger, bool debug)
         {
-            if (string.IsNullOrEmpty(url))
-                throw new ArgumentNullException(nameof(url));
+            if (tcService == null) throw new ArgumentNullException(nameof(tcService));
+            if (moduleFolder == null) throw new ArgumentNullException(nameof(moduleFolder));
 
-            var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
-            return await CreateFromRepo(repo, branch, folder, accessToken);
-        }
+            if (Directory.Exists(outputFile))
+                throw new ArgumentException($"'{nameof(outputFile)}' is a folder.", nameof(outputFile));
 
-        public static Task<ModuleProcessor> CreateFromRepo(string repo, string branch, string folder, string accessToken = null)
-        {
-            if (string.IsNullOrEmpty(repo))
-                throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
-            if (string.IsNullOrEmpty(branch))
-                throw new ArgumentException($"'{nameof(branch)}' cannot be null or empty.", nameof(branch));
-            if (string.IsNullOrEmpty(folder))
-                throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
+            if (string.IsNullOrEmpty(outputFile))
+                throw new ArgumentException($"'{nameof(outputFile)}' cannot be null or empty.", nameof(outputFile));
 
-            accessToken = string.IsNullOrEmpty(accessToken)
-                ? GithubHelper.ReadDefaultSecurityToken()
-                : accessToken;
+            if (!Path.HasExtension(outputFile))
+                outputFile = Path.ChangeExtension(outputFile, "docx");
 
-            var tcService = TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken);
-            return Task.FromResult(new ModuleProcessor(tcService, accessToken, folder));
-        }
+            if (File.Exists(outputFile))
+                File.Delete(outputFile);
 
-        public static Task<ModuleProcessor> CreateFromLocalFolder(string learnFolder)
-        {
-            if (string.IsNullOrWhiteSpace(learnFolder))
-                throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
+            using var document = Document.Create(outputFile);
 
-            if (!Directory.Exists(learnFolder))
-                throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
+            var rootTemp = debug ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
+            var tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
+            while (Directory.Exists(tempFolder))
+            {
+                tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
+            }
 
-            var tcService = TripleCrownGitHubService.CreateLocal(learnFolder);
-            return Task.FromResult(new ModuleProcessor(tcService, null, learnFolder));
-        }
+            (moduleData, markdownFile) = await new LearnUtilities().DownloadModuleAsync(tcService, accessToken, moduleFolder, tempFolder);
 
-        private ModuleProcessor(ITripleCrownGitHubService tcService, string accessToken, string moduleFolder)
-        {
-            this.tcService = tcService ?? throw new ArgumentNullException(nameof(tcService));
-            this.moduleFolder = moduleFolder ?? throw new ArgumentNullException(nameof(moduleFolder));
-            this.accessToken = accessToken;
-        }
-
-        public async Task Process(IDocument wordDocument, string zonePivot, bool debug = false)
-        {
-            this.document = wordDocument ?? throw new ArgumentNullException(nameof(wordDocument));
-
-            var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-            (moduleData, markdownFile) = await new LearnUtilities().DownloadModuleAsync(tcService, accessToken, moduleFolder, outputFolder);
+            logger?.Invoke($"Converting \"{moduleData.Title}\" to {outputFile}");
 
             try
             {
-                AddMetadata();
-                WriteTitle();
+                AddMetadata(document);
+                WriteTitle(document);
 
                 var context = new MarkdownContext();
                 var pipelineBuilder = new MarkdownPipelineBuilder();
@@ -107,25 +82,21 @@ namespace ModuleToDoc
                     .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
                     .Build();
 
-                var docWriter = new DocxObjectRenderer(wordDocument, outputFolder, zonePivot);
-
                 string markdownText = await File.ReadAllTextAsync(markdownFile);
                 var markdownDocument = Markdown.Parse(markdownText, pipeline);
 
                 if (debug)
                 {
-                    string debugFile =
-                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-                            "debug.txt");
-                    await File.WriteAllTextAsync(debugFile, MarkdigDebug.Dump(markdownDocument));
+                    await File.WriteAllTextAsync(Path.Combine(tempFolder, "debug.txt"), MarkdigDebug.Dump(markdownDocument));
                 }
 
+                var docWriter = new DocxObjectRenderer(document, tempFolder, zonePivot);
                 docWriter.Render(markdownDocument);
 
-                AddUnitMetadata();
+                AddUnitMetadata(document);
 
-                wordDocument.Save();
-                wordDocument.Close();
+                document.Save();
+                document.Close();
             }
             finally
             {
@@ -133,17 +104,21 @@ namespace ModuleToDoc
                 {
                     try
                     {
-                        Directory.Delete(outputFolder, true);
+                        Directory.Delete(tempFolder, true);
                     }
                     catch
                     {
                         // ignored
                     }
                 }
+                else
+                {
+                    logger?.Invoke($"Downloaded module folder: {tempFolder}");
+                }
             }
         }
 
-        private void AddUnitMetadata()
+        private void AddUnitMetadata(IDocument document)
         {
             var headers = document.Paragraphs
                 .Where(p => p.Properties.StyleName == HeadingType.Heading1.ToString())
@@ -166,7 +141,7 @@ namespace ModuleToDoc
             }
         }
 
-        private void AddMetadata()
+        private void AddMetadata(IDocument document)
         {
             document.SetPropertyValue(DocumentPropertyName.Title, moduleData.Title);
             document.SetPropertyValue(DocumentPropertyName.Subject, moduleData.Summary);
@@ -183,7 +158,7 @@ namespace ModuleToDoc
             document.AddCustomProperty("Abstract", moduleData.Abstract);
         }
 
-        private void WriteTitle()
+        private void WriteTitle(IDocument document)
         {
             document.AddParagraph(moduleData.Title)
                 .Style(HeadingType.Title);

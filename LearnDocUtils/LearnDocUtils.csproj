@@ -19,8 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Julmar.DxPlus" Version="1.0.3-prerelease" />
+    <PackageReference Include="Julmar.DxPlus" Version="1.0.5" />
     <PackageReference Include="Julmar.MSLearnRepos" Version="1.0.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj" />
   </ItemGroup>
 
 </Project>
