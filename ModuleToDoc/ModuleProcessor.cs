@@ -1,0 +1,194 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using DXPlus;
+using Markdig;
+using Markdig.Extensions.EmphasisExtras;
+using Markdig.Renderer.Docx;
+using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+using MSLearnRepos;
+
+namespace ModuleToDoc
+{
+    public class ModuleProcessor
+    {
+        private TripleCrownModule moduleData;
+        private IDocument document;
+        private string markdownFile;
+        private readonly ITripleCrownGitHubService tcService;
+        private readonly string accessToken;
+        private readonly string moduleFolder;
+
+        public static async Task<ModuleProcessor> CreateFromUrl(string url, string accessToken = null)
+        {
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentNullException(nameof(url));
+
+            var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
+            return await CreateFromRepo(repo, branch, folder, accessToken);
+        }
+
+        public static Task<ModuleProcessor> CreateFromRepo(string repo, string branch, string folder, string accessToken = null)
+        {
+            if (string.IsNullOrEmpty(repo))
+                throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
+            if (string.IsNullOrEmpty(branch))
+                throw new ArgumentException($"'{nameof(branch)}' cannot be null or empty.", nameof(branch));
+            if (string.IsNullOrEmpty(folder))
+                throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
+
+            accessToken = string.IsNullOrEmpty(accessToken)
+                ? GithubHelper.ReadDefaultSecurityToken()
+                : accessToken;
+
+            var tcService = TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken);
+            return Task.FromResult(new ModuleProcessor(tcService, accessToken, folder));
+        }
+
+        public static Task<ModuleProcessor> CreateFromLocalFolder(string learnFolder)
+        {
+            if (string.IsNullOrWhiteSpace(learnFolder))
+                throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
+
+            if (!Directory.Exists(learnFolder))
+                throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
+
+            var tcService = TripleCrownGitHubService.CreateLocal(learnFolder);
+            return Task.FromResult(new ModuleProcessor(tcService, null, learnFolder));
+        }
+
+        private ModuleProcessor(ITripleCrownGitHubService tcService, string accessToken, string moduleFolder)
+        {
+            this.tcService = tcService ?? throw new ArgumentNullException(nameof(tcService));
+            this.moduleFolder = moduleFolder ?? throw new ArgumentNullException(nameof(moduleFolder));
+            this.accessToken = accessToken;
+        }
+
+        public async Task Process(IDocument wordDocument, string zonePivot, bool debug = false)
+        {
+            this.document = wordDocument ?? throw new ArgumentNullException(nameof(wordDocument));
+
+            var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
+            (moduleData, markdownFile) = await new LearnUtilities().DownloadModuleAsync(tcService, accessToken, moduleFolder, outputFolder);
+
+            try
+            {
+                AddMetadata();
+                WriteTitle();
+
+                var context = new MarkdownContext();
+                var pipelineBuilder = new MarkdownPipelineBuilder();
+                var pipeline = pipelineBuilder
+                    .UseAbbreviations()
+                    .UseAutoIdentifiers()
+                    //.UseCitations()
+                    //.UseCustomContainers()
+                    //.UseDefinitionLists()
+                    //.UseFigures()
+                    //.UseFooters()
+                    //.UseFootnotes()
+                    .UseGridTables()
+                    .UseMathematics()
+                    .UseMediaLinks()
+                    .UsePipeTables()
+                    .UseListExtras()
+                    .UseTaskLists()
+                    //.UseDiagrams()
+                    .UseAutoLinks()
+                    .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
+                    .UseIncludeFile(context)
+                    .UseQuoteSectionNote(context)
+                    .UseRow(context)
+                    .UseNestedColumn(context)
+                    .UseTripleColon(context)
+                    .UseNoloc()
+                    .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
+                    .Build();
+
+                var docWriter = new DocxObjectRenderer(wordDocument, outputFolder, zonePivot);
+
+                string markdownText = await File.ReadAllTextAsync(markdownFile);
+                var markdownDocument = Markdown.Parse(markdownText, pipeline);
+
+                if (debug)
+                {
+                    string debugFile =
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                            "debug.txt");
+                    await File.WriteAllTextAsync(debugFile, MarkdigDebug.Dump(markdownDocument));
+                }
+
+                docWriter.Render(markdownDocument);
+
+                AddUnitMetadata();
+
+                wordDocument.Save();
+                wordDocument.Close();
+            }
+            finally
+            {
+                if (!debug)
+                {
+                    try
+                    {
+                        Directory.Delete(outputFolder, true);
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+            }
+        }
+
+        private void AddUnitMetadata()
+        {
+            var headers = document.Paragraphs
+                .Where(p => p.Properties.StyleName == HeadingType.Heading1.ToString())
+                .ToList();
+
+            string user = Environment.UserName;
+            if (string.IsNullOrEmpty(user))
+                user = "Office User";
+
+            foreach (var unit in moduleData.Units)
+            {
+                if (unit.UsesSandbox || unit.LabId != null || !string.IsNullOrEmpty(unit.InteractivityType))
+                {
+                    string title = unit.Title;
+                    var p = headers.SingleOrDefault(p => p.Text == title);
+                    p?.AttachComment(
+                        document.CreateComment(user,
+                            $"Sandbox: {unit.UsesSandbox}, LabId: {unit.LabId}, Interactivity: {unit.InteractivityType}"));
+                }
+            }
+        }
+
+        private void AddMetadata()
+        {
+            document.SetPropertyValue(DocumentPropertyName.Title, moduleData.Title);
+            document.SetPropertyValue(DocumentPropertyName.Subject, moduleData.Summary);
+            document.SetPropertyValue(DocumentPropertyName.Keywords, string.Join(',', moduleData.Products));
+            document.SetPropertyValue(DocumentPropertyName.Comments, string.Join(',',moduleData.FriendlyLevels));
+            document.SetPropertyValue(DocumentPropertyName.Category, string.Join(',', moduleData.FriendlyRoles));
+            document.SetPropertyValue(DocumentPropertyName.CreatedDate, moduleData.LastUpdated.ToString("yyyy-MM-ddT00:00:00Z"));
+            document.SetPropertyValue(DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
+
+            // Add custom data.
+            document.AddCustomProperty("ModuleUid", moduleData.Uid);
+            document.AddCustomProperty("MsTopic", moduleData.Metadata.MsTopic);
+            document.AddCustomProperty("MsProduct", moduleData.Metadata.MsProduct);
+            document.AddCustomProperty("Abstract", moduleData.Abstract);
+        }
+
+        private void WriteTitle()
+        {
+            document.AddParagraph(moduleData.Title)
+                .Style(HeadingType.Title);
+            document.AddParagraph($"Last modified on {moduleData.LastUpdated.ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
+                .Style(HeadingType.Subtitle);
+        }
+    }
+}
