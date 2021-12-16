@@ -19,7 +19,13 @@ namespace Markdig.Renderer.Docx
         private readonly IDocument document;
         private readonly List<IDocxObjectRenderer> renderers;
         private readonly string moduleFolder;
-        private Action<string> logger;
+        private readonly Action<string> logger;
+
+        /// <summary>
+        /// This holds elements where previous inline renderers had to reach into the stream
+        /// and render siblings. It's used to avoid double rendering.
+        /// </summary>
+        public IList<MarkdownObject> OutOfPlaceRendered => new List<MarkdownObject>();
 
         public string ZonePivot { get; }
 

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i https://docs.microsoft.com/en-us/learn/modules/manage-user-authentication/ -o C:\\Users\\mark\\OneDrive\\Desktop\\test.docx"
+      "commandLineArgs": "-o C:\\Users\\mark\\OneDrive\\Desktop\\test.docx -i https://docs.microsoft.com/en-us/learn/modules/csharp-write-first/"
     }
   }
 }

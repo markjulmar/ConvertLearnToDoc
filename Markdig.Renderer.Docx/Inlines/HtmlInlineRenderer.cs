@@ -21,11 +21,11 @@ namespace Markdig.Renderer.Docx.Inlines
                 case "kbd":
                     if (isClose)
                     {
-                        Run r = currentParagraph.Runs.Last();
-                        r.AddFormatting(new Formatting
-                        {
+                        var r = currentParagraph.Runs.Last();
+                        r.AddFormatting(new Formatting {
                             Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
-                            Color = Color.DarkGray
+                            Color = Color.Black,
+                            ShadeFill = Color.FromArgb(0xf0,0xf0,0xf0)
                         });
                     }
 
@@ -39,7 +39,7 @@ namespace Markdig.Renderer.Docx.Inlines
                     break;
                 case "rgn":
                     if (!isClose)
-                        currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(html)}}}",
+                        currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
                             new Formatting() { Highlight = Highlight.Cyan });
                     break;
                 default:
@@ -50,7 +50,7 @@ namespace Markdig.Renderer.Docx.Inlines
 
         private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)
         {
-            string text = Helpers.ReadLiteralTextAfterTag(html);
+            string text = Helpers.ReadLiteralTextAfterTag(owner, html);
             Regex re = new Regex(@"(?inx)
                 <a \s [^>]*
                     href \s* = \s*

@@ -1,6 +1,5 @@
 using System.Drawing;
 using DXPlus;
-using Markdig.Renderer.Docx.Blocks;
 using Markdig.Syntax.Inlines;
 
 namespace Markdig.Renderer.Docx.Inlines
@@ -12,7 +11,11 @@ namespace Markdig.Renderer.Docx.Inlines
             string code = obj.Content;
             currentParagraph
                 .Append(code)
-                .WithFormatting(new Formatting { Font = FontFamily.GenericMonospace, Bold = true });
+                .WithFormatting(new Formatting
+                {
+                    Font = new FontFamily("Consolas"), 
+                    ShadeFill = Color.FromArgb(0xf0,0xf0,0xf0)
+                });
         }
     }
 }

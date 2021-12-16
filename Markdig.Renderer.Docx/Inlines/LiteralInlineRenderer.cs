@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using System.Linq;
+using System.Xml;
 using DXPlus;
-using Markdig.Renderer.Docx.Blocks;
 using Markdig.Syntax.Inlines;
 
 namespace Markdig.Renderer.Docx.Inlines
@@ -15,18 +16,20 @@ namespace Markdig.Renderer.Docx.Inlines
             if (literal.Content.IsEmpty) 
                 return;
 
-            // Surrounded by HTML tags .. ignore.
-            if (Helpers.IsSurroundedByHtml(literal))
+            // Rendered (or will be) by another element?
+            if (owner.OutOfPlaceRendered.Contains(literal))
                 return;
+
+            string text = Helpers.CleanText(literal.Content.ToString());
 
             if (currentParagraph.Text.Length == 0)
             {
-                currentParagraph.SetText(literal.Content.ToString());
+                currentParagraph.SetText(text);
             }
             else
             {
-                currentParagraph.Append(literal.Content.ToString());
+                currentParagraph.Append(text);
             }
-        }        
+        }
     }
 }

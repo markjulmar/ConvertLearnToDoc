@@ -16,7 +16,6 @@ namespace Markdig.Renderer.Docx.Blocks
                 currentParagraph
                     .Style(HeadingType.IntenseQuote)
                     .AppendLine(block.NoteTypeString);
-                WriteChildren(block, owner, document, currentParagraph);
             }
             else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
             {
