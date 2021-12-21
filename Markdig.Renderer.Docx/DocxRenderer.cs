@@ -150,9 +150,10 @@ namespace Markdig.Renderer.Docx
                 var picture = image.CreatePicture(imageSource, altText, finalWidth, finalHeight);
                 currentParagraph.Append(picture);
 
+                // Not needed -- the filename is tied in the docx.
                 // Attach the original filename as a comment.
-                currentParagraph.AttachComment(document.CreateComment(Environment.UserName, imageSource),
-                    currentParagraph.Runs.Last());
+                //currentParagraph.AttachComment(document.CreateComment(Environment.UserName, imageSource),
+                //    currentParagraph.Runs.Last());
 
                 return picture;
             }

@@ -20,13 +20,14 @@ namespace Markdig.Renderer.Docx.Blocks
                 for (int colIndex = 0; colIndex < row.Count; colIndex++)
                 {
                     var cell = (NestedColumnBlock) row[colIndex];
-                    var documentCell = documentTable.Rows[rowIndex].Cells[colIndex];
+                    var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
 
                     var cellParagraph = documentCell.Paragraphs.First();
                     WriteChildren(cell, owner, document, cellParagraph);
                 }
             }
-            documentTable.AutoFit(AutoFit.Contents);
+
+            documentTable.AutoFit = true;
         }
 
         public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, RowBlock obj)

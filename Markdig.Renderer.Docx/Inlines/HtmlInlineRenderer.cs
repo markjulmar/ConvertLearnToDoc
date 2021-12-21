@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DXPlus;
+using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
 namespace Markdig.Renderer.Docx.Inlines
@@ -35,7 +36,8 @@ namespace Markdig.Renderer.Docx.Inlines
                         ProcessRawAnchor(html, owner, document, currentParagraph);
                     break;
                 case "br":
-                    currentParagraph.AppendLine();
+                    if (html.Parent.ParentBlock is not HeadingBlock)
+                        currentParagraph.AppendLine();
                     break;
                 case "rgn":
                     if (!isClose)

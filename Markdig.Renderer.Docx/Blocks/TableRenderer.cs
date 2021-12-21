@@ -23,10 +23,6 @@ namespace Markdig.Renderer.Docx.Blocks
                     .ToList();
             }
 
-            // Determine the width of the page
-            var section = document.Sections.First();
-            double pageWidth = section.Properties.PageWidth - section.Properties.LeftMargin - section.Properties.RightMargin;
-
             int totalColumns = table.Max(tr => ((TableRow) tr).Count);
             DXPlus.Table documentTable;
             if (currentParagraph != null)
@@ -53,11 +49,15 @@ namespace Markdig.Renderer.Docx.Blocks
                 for (int colIndex = 0; colIndex < row.Count; colIndex++)
                 {
                     var cell = (TableCell) row[colIndex];
-                    var documentCell = documentTable.Rows[rowIndex].Cells[colIndex];
+                    var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
 
                     if (columnWidths.Count > 0)
                     {
-                        documentCell.Width = columnWidths[colIndex] * pageWidth;
+                        double width = columnWidths[colIndex];
+                        if (width == 0)
+                            documentCell.SetWidth(TableWidthUnit.Auto, 0);
+                        else
+                            documentCell.SetWidth(TableWidthUnit.Percentage, width);
                         documentCell.SetMargins(0);
                     }
 
@@ -101,7 +101,9 @@ namespace Markdig.Renderer.Docx.Blocks
             }
 
             if (columnWidths.Count == 0)
-                documentTable.AutoFit(AutoFit.Contents);
+            {
+                documentTable.AutoFit = true;
+            }
         }
     }
 }

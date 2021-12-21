@@ -20,7 +20,7 @@ namespace Markdig.Renderer.Docx.Blocks
             else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
             {
                 string videoLink = block.VideoLink;
-                currentParagraph.AppendLine($"{{video: {videoLink}}}",
+                currentParagraph.Append($"{{video: {videoLink}}}",
                     new Formatting { Highlight = Highlight.Magenta, Color = Color.White });
             }
 
