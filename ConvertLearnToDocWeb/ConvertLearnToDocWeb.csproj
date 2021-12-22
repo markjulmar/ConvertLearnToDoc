@@ -4,6 +4,10 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup>
+	<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss:fffZ"))</SourceRevisionId>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\LearnDocUtils\LearnDocUtils.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
