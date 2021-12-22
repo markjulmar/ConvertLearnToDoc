@@ -11,13 +11,13 @@ namespace LearnDocUtils
 {
     public sealed class DocxToLearn
     {
-        private Action<string> _logger;
-        private bool _keepTempFiles;
+        private Action<string> logger;
+        private bool keepTempFiles;
 
         public async Task ConvertAsync(string docxFile, string outputFolder, Action<string> logger = null, bool debug = false)
         {
-            _logger = logger ?? Console.WriteLine;
-            _keepTempFiles = debug;
+            this.logger = logger ?? Console.WriteLine;
+            keepTempFiles = debug;
 
             if (string.IsNullOrWhiteSpace(outputFolder))
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or whitespace.", nameof(outputFolder));
@@ -34,7 +34,7 @@ namespace LearnDocUtils
 
             try
             {
-                await Utils.ConvertFileAsync(_logger, docxFile, tempFile, outputFolder,
+                await Utils.ConvertFileAsync(this.logger, docxFile, tempFile, outputFolder,
                     "--extract-media=.", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
 
                 // Now pick off title metadata.
@@ -112,13 +112,13 @@ namespace LearnDocUtils
             }
             finally
             {
-                if (!_keepTempFiles)
+                if (!keepTempFiles)
                 {
                     File.Delete(tempFile);
                 }
                 else
                 {
-                    _logger?.Invoke($"Consolidated Markdown file: {tempFile}");
+                    this.logger?.Invoke($"Consolidated Markdown file: {tempFile}");
                 }
             }
         }
@@ -136,7 +136,7 @@ namespace LearnDocUtils
 
         private ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
-            _logger?.Invoke($"LoadDocumentMetadata({docxFile})");
+            logger?.Invoke($"LoadDocumentMetadata({docxFile})");
 
             var doc = Document.Load(docxFile);
             var metadata = new ModuleMetadata();

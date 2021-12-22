@@ -17,7 +17,8 @@ namespace Markdig.Renderer.Docx.Blocks
             currentParagraph ??= document.AddParagraph();
 
             WriteChildren(fencedCodeBlock, owner, document, currentParagraph);
-            currentParagraph.Style("SourceCodeBlock").AttachComment(document.CreateComment(Environment.UserName, language));
+            currentParagraph.Style("SourceCodeBlock")
+                .AttachComment(document.CreateComment(Environment.UserName, language));
         }
 
         private void AddBlockedCodeStyle(IDocument document)

@@ -42,8 +42,9 @@ namespace Markdig.Renderer.Docx.Blocks
             for (var rowIndex = 0; rowIndex < table.Count; rowIndex++)
             {
                 var row = (TRow) table[rowIndex];
-                if (firstRow && row.IsHeader) {
-                    documentTable.Design = TableDesign.TableGrid;
+                if (firstRow) {
+                    documentTable.Design = row.IsHeader
+                        ? TableDesign.TableGrid : TableDesign.None;
                 }
 
                 firstRow = false;
