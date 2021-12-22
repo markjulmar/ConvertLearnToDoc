@@ -4,6 +4,8 @@ using System.Linq;
 using DXPlus;
 using Markdig.Extensions.Tables;
 using Table = Markdig.Extensions.Tables.Table;
+using TRow = Markdig.Extensions.Tables.TableRow;
+using TCell = Markdig.Extensions.Tables.TableCell;
 
 namespace Markdig.Renderer.Docx.Blocks
 {
@@ -23,7 +25,7 @@ namespace Markdig.Renderer.Docx.Blocks
                     .ToList();
             }
 
-            int totalColumns = table.Max(tr => ((TableRow) tr).Count);
+            int totalColumns = table.Max(tr => ((TRow) tr).Count);
             DXPlus.Table documentTable;
             if (currentParagraph != null)
             {
@@ -39,7 +41,7 @@ namespace Markdig.Renderer.Docx.Blocks
 
             for (var rowIndex = 0; rowIndex < table.Count; rowIndex++)
             {
-                var row = (TableRow) table[rowIndex];
+                var row = (TRow) table[rowIndex];
                 if (firstRow && row.IsHeader) {
                     documentTable.Design = TableDesign.TableGrid;
                 }
@@ -48,7 +50,7 @@ namespace Markdig.Renderer.Docx.Blocks
 
                 for (int colIndex = 0; colIndex < row.Count; colIndex++)
                 {
-                    var cell = (TableCell) row[colIndex];
+                    var cell = (TCell) row[colIndex];
                     var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
 
                     if (columnWidths.Count > 0)

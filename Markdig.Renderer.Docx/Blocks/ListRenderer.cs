@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using DXPlus;
 using Markdig.Syntax;
@@ -34,7 +32,9 @@ namespace Markdig.Renderer.Docx.Blocks
                 // ... which in turn contain paragraphs, tables, code blocks, etc.
                 foreach (var listItem in block.Cast<ListItemBlock>())
                 {
-                    if (count >= 0 || currentParagraph == null)
+                    if (count > 0 && currentParagraph != null)
+                        currentParagraph = currentParagraph.AddParagraph();
+                    else if (currentParagraph == null)
                         currentParagraph = document.AddParagraph();
                     currentParagraph.ListStyle(nd, currentLevel);
 
