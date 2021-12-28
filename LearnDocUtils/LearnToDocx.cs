@@ -7,17 +7,17 @@ namespace LearnDocUtils
 {
     public static class LearnToDocx
     {
-        public static async Task ConvertFromUrl(string url, string outputFile, string zonePivot, string accessToken,
+        public static async Task ConvertFromUrlAsync(string url, string outputFile, string zonePivot, string accessToken,
                                             Action<string> logger, bool debug, bool usePanDoc)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
             var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
-            await ConvertFromRepo(repo, branch, folder, outputFile, zonePivot, accessToken, logger, debug, usePanDoc);
+            await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, logger, debug, usePanDoc);
         }
 
-        public static async Task ConvertFromRepo(string repo, string branch, string folder,
+        public static async Task ConvertFromRepoAsync(string repo, string branch, string folder,
                                             string outputFile, string zonePivot, string accessToken, 
                                             Action<string> logger, bool debug, bool usePanDoc)
         {
@@ -46,7 +46,7 @@ namespace LearnDocUtils
             }
         }
 
-        public static async Task ConvertFromFolder(string learnFolder, string zonePivot, string outputFile, Action<string> logger, bool debug, bool usePanDoc)
+        public static async Task ConvertFromFolderAsync(string learnFolder, string zonePivot, string outputFile, Action<string> logger, bool debug, bool usePanDoc)
         {
             if (string.IsNullOrWhiteSpace(learnFolder))
                 throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));

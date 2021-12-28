@@ -26,7 +26,7 @@ namespace ConvertLearnToDoc
                 // Input is a Learn module URL
                 if (options.InputFileOrFolder.StartsWith("http"))
                 {
-                    await LearnToDocx.ConvertFromUrl(options.InputFileOrFolder,
+                    await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
                         options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
                 }
@@ -34,7 +34,7 @@ namespace ConvertLearnToDoc
                 // Input is a repo + folder + branch
                 else if (!string.IsNullOrEmpty(options.GitHubRepo))
                 {
-                    await LearnToDocx.ConvertFromRepo(options.GitHubRepo, options.GitHubBranch,
+                    await LearnToDocx.ConvertFromRepoAsync(options.GitHubRepo, options.GitHubBranch,
                         options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
                         options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
@@ -42,7 +42,7 @@ namespace ConvertLearnToDoc
                 // Input is a local folder containing a Learn module
                 else if (Directory.Exists(options.InputFileOrFolder))
                 {
-                    await LearnToDocx.ConvertFromFolder(options.InputFileOrFolder, options.ZonePivot,
+                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.ZonePivot,
                         options.OutputFileOrFolder,
                         Console.WriteLine, options.Debug, options.UsePandoc);
                 }
@@ -52,8 +52,8 @@ namespace ConvertLearnToDoc
                     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
                         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
 
-                    await new DocxToLearn().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
-                        debug: options.Debug);
+                    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
+                        Console.WriteLine, options.Debug, options.UsePandoc);
 
                     if (options.ZipOutput)
                     {
