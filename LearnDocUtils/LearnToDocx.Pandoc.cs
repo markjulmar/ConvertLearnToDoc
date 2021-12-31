@@ -104,7 +104,7 @@ namespace LearnDocUtils
                 }
 
                 // Convert the file.
-                await Utils.ConvertFileAsync(logger, localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown),
+                await PandocUtils.ConvertFileAsync(logger, localMarkdown, outputFile, Path.GetDirectoryName(localMarkdown),
                     "-f markdown-fenced_divs", "-t docx");
 
                 // Do some post processing

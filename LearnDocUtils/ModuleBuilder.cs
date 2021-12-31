@@ -25,8 +25,7 @@ namespace LearnDocUtils
 
         public async Task CreateModuleAsync(Func<string,string> markdownProcessor)
         {
-            if (markdownProcessor == null)
-                markdownProcessor = s => s;
+            markdownProcessor ??= s => s;
 
             // Get the title metadata.
             var metadata = LoadDocumentMetadata(docxFile);
@@ -46,11 +45,11 @@ namespace LearnDocUtils
                     if (line.StartsWith("# "))
                     {
                         currentFile = new List<string>();
-                        files.Add(line.Substring(2), currentFile);
+                        files.Add(line[2..], currentFile);
                     }
-                    else if (currentFile != null)
+                    else
                     {
-                        currentFile.Add(line);
+                        currentFile?.Add(line);
                     }
                 }
             }

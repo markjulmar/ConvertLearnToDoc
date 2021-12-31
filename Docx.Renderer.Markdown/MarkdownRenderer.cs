@@ -9,8 +9,7 @@ namespace Docx.Renderer.Markdown
 {
     public class MarkdownRenderer : IMarkdownRenderer
     {
-        private string mediaFolder;
-        private List<IMarkdownObjectRenderer> renderers;
+        private readonly List<IMarkdownObjectRenderer> renderers;
 
         public MarkdownRenderer()
         {
@@ -21,19 +20,28 @@ namespace Docx.Renderer.Markdown
             };
         }
 
-        public string MediaFolder => mediaFolder;
+        public string MediaFolder { get; private set; }
 
         public void Convert(string docxFile, string markdownFile, string mediaFolder)
         {
-            using var document = Document.Load(docxFile);
-            using var writer = new StreamWriter(markdownFile);
-
+            if (string.IsNullOrEmpty(docxFile))
+                throw new ArgumentException("Value cannot be null or empty.", nameof(docxFile));
+            if (!File.Exists(docxFile))
+                throw new ArgumentException($"{docxFile} does not exist.", nameof(docxFile));
+            if (string.IsNullOrEmpty(markdownFile))
+                throw new ArgumentException("Value cannot be null or empty.", nameof(markdownFile));
             if (string.IsNullOrEmpty(mediaFolder))
-                mediaFolder = Path.GetDirectoryName(markdownFile);
-            else if (!Path.IsPathRooted(mediaFolder))
-                mediaFolder = Path.Combine(Path.GetDirectoryName(markdownFile), mediaFolder);
+                throw new ArgumentException("Value cannot be null or empty.", nameof(mediaFolder));
+
+            MediaFolder = mediaFolder;
             if (!Directory.Exists(mediaFolder))
                 Directory.CreateDirectory(mediaFolder);
+
+            if (File.Exists(markdownFile))
+                File.Delete(markdownFile);
+
+            using var document = Document.Load(docxFile);
+            using var writer = new StreamWriter(markdownFile);
 
             var renderer = this as IMarkdownRenderer;
             renderer.WriteContainer(writer, document.Blocks, null);

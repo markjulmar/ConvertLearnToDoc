@@ -6,7 +6,7 @@ namespace LearnDocUtils
 {
     public static class DocxToLearn
     {
-        public static Task ConvertAsync(string docxFile, string outputFolder,
+        public static async Task ConvertAsync(string docxFile, string outputFolder,
             Action<string> logger, bool debug, bool usePandoc)
         {
             if (string.IsNullOrWhiteSpace(docxFile))
@@ -19,12 +19,31 @@ namespace LearnDocUtils
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
 
-            if (usePandoc)
-            {
-                return new DocxToLearnPandoc().ConvertAsync(docxFile, outputFolder, logger, debug);
-            }
+            IDocxToMarkdown converter = usePandoc ? new DocxToMarkdownPandoc() : new DocxToMarkdownDxPlus();
+            string markdownFile = Path.Combine(outputFolder, "temp.md");
+            string mediaFolder = Path.Combine(outputFolder, "media");
 
-            return new DocxToLearnDXPlus().ConvertAsync(docxFile, outputFolder, logger, debug);
+            try
+            {
+                // Convert the docx file to a single .md file
+                await converter.ConvertAsync(docxFile, markdownFile, mediaFolder, logger, debug);
+
+                // Now build a module from the markdown contents
+                var moduleBuilder = new ModuleBuilder(docxFile, outputFolder, markdownFile, logger);
+                await moduleBuilder.CreateModuleAsync(converter.MarkdownProcessor);
+            }
+            catch
+            {
+                Directory.Delete(outputFolder, true);
+                throw;
+            }
+            finally
+            {
+                if (!debug)
+                {
+                    File.Delete(markdownFile);
+                }
+            }
         }
     }
 }

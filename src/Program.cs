@@ -64,7 +64,7 @@ namespace ConvertLearnToDoc
                         string zipFile = Path.Combine(baseFolder,
                             Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.OutputFileOrFolder), "zip"));
 
-                        Utils.CompressFolder(options.OutputFileOrFolder, zipFile);
+                        System.IO.Compression.ZipFile.CreateFromDirectory(options.OutputFileOrFolder, zipFile);
                     }
                 }
 
