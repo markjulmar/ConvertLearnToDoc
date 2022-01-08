@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Docx.Renderer.Markdown.Renderers;
 using DXPlus;
+using Julmar.GenMarkdown;
 
 namespace Docx.Renderer.Markdown
 {
@@ -16,6 +17,7 @@ namespace Docx.Renderer.Markdown
             renderers = new List<IMarkdownObjectRenderer>()
             {
                 new ParagraphRenderer(),
+                new TableRenderer(),
                 new RunRenderer()
             };
         }
@@ -33,36 +35,42 @@ namespace Docx.Renderer.Markdown
             if (string.IsNullOrEmpty(mediaFolder))
                 throw new ArgumentException("Value cannot be null or empty.", nameof(mediaFolder));
 
-            MediaFolder = mediaFolder;
-            if (!Directory.Exists(mediaFolder))
-                Directory.CreateDirectory(mediaFolder);
+            MediaFolder = Path.GetRelativePath(Path.GetDirectoryName(markdownFile)??"", mediaFolder);
+            if (!Directory.Exists(MediaFolder))
+                Directory.CreateDirectory(MediaFolder);
 
             if (File.Exists(markdownFile))
                 File.Delete(markdownFile);
 
-            using var document = Document.Load(docxFile);
-            using var writer = new StreamWriter(markdownFile);
+            using var wordDocument = Document.Load(docxFile);
+            var markdownDocument = new MarkdownDocument();
 
             var renderer = this as IMarkdownRenderer;
-            renderer.WriteContainer(writer, document.Blocks, null);
+            renderer.WriteContainer(markdownDocument, null, wordDocument.Blocks, null);
+
+            using var writer = new StreamWriter(markdownFile);
+            markdownDocument.Write(writer);
         }
 
         public IMarkdownObjectRenderer FindRenderer(object element)
             => renderers.FirstOrDefault(r => r.CanRender(element));
 
-        public void WriteContainer(TextWriter writer, IEnumerable<object> container, object tags)
+        public void WriteContainer(MarkdownDocument document, MarkdownBlock blockOwner, IEnumerable<object> container, RenderBag tags)
         {
             foreach (var block in container)
             {
-                WriteElement(writer, block, tags);
+                WriteElement(document, blockOwner, block, tags);
             }
         }
 
-        public void WriteElement(TextWriter writer, object element, object tags)
+        public void WriteElement(MarkdownDocument document, MarkdownBlock blockOwner, 
+                                    object element, RenderBag tags)
         {
             var renderer = FindRenderer(element);
-            if (renderer != null) renderer.Render(this, writer, element, tags);
-            else Console.WriteLine($"Missing renderer for {element.GetType().Name}");
+            if (renderer != null) 
+                renderer.Render(this, document, blockOwner, element, tags);
+            else 
+                Console.WriteLine($"Missing renderer for {element.GetType().Name}");
         }
     }
 }

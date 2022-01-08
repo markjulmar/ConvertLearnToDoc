@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using CommandLine;
 using LearnDocUtils;
-using Microsoft.VisualBasic;
 
 namespace ConvertLearnToDoc
 {
@@ -11,8 +10,6 @@ namespace ConvertLearnToDoc
     {
         public static async Task Main(string[] args)
         {
-            Console.WriteLine("Learn/Docx converter");
-
             CommandLineOptions options = null;
             new Parser(cfg => { cfg.HelpWriter = Console.Error; })
                 .ParseArguments<CommandLineOptions>(args)
@@ -20,15 +17,19 @@ namespace ConvertLearnToDoc
             if (options == null)
                 return; // bad arguments or help.
 
+            Console.WriteLine("Learn/Docx converter");
+
             try
             {
-
                 // Input is a Learn module URL
                 if (options.InputFileOrFolder.StartsWith("http"))
                 {
                     await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.AccessToken, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
                 }
 
                 // Input is a repo + folder + branch
@@ -37,14 +38,20 @@ namespace ConvertLearnToDoc
                     await LearnToDocx.ConvertFromRepoAsync(options.GitHubRepo, options.GitHubBranch,
                         options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.AccessToken, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
+
                 }
                 // Input is a local folder containing a Learn module
                 else if (Directory.Exists(options.InputFileOrFolder))
                 {
                     await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.ZonePivot,
-                        options.OutputFileOrFolder,
-                        Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.OutputFileOrFolder, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
                 }
                 // Input is a docx file
                 else
@@ -53,7 +60,9 @@ namespace ConvertLearnToDoc
                         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
 
                     await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
-                        Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.Debug, options.UsePandoc
+                            ? DocxConverterFactory.WithPandoc
+                            : DocxConverterFactory.WithDxPlus);
 
                     if (options.ZipOutput)
                     {

@@ -65,7 +65,10 @@ namespace ConvertLearnToDocWeb.Controllers
             {
                 _logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder}: outputFile={outputFile})");
                 await LearnToDocx.ConvertFromRepoAsync(repo, branch, folder, outputFile, null,
-                    _configuration.GetValue<string>("GitHub:Token"), s => _logger.LogDebug(s), false, model.UseLegacyConverter);
+                    _configuration.GetValue<string>("GitHub:Token"), false,
+                    model.UseLegacyConverter
+                    ? MarkdownConverterFactory.WithPandoc
+                    : MarkdownConverterFactory.WithDxPlus);
             }
             catch (Exception ex)
             {
@@ -84,7 +87,7 @@ namespace ConvertLearnToDocWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConvertDocToLearn(IFormFile wordDoc)
+        public async Task<IActionResult> ConvertDocToLearn(IFormFile wordDoc, bool useLegacyConverter)
         {
             using var scope = _logger.BeginScope("ConvertDocToLearn");
 
@@ -114,7 +117,9 @@ namespace ConvertLearnToDocWeb.Controllers
             try
             {
                 _logger.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
-                await DocxToLearn.ConvertAsync(tempFile, outputPath, s => _logger.LogDebug(s), false, true);
+                await DocxToLearn.ConvertAsync(tempFile, outputPath, false, useLegacyConverter
+                    ? DocxConverterFactory.WithPandoc
+                    : DocxConverterFactory.WithDxPlus);
             }
             catch (Exception ex)
             {

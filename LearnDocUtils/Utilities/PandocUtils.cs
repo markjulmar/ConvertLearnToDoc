@@ -71,13 +71,12 @@ namespace LearnDocUtils
             }
         }
 
-        public static async Task ConvertFileAsync(Action<string> logger, string inputFile, string outputFile, string workingFolder, params string[] arguments)
+        public static async Task ConvertFileAsync(string inputFile, string outputFile, string workingFolder, params string[] arguments)
         {
             const int timeout = 90; // wait up to 90s
             string executable = PanDocExe;
             if (!File.Exists(executable))
             {
-                logger?.Invoke($"Downloading pandoc {LatestPandocVersion}");
                 await DownloadPandoc();
             }
 

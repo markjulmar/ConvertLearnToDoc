@@ -1,20 +1,28 @@
-﻿namespace Docx.Renderer.Markdown
+﻿using System.Drawing;
+
+namespace Docx.Renderer.Markdown
 {
-    public class TextFormatting
+    public struct TextFormatting
     {
         public string StyleName { get; set; }
         public bool Monospace { get; set; }
         public bool Bold { get; set; }
         public bool Italic { get; set; }
+
+        public static bool IsMonospaceFont(FontFamily fontFamily)
+        {
+            if (fontFamily == null) return false;
+
+            string font = fontFamily.Name.ToLower();
+            
+            return font.Contains("mono")
+                   || font.Contains("code")
+                   || font is "consolas" or "courier new";
+        }
     }
 
-    public class QuoteFormatting
+    public struct QuoteFormatting
     {
         public string Type { get; set; }
-    }
-
-    public class CodeFormatting
-    {
-        public string Language { get; set; }
     }
 }

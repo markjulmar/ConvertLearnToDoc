@@ -1,10 +1,12 @@
-﻿using System.IO;
+﻿using Julmar.GenMarkdown;
 
 namespace Docx.Renderer.Markdown
 {
     public interface IMarkdownObjectRenderer
     {
         bool CanRender(object element);
-        void Render(IMarkdownRenderer renderer, TextWriter writer, object element, object tags);
+        void Render(IMarkdownRenderer renderer, 
+                    MarkdownDocument document, MarkdownBlock blockOwner,
+                    object elementToRender, RenderBag tags);
     }
 }

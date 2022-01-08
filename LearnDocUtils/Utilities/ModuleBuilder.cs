@@ -13,20 +13,16 @@ namespace LearnDocUtils
         private readonly string docxFile;
         private readonly string outputFolder;
         private readonly string markdownFile;
-        private readonly Action<string> logger;
 
-        public ModuleBuilder(string docxFile, string outputFolder, string markdownFile, Action<string> logger)
+        public ModuleBuilder(string docxFile, string outputFolder, string markdownFile)
         {
             this.docxFile = docxFile;
             this.outputFolder = outputFolder;
             this.markdownFile = markdownFile;
-            this.logger = logger;
         }
 
-        public async Task CreateModuleAsync(Func<string,string> markdownProcessor)
+        public async Task CreateModuleAsync()
         {
-            markdownProcessor ??= s => s;
-
             // Get the title metadata.
             var metadata = LoadDocumentMetadata(docxFile);
 
@@ -80,7 +76,7 @@ namespace LearnDocUtils
 
                 string unitYaml = PopulateTemplate("unit.yml", values);
                 await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")), unitYaml);
-                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")), markdownProcessor.Invoke(string.Join("\r\n", value)));
+                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")), string.Join("\r\n", value));
                 unitIds.Add($"- {moduleUid}.{baseFn}");
                 index++;
             }
@@ -115,8 +111,6 @@ namespace LearnDocUtils
 
         private ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
-            logger?.Invoke($"LoadDocumentMetadata({docxFile})");
-
             var doc = Document.Load(docxFile);
             var metadata = new ModuleMetadata();
 

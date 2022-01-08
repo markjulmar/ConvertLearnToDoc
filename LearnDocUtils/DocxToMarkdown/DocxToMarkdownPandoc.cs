@@ -6,9 +6,9 @@ using System.Linq;
 
 namespace LearnDocUtils
 {
-    public sealed class DocxToMarkdownPandoc : IDocxToMarkdown
+    sealed class DocxToMarkdownPandoc : IDocxToMarkdown
     {
-        public async Task ConvertAsync(string docxFile, string markdownFile, string mediaFolder, Action<string> log, bool debug)
+        public async Task ConvertAsync(string docxFile, string markdownFile, string mediaFolder)
         {
             if (docxFile == null) 
                 throw new ArgumentNullException(nameof(docxFile));
@@ -22,8 +22,6 @@ namespace LearnDocUtils
             if (File.Exists(markdownFile))
                 File.Delete(markdownFile);
 
-            var logger = log ?? Console.WriteLine;
-
             if (string.IsNullOrEmpty(mediaFolder))
                 mediaFolder = Path.Combine(Path.GetDirectoryName(markdownFile)??"", "media");
             if (!Directory.Exists(mediaFolder))
@@ -32,13 +30,15 @@ namespace LearnDocUtils
             string outputFolder = Path.GetDirectoryName(markdownFile);
             outputFolder = string.IsNullOrEmpty(outputFolder) ? Directory.GetCurrentDirectory() : Path.GetFullPath(outputFolder);
 
-            await PandocUtils.ConvertFileAsync(logger, docxFile, markdownFile, outputFolder,
+            await PandocUtils.ConvertFileAsync(docxFile, markdownFile, outputFolder,
                 $"--extract-media=\"{mediaFolder}\"", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
+
+            // Do some post-processing.
+            string markdownText = PostProcessMarkdown(File.ReadAllText(markdownFile));
+            File.WriteAllText(markdownFile, markdownText);
         }
 
-        public Func<string, string> MarkdownProcessor => ProcessMarkdown;
-
-        private static string ProcessMarkdown(string text)
+        private static string PostProcessMarkdown(string text)
         {
             text = text.Trim('\r').Trim('\n');
 

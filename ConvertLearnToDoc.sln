@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc", "src\ConvertLearnToDoc.csproj", "{13787258-BA5C-4104-83FE-DEC2F633E85E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDocWeb", "ConvertLearnToDocWeb\ConvertLearnToDocWeb.csproj", "{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}"
 EndProject
