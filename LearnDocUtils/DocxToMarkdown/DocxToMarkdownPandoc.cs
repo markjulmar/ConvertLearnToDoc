@@ -10,13 +10,13 @@ namespace LearnDocUtils
     {
         public async Task ConvertAsync(string docxFile, string markdownFile, string mediaFolder)
         {
-            if (docxFile == null) 
-                throw new ArgumentNullException(nameof(docxFile));
-            if (string.IsNullOrEmpty(markdownFile)) 
-                throw new ArgumentNullException(nameof(markdownFile));
+            if (string.IsNullOrEmpty(docxFile))
+                throw new ArgumentException("Value cannot be null or empty.", nameof(docxFile));
             if (!File.Exists(docxFile))
                 throw new ArgumentException($"{docxFile} does not exist.", nameof(docxFile));
-            if (Path.GetInvalidFileNameChars().Any(markdownFile.Contains))
+            if (string.IsNullOrEmpty(markdownFile)) 
+                throw new ArgumentNullException(nameof(markdownFile));
+            if (Path.GetInvalidPathChars().Any(markdownFile.Contains))
                 throw new ArgumentException($"{markdownFile} is an invalid filename.", nameof(markdownFile));
 
             if (File.Exists(markdownFile))
@@ -27,15 +27,15 @@ namespace LearnDocUtils
             if (!Directory.Exists(mediaFolder))
                 Directory.CreateDirectory(mediaFolder);
 
-            string outputFolder = Path.GetDirectoryName(markdownFile);
+            var outputFolder = Path.GetDirectoryName(markdownFile);
             outputFolder = string.IsNullOrEmpty(outputFolder) ? Directory.GetCurrentDirectory() : Path.GetFullPath(outputFolder);
 
             await PandocUtils.ConvertFileAsync(docxFile, markdownFile, outputFolder,
                 $"--extract-media=\"{mediaFolder}\"", "--wrap=none", "-t markdown-simple_tables-multiline_tables-grid_tables+pipe_tables");
 
             // Do some post-processing.
-            string markdownText = PostProcessMarkdown(File.ReadAllText(markdownFile));
-            File.WriteAllText(markdownFile, markdownText);
+            var markdownText = PostProcessMarkdown(await File.ReadAllTextAsync(markdownFile));
+            await File.WriteAllTextAsync(markdownFile, markdownText);
         }
 
         private static string PostProcessMarkdown(string text)

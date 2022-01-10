@@ -22,6 +22,7 @@ namespace Docx.Renderer.Markdown
             };
         }
 
+        public string RelativeMediaFolder { get; private set; }
         public string MediaFolder { get; private set; }
 
         public void Convert(string docxFile, string markdownFile, string mediaFolder)
@@ -32,10 +33,14 @@ namespace Docx.Renderer.Markdown
                 throw new ArgumentException($"{docxFile} does not exist.", nameof(docxFile));
             if (string.IsNullOrEmpty(markdownFile))
                 throw new ArgumentException("Value cannot be null or empty.", nameof(markdownFile));
+            if (Path.GetInvalidPathChars().Any(markdownFile.Contains))
+                throw new ArgumentException($"{markdownFile} is an invalid filename.", nameof(markdownFile));
             if (string.IsNullOrEmpty(mediaFolder))
                 throw new ArgumentException("Value cannot be null or empty.", nameof(mediaFolder));
 
-            MediaFolder = Path.GetRelativePath(Path.GetDirectoryName(markdownFile)??"", mediaFolder);
+            MediaFolder = mediaFolder;
+            RelativeMediaFolder = Path.GetRelativePath(Path.GetDirectoryName(markdownFile)??"", mediaFolder);
+
             if (!Directory.Exists(MediaFolder))
                 Directory.CreateDirectory(MediaFolder);
 

@@ -114,48 +114,15 @@ namespace Markdig.Renderer.Docx
             }
         }
 
-        public Picture InsertImage(Paragraph currentParagraph, string imageSource, string altText)
+        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText)
         {
             string path = ResolvePath(moduleFolder, imageSource);
             if (File.Exists(path))
             {
-                int width = 400, height = 400;
-                using (var img = System.Drawing.Image.FromFile(path))
-                {
-                    width = img.Width;
-                    height = img.Height;
-                }
-
-                int finalWidth = width;
-                int finalHeight = height;
-
-                if (finalWidth > finalHeight)
-                {
-                    if (finalWidth > 400)
-                    {
-                        finalWidth = 400;
-                        finalHeight = (int)(400 * ((double)height / width));
-                    }
-                }
-                else
-                {
-                    if (finalHeight > 400)
-                    {
-                        finalHeight = 400;
-                        finalWidth = (int)(400 * ((double)width / height));
-                    }
-                }
-
                 var image = document.AddImage(path);
-                var picture = image.CreatePicture(imageSource, altText, finalWidth, finalHeight);
-                currentParagraph.Append(picture);
-
-                // Not needed -- the filename is tied in the docx.
-                // Attach the original filename as a comment.
-                //currentParagraph.AttachComment(document.CreateComment(Environment.UserName, imageSource),
-                //    currentParagraph.Runs.Last());
-
-                return picture;
+                var drawing = image.CreatePicture(imageSource, altText);
+                currentParagraph.Append(drawing);
+                return drawing;
             }
 
             return null;

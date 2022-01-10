@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,18 +14,11 @@ namespace LearnDocUtils
         public async Task Convert(TripleCrownModule moduleData, string markdownFile, string docxFile, string zonePivot)
         {
             // Do some pre-processing on the Markdown file.
-            var folder = Path.GetDirectoryName(markdownFile);
+            var folder = Path.GetDirectoryName(markdownFile)??"";
             var processedMarkdownFile = Path.Combine(folder, Path.ChangeExtension(Path.GetRandomFileName(), "md"));
 
-            string markdownText = PreprocessMarkdownText(File.ReadAllText(markdownFile));
-            using (var tempFile = new StreamWriter(processedMarkdownFile))
-            {
-                await tempFile.WriteLineAsync("---");
-                await tempFile.WriteLineAsync($"title: {moduleData.Title}");
-                await tempFile.WriteLineAsync("---");
-                await tempFile.WriteLineAsync();
-                await tempFile.WriteAsync(markdownText);
-            }
+            string markdownText = PreprocessMarkdownText(await File.ReadAllTextAsync(markdownFile));
+            await File.WriteAllTextAsync(processedMarkdownFile, markdownText);
 
             try
             {
@@ -54,44 +46,62 @@ namespace LearnDocUtils
             return text;
         }
 
-        static void PostProcessDocument(TripleCrownModule moduleData, string docxFile)
+        private static void PostProcessDocument(TripleCrownModule moduleData, string docxFile)
         {
             using var doc = Document.Load(docxFile);
 
             // Add the metadata
-            doc.SetPropertyValue(DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
-            doc.SetPropertyValue(DocumentPropertyName.Subject, moduleData.Summary);
+            WriteTitle(moduleData, doc);
+            AddMetadata(moduleData, doc);
 
-            doc.AddCustomProperty("ModuleUid", moduleData.Uid);
-            doc.AddCustomProperty("MsTopic", moduleData.Metadata.MsTopic);
-            doc.AddCustomProperty("MsProduct", moduleData.Metadata.MsProduct);
-            doc.AddCustomProperty("Abstract", moduleData.Abstract);
-
-            List<Paragraph> captions = new();
             var paragraphs = doc.Paragraphs.ToList();
-            for (var index = 0; index < paragraphs.Count; index++)
+            foreach (var paragraph in paragraphs)
             {
-                var paragraph = paragraphs[index];
-
                 // Go through and add highlights to all custom Markdown extensions.
                 foreach (var (_, _) in paragraph.FindPattern(new Regex(":::(.*?):::")))
                 {
                     paragraph.Runs.ToList()
                         .ForEach(run => run.AddFormatting(new Formatting { Highlight = Highlight.Yellow }));
                 }
-
-                captions.AddRange(from _ in paragraph.Pictures
-                                  where paragraph.Runs.Count() == 1
-                                  select doc.Paragraphs.ElementAt(index + 1));
             }
 
             // Remove the captions on pictures.
-            captions.ForEach(p => p.SetText(string.Empty));
+            paragraphs
+                .Where(p => p.Properties.StyleName == "ImageCaption")
+                .ToList()
+                .ForEach(p => p.Remove());
 
             doc.Save();
             doc.Close();
         }
 
+        private static void WriteTitle(TripleCrownModule moduleData, IDocument document)
+        {
+            document.InsertParagraph(0, moduleData.Title)
+                .Style(HeadingType.Title);
+            document.InsertParagraph(1, $"Last modified on {moduleData.LastUpdated.ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
+                .Style(HeadingType.Subtitle);
+        }
+
+        private static void AddMetadata(TripleCrownModule moduleData, IDocument document)
+        {
+            document.SetPropertyValue(DocumentPropertyName.Title, moduleData.Title);
+            document.SetPropertyValue(DocumentPropertyName.Subject, moduleData.Summary);
+            document.SetPropertyValue(DocumentPropertyName.Keywords, string.Join(',', moduleData.Products));
+            document.SetPropertyValue(DocumentPropertyName.Comments, string.Join(',', moduleData.FriendlyLevels));
+            document.SetPropertyValue(DocumentPropertyName.Category, string.Join(',', moduleData.FriendlyRoles));
+            document.SetPropertyValue(DocumentPropertyName.CreatedDate, moduleData.LastUpdated.ToString("yyyy-MM-ddT00:00:00Z"));
+            document.SetPropertyValue(DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
+
+            // Add custom data.
+            document.AddCustomProperty("ModuleUid", moduleData.Uid);
+            document.AddCustomProperty("MsTopic", moduleData.Metadata.MsTopic);
+            document.AddCustomProperty("MsProduct", moduleData.Metadata.MsProduct);
+            document.AddCustomProperty("Abstract", moduleData.Abstract);
+        }
+        
+        /* Pandoc can't handle HTML tables.
+         * Removing method.
         private static string ConvertTripleColonTables(string text)
         {
             int rows = 0;
@@ -142,10 +152,12 @@ namespace LearnDocUtils
                 }
             }
         }
+        */
 
+        /* Pandoc can't handle video tags either :(
+         *
         private static string ConvertVideoTags(string text)
         {
-            /*
             var matches = Regex.Matches(text, @">[ ]*\[!VIDEO (.*?)\]", RegexOptions.IgnoreCase);
             foreach (Match m in matches)
             {
@@ -153,10 +165,9 @@ namespace LearnDocUtils
                 text = text.Replace(m.Value,
                     $"<video width=\"640\" height=\"480\" controls>\r\n\t<source src=\"{url}\" type=\"video/mp4\">\r\n</video>\r\n");
             }
-            */
-
             return text;
         }
+        */
 
         private static string ConvertTripleColonImagesToTags(string text)
         {
@@ -210,7 +221,7 @@ namespace LearnDocUtils
         private static string GetQuotedText(string text, string value)
         {
             Match match = Regex.Match(text, @$"{value}=(?:\""|\')(.+?)(?:\""|\')", RegexOptions.IgnoreCase);
-            string result = match.Groups[1]?.Value;
+            string result = match.Groups[1].Value;
             return string.IsNullOrEmpty(result) ? null : result;
         }
     }

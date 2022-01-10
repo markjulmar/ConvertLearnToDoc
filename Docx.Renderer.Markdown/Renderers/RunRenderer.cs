@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using DXPlus;
 using Julmar.GenMarkdown;
 using DXText = DXPlus.Text;
@@ -61,17 +62,30 @@ namespace Docx.Renderer.Markdown.Renderers
                             p.Add(Text.LineBreak);
                         break;
                     }
-                    case Drawing {Picture: {}} d:
+                    case Drawing d:
                     {
                         var p = d.Picture;
+                        if (p == null) 
+                            break;
 
-                        string fn = Path.Combine(renderer.MediaFolder, p.FileName);
+                        var filename = p.Description;
+                        if (!string.IsNullOrEmpty(filename))
+                        {
+                            filename = Path.GetFileName(filename);
+                            if (!Path.HasExtension(filename) 
+                                || Path.GetInvalidFileNameChars().Any(filename.Contains))
+                                filename = null;
+                        }
+
+                        filename ??= p.FileName;
+                        
                         using var input = p.Image.OpenStream();
-                        using var output = File.OpenWrite(fn);
+                        using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
                         input.CopyTo(output);
 
                         document.Remove(blockOwner);
-                        document.Add(new Julmar.GenMarkdown.Image(p.Description, fn));
+                        document.Add(new Julmar.GenMarkdown.Image(p.Description, 
+                            Path.Combine(renderer.RelativeMediaFolder, filename)));
                         break;
                     }
                 }

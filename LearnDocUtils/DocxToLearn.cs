@@ -21,8 +21,8 @@ namespace LearnDocUtils
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
 
-            string markdownFile = Path.Combine(outputFolder, "temp.md");
-            string mediaFolder = Path.Combine(outputFolder, "media");
+            var markdownFile = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(docxFile)+"-temp.g.md");
+            var mediaFolder = Path.Combine(outputFolder, "media");
 
             try
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace LearnDocUtils
             Directory.CreateDirectory(includeFolder);
 
             // Read all the lines
-            var files = new Dictionary<string, List<string>>();
+            var files = new Dictionary<string, (string title, List<string> lines)>();
             using (var reader = new StreamReader(markdownFile))
             {
                 List<string> currentFile = null;
@@ -41,7 +42,18 @@ namespace LearnDocUtils
                     if (line.StartsWith("# "))
                     {
                         currentFile = new List<string>();
-                        files.Add(line[2..], currentFile);
+                        var title = line[2..];
+
+                        // Get a unique filename based on the title.
+                        var baseFn = GenerateFilenameFromTitle(title);
+                        var fn = baseFn;
+                        int n = 1;
+                        while (files.ContainsKey(fn))
+                        {
+                            fn = $"{baseFn}{n++}";
+                        }
+
+                        files.Add(fn, (title, currentFile));
                     }
                     else
                     {
@@ -50,51 +62,56 @@ namespace LearnDocUtils
                 }
             }
 
-            string moduleUid = !string.IsNullOrEmpty(metadata.ModuleUid) ? metadata.ModuleUid : "learn." + GenerateFilenameFromTitle(metadata.Title ?? "");
+            var moduleUid = !string.IsNullOrEmpty(metadata.ModuleUid)
+                ? metadata.ModuleUid
+                : "learn." + GenerateFilenameFromTitle(metadata.Title ?? "");
 
             int index = 1;
             List<string> unitIds = new();
 
             // Write all the units.
-            foreach (var (title, value) in files)
+            foreach (var (baseFn, (title, lines)) in files)
             {
-                string baseFn = GenerateFilenameFromTitle(title);
                 string unitFileName = $"{index}-{baseFn}";
 
-                var quizText = ExtractQuiz(value);
+                var quizText = ExtractQuiz(title, lines);
                 var values = new Dictionary<string, string>
-                    {
-                        { "module-uid", moduleUid },
-                        { "unit-uid", baseFn },
-                        { "title", title },
-                        { "mstopic", metadata.MsTopic??"interactive-tutorial" },
-                        { "msproduct", metadata.MsProduct??"learning-azure" },
-                        { "author", metadata.MsAuthor ?? "TBD" },
-                        { "unit-content", $"  |\r\n  [!include[](includes/{unitFileName}.md)]" },
-                        { "quizText", quizText }
-                    };
+                {
+                    { "module-uid", moduleUid },
+                    { "unit-uid", baseFn },
+                    { "title", title },
+                    { "duration", EstimateDuration(lines, quizText).ToString() },
+                    { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
+                    { "msproduct", metadata.MsProduct ?? "learning-azure" },
+                    { "author", metadata.MsAuthor ?? "TBD" },
+                    { "unit-content", $"  |\r\n  [!include[](includes/{unitFileName}.md)]" },
+                    { "quizText", quizText }
+                };
 
                 string unitYaml = PopulateTemplate("unit.yml", values);
-                await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")), unitYaml);
-                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")), string.Join("\r\n", value));
+                await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")),
+                    unitYaml);
+                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")),
+                    string.Join("\r\n", lines));
                 unitIds.Add($"- {moduleUid}.{baseFn}");
                 index++;
             }
 
             // Write the index.yml file.
             var moduleValues = new Dictionary<string, string>
-                {
-                    { "module-uid", moduleUid },
-                    { "title", metadata.Title ?? "TBD" },
-                    { "summary", metadata.Summary ?? "TBD" },
-                    { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
-                    { "mstopic", metadata.MsTopic??"interactive-tutorial" },
-                    { "msproduct", metadata.MsProduct??"learning-azure" },
-                    { "author", metadata.MsAuthor ?? "TBD" },
-                    { "unit-uid-list", string.Join("\r\n", unitIds) }
-                };
+            {
+                { "module-uid", moduleUid },
+                { "title", metadata.Title ?? "TBD" },
+                { "summary", metadata.Summary ?? "TBD" },
+                { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
+                { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
+                { "msproduct", metadata.MsProduct ?? "learning-azure" },
+                { "author", metadata.MsAuthor ?? "TBD" },
+                { "unit-uid-list", string.Join("\r\n", unitIds) }
+            };
 
-            await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), PopulateTemplate("index.yml", moduleValues));
+            await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"),
+                PopulateTemplate("index.yml", moduleValues));
 
         }
 
@@ -109,7 +126,7 @@ namespace LearnDocUtils
             return template;
         }
 
-        private ModuleMetadata LoadDocumentMetadata(string docxFile)
+        private static ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
             var doc = Document.Load(docxFile);
             var metadata = new ModuleMetadata();
@@ -120,9 +137,15 @@ namespace LearnDocUtils
                 if (styleName == "Heading1") break;
                 switch (styleName)
                 {
-                    case "Title": metadata.Title = item.Text; break;
-                    case "Author": metadata.MsAuthor = item.Text; break;
-                    case "Abstract": metadata.Summary = item.Text; break;
+                    case "Title":
+                        metadata.Title = item.Text;
+                        break;
+                    case "Author":
+                        metadata.MsAuthor = item.Text;
+                        break;
+                    case "Abstract":
+                        metadata.Summary = item.Text;
+                        break;
                 }
             }
 
@@ -185,19 +208,13 @@ namespace LearnDocUtils
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Unable to determine title of document", nameof(title));
 
-            title = title.Replace(" - ", " ");
-
-            string fn = "";
-            for (int i = 0; i < title.Length; i++)
-            {
-                char ch = title[i];
-                if (ch == ' ') ch = '-';
-                if (char.IsLetter(ch) || ch == '-')
-                {
-                    fn += char.ToLower(ch);
-                }
-            }
-            return fn;
+            return new string(
+                        title
+                            .Replace(" - ", "-")
+                            .Replace(' ', '-')
+                            .Where(ch => char.IsLetter(ch) || ch is '-')
+                            .Select(char.ToLower)
+                            .ToArray());
         }
 
         private static string GetTemplate(string templateKey) =>
@@ -205,55 +222,61 @@ namespace LearnDocUtils
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? @".\",
                 "templates", templateKey));
 
-        private static string ExtractQuiz(List<string> lines)
+        private static string ExtractQuiz(string title, List<string> lines)
         {
-            var sb = new StringBuilder();
+            // Look for the KC title.
+            if (title.Trim().ToLower() is not ("knowledge check" or "check your knowledge"))
+                return string.Empty;
 
+            // Find the start of the quiz. We're going to assume it's the first H3.
+            int firstLine = -1;
             for (int i = 0; i < lines.Count; i++)
             {
                 string check = lines[i].Trim().ToLower();
-                if (check == "## knowledge check"
-                    || check == "## check your knowledge")
+                if (check.StartsWith("### "))
                 {
-                    int lastLine = i + 1;
-                    while (lastLine < lines.Count)
-                    {
-                        if (lines[lastLine].StartsWith("## ")
-                            || lines[lastLine].StartsWith("# "))
-                            break;
-                        lastLine++;
-                    }
-
-                    var quiz = new List<string>(lines.GetRange(i, lastLine - i));
-
-                    sb.AppendLine("quiz:");
-                    sb.AppendLine($"  title: {quiz[0][3..]}");
-                    sb.AppendLine("  questions:");
-
-                    for (int pos = 1; pos < quiz.Count; pos++)
-                    {
-                        string line = quiz[pos];
-                        if (string.IsNullOrWhiteSpace(line))
-                            continue;
-                        if (line.StartsWith("### "))
-                        {
-                            sb.AppendLine($"  - content: \"{line.Substring(4)}\"");
-                            sb.AppendLine("    choices:");
-                        }
-                        else
-                        {
-                            sb.AppendLine($"    - content: \"{line[(line.IndexOf(']') + 1)..].TrimStart()}\"");
-                            sb.AppendLine("      explanation: \"\"");
-                            sb.AppendLine($"      isCorrect: {line.Contains("[x]")}");
-                        }
-                    }
-
-                    lines.RemoveRange(i, lastLine - i);
+                    firstLine = i;
                     break;
                 }
             }
 
+            // Hmm. never found it.
+            if (firstLine == -1)
+                return string.Empty;
+
+            // Get the lines specific to the quiz and remove them from content.
+            var quiz = new List<string>(lines.GetRange(firstLine, lines.Count - firstLine));
+            lines.RemoveRange(firstLine, lines.Count - firstLine);
+
+            // Now build the quiz.
+            var sb = new StringBuilder();
+            sb.AppendLine("quiz:");
+            sb.AppendLine($"  title: {title}");
+            sb.AppendLine("  questions:");
+
+            foreach (var line in quiz.Where(line => !string.IsNullOrWhiteSpace(line)))
+            {
+                if (line.StartsWith("### "))
+                {
+                    sb.AppendLine($"  - content: \"{line[4..]}\"");
+                    sb.AppendLine("    choices:");
+                }
+                else
+                {
+                    var isCorrect = line.Contains("[x]") || line.Contains("☒");
+                    sb.AppendLine($"    - content: \"{line.Replace("☒", "")[(line.IndexOf(']') + 1)..].TrimStart()}\"");
+                    sb.AppendLine("      explanation: \"\"");
+                    sb.AppendLine($"      isCorrect: {isCorrect.ToString().ToLower()}");
+                }
+            }
+
             return sb.ToString();
+        }
+
+        private static int EstimateDuration(IEnumerable<string> lines, string quizText)
+        {
+            return 1 + (lines.Sum(l => l.Split(' ').Length)
+                        + quizText.Split(' ').Length) / 120;
         }
     }
 }

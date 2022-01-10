@@ -30,10 +30,10 @@ namespace Markdig.Renderer.Docx.Inlines
                         addBorder = true;
                 }
 
-                var picture = owner.InsertImage(currentParagraph, url, title);
-                if (addBorder && picture != null)
+                var drawing = owner.InsertImage(currentParagraph, url, title);
+                if (addBorder && drawing != null)
                 {
-                    picture.BorderColor = Color.DarkGray;
+                    drawing.Picture.BorderColor = Color.DarkGray;
                 }
             }
             else

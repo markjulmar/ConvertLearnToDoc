@@ -16,10 +16,10 @@ namespace Docx.Renderer.Markdown.Renderers
             Action<IMarkdownRenderer,MarkdownDocument,MarkdownBlock,DXParagraph, RenderBag>> creators = new()
         {
             { "Heading1", (r,d,bo,e,tags) => CreateHeader(1,r,d,bo,e,tags) },
-            { "Heading2", (r,d,bo,e,tags) => CreateHeader(1,r,d,bo,e,tags) },
-            { "Heading3", (r,d,bo,e,tags) => CreateHeader(1,r,d,bo,e,tags) },
-            { "Heading4", (r,d,bo,e,tags) => CreateHeader(1,r,d,bo,e,tags) },
-            { "Heading5", (r,d,bo,e,tags) => CreateHeader(1,r,d,bo,e,tags) },
+            { "Heading2", (r,d,bo,e,tags) => CreateHeader(2,r,d,bo,e,tags) },
+            { "Heading3", (r,d,bo,e,tags) => CreateHeader(3,r,d,bo,e,tags) },
+            { "Heading4", (r,d,bo,e,tags) => CreateHeader(4,r,d,bo,e,tags) },
+            { "Heading5", (r,d,bo,e,tags) => CreateHeader(5,r,d,bo,e,tags) },
             { @"(?s:.*)Code", CreateCodeBlock },
             { @"(?s:.*)Quote", CreateBlockQuote },
             { ".*", CreateParagraph } // Must be last.
