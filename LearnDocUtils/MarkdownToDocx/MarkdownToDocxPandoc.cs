@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -77,10 +76,13 @@ namespace LearnDocUtils
 
         private static void WriteTitle(TripleCrownModule moduleData, IDocument document)
         {
-            document.InsertParagraph(0, moduleData.Title)
-                .Style(HeadingType.Title);
-            document.InsertParagraph(1, $"Last modified on {moduleData.LastUpdated.ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
-                .Style(HeadingType.Subtitle);
+            var firstParagraph = document.Paragraphs.First();
+            firstParagraph
+                .InsertBefore(new Paragraph(
+                            $"Last modified on {moduleData.LastUpdated.ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
+                        .Style(HeadingType.Subtitle))
+                .InsertBefore(new Paragraph(moduleData.Title)
+                        .Style(HeadingType.Title));
         }
 
         private static void AddMetadata(TripleCrownModule moduleData, IDocument document)

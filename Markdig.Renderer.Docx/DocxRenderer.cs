@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using DXPlus;
 using Markdig.Renderer.Docx.Blocks;
 using Markdig.Renderer.Docx.Inlines;
@@ -127,6 +128,13 @@ namespace Markdig.Renderer.Docx
 
             return null;
         }
+
+        /// <summary>
+        /// Returns a specific embedded resource by name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public Stream GetEmbeddedResource(string name) => Assembly.GetExecutingAssembly().GetManifestResourceStream("Markdig.Renderer.Docx.Resources."+name);
 
         private static string ResolvePath(string rootFolder, string path)
             => path.Contains(':')

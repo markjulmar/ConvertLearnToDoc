@@ -9,7 +9,7 @@
     <None Remove="Renderers\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Julmar.DxPlus" Version="1.1.0" />
+    <PackageReference Include="Julmar.DxPlus" Version="1.1.2" />
     <PackageReference Include="Julmar.GenMarkdown" Version="1.0.3" />
   </ItemGroup>
 </Project>
