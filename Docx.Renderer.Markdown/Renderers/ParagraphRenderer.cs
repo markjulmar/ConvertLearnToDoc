@@ -25,7 +25,10 @@ namespace Docx.Renderer.Markdown.Renderers
             { ".*", CreateParagraph } // Must be last.
         };
 
-        private static readonly Dictionary<string, string> blockHeaders = new Dictionary<string, string>
+        /// <summary>
+        /// The quote block headers
+        /// </summary>
+        private static readonly Dictionary<string, string> blockHeaders = new()
         {
             {"note:", "NOTE"},
             {"tip:", "TIP"},

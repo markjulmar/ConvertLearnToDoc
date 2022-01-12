@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using DXPlus;
 using Julmar.GenMarkdown;
 using DXText = DXPlus.Text;
+using Image = DXPlus.Image;
 using Text = Julmar.GenMarkdown.Text;
 
 namespace Docx.Renderer.Markdown.Renderers
@@ -64,32 +64,70 @@ namespace Docx.Renderer.Markdown.Renderers
                     }
                     case Drawing d:
                     {
-                        var p = d.Picture;
-                        if (p == null) 
-                            break;
-
-                        var filename = p.Description;
-                        if (!string.IsNullOrEmpty(filename))
+                        var block = ProcessDrawing(renderer, d);
+                        if (block != null)
                         {
-                            filename = Path.GetFileName(filename);
-                            if (!Path.HasExtension(filename) 
-                                || Path.GetInvalidFileNameChars().Any(filename.Contains))
-                                filename = null;
+                            document.Remove(blockOwner);
+                            document.Add(block);
                         }
-
-                        filename ??= p.FileName;
-                        
-                        using var input = p.Image.OpenStream();
-                        using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
-                        input.CopyTo(output);
-
-                        document.Remove(blockOwner);
-                        document.Add(new Julmar.GenMarkdown.Image(p.Description, 
-                            Path.Combine(renderer.RelativeMediaFolder, filename)));
                         break;
                     }
                 }
             }
+        }
+
+        private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d)
+        {
+            var p = d.Picture;
+            if (p == null)
+                return null;
+
+            if (p.Extensions.Contains(VideoExtension.ExtensionId))
+            {
+                string videoUrl = ((VideoExtension) p.Extensions.Get(VideoExtension.ExtensionId)).Source;
+                if (string.IsNullOrEmpty(videoUrl) || !videoUrl.ToLower().StartsWith("http"))
+                {
+                    // See if there's a hyperlink.
+                    videoUrl = p.Hyperlink?.OriginalString;
+                }
+
+                return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO]({videoUrl})") : null;
+            }
+
+            // Get the filename for the image.
+            var filename = p.Description;
+            if (!string.IsNullOrEmpty(filename))
+            {
+                filename = Path.GetFileName(filename);
+                if (string.IsNullOrEmpty(filename) 
+                    || !Path.HasExtension(filename)
+                    || Path.GetInvalidFileNameChars().Any(filename.Contains))
+                    filename = null;
+            }
+
+            Image theImage;
+
+            // If we have an SVG version, we'll use that.
+            var svgExtension = (SvgExtension) p.Extensions.Get(SvgExtension.ExtensionId);
+            if (svgExtension != null)
+            {
+                theImage = svgExtension.Image;
+                if (string.IsNullOrEmpty(filename))
+                    filename = theImage.FileName;
+            }
+            else
+            {
+                theImage = p.Image;
+                if (string.IsNullOrEmpty(filename))
+                    filename = p.FileName;
+            }
+
+            using var input = theImage.OpenStream();
+            using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
+            input.CopyTo(output);
+
+            return new Julmar.GenMarkdown.Image(p.Description,
+                Path.Combine(renderer.RelativeMediaFolder, filename));
         }
     }
 }

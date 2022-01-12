@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="Julmar.DxPlus" Version="1.1.2" />
+	<PackageReference Include="Julmar.DxPlus" Version="1.1.3" />
     <PackageReference Include="Julmar.MSLearnRepos" Version="1.0.5.2" />
   </ItemGroup>
 

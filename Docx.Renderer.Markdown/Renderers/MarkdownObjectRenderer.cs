@@ -1,6 +1,4 @@
-﻿using System.Dynamic;
-using DXPlus;
-using Julmar.GenMarkdown;
+﻿using Julmar.GenMarkdown;
 
 namespace Docx.Renderer.Markdown.Renderers
 {

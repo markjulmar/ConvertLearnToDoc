@@ -78,7 +78,7 @@ namespace LearnDocUtils
             {
                 if (!debug)
                 {
-                    Directory.Delete(tempFolder);
+                    Directory.Delete(tempFolder, true);
                 }
             }
         }
