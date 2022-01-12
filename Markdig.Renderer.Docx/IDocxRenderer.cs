@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using DXPlus;
 using Markdig.Syntax;
 
@@ -9,6 +10,7 @@ namespace Markdig.Renderer.Docx
         IList<MarkdownObject> OutOfPlaceRendered { get; }
         string ZonePivot { get; }
         IDocxObjectRenderer FindRenderer(MarkdownObject obj);
-        Picture InsertImage(Paragraph currentParagraph, string imageSource, string altText);
+        Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText);
+        Stream GetEmbeddedResource(string name);
     }
 }

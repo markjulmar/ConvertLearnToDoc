@@ -9,6 +9,6 @@ metadata:
   ms.author: {author}
   ms.topic: {mstopic}
   ms.prod: {msproduct}
-durationInMinutes: 0
+durationInMinutes: {duration}
 content: {unit-content}
 {quizText}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Julmar.DxPlus" />
+    <None Remove="Renderers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Julmar.DxPlus" Version="1.1.2" />
+    <PackageReference Include="Julmar.GenMarkdown" Version="1.0.3" />
+  </ItemGroup>
+</Project>

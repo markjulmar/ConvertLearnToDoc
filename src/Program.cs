@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using CommandLine;
 using LearnDocUtils;
-using Microsoft.VisualBasic;
 
 namespace ConvertLearnToDoc
 {
@@ -11,8 +10,6 @@ namespace ConvertLearnToDoc
     {
         public static async Task Main(string[] args)
         {
-            Console.WriteLine("Learn/Docx converter");
-
             CommandLineOptions options = null;
             new Parser(cfg => { cfg.HelpWriter = Console.Error; })
                 .ParseArguments<CommandLineOptions>(args)
@@ -20,31 +17,41 @@ namespace ConvertLearnToDoc
             if (options == null)
                 return; // bad arguments or help.
 
+            Console.WriteLine("Learn/Docx converter");
+
             try
             {
-
                 // Input is a Learn module URL
                 if (options.InputFileOrFolder.StartsWith("http"))
                 {
-                    await LearnToDocx.ConvertFromUrl(options.InputFileOrFolder,
+                    await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.AccessToken, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
                 }
 
                 // Input is a repo + folder + branch
                 else if (!string.IsNullOrEmpty(options.GitHubRepo))
                 {
-                    await LearnToDocx.ConvertFromRepo(options.GitHubRepo, options.GitHubBranch,
+                    await LearnToDocx.ConvertFromRepoAsync(options.GitHubRepo, options.GitHubBranch,
                         options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, Console.WriteLine, options.Debug, options.UsePandoc);
+                        options.AccessToken, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
+
                 }
                 // Input is a local folder containing a Learn module
                 else if (Directory.Exists(options.InputFileOrFolder))
                 {
-                    await LearnToDocx.ConvertFromFolder(options.InputFileOrFolder, options.ZonePivot,
-                        options.OutputFileOrFolder,
-                        Console.WriteLine, options.Debug, options.UsePandoc);
+                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.ZonePivot,
+                        options.OutputFileOrFolder, options.Debug,
+                        options.UsePandoc
+                            ? MarkdownConverterFactory.WithPandoc
+                            : MarkdownConverterFactory.WithDxPlus);
                 }
                 // Input is a docx file
                 else
@@ -52,8 +59,10 @@ namespace ConvertLearnToDoc
                     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
                         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
 
-                    await new DocxToLearn().ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
-                        debug: options.Debug);
+                    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
+                        options.Debug, options.UsePandoc
+                            ? DocxConverterFactory.WithPandoc
+                            : DocxConverterFactory.WithDxPlus);
 
                     if (options.ZipOutput)
                     {
@@ -64,7 +73,7 @@ namespace ConvertLearnToDoc
                         string zipFile = Path.Combine(baseFolder,
                             Path.ChangeExtension(Path.GetFileNameWithoutExtension(options.OutputFileOrFolder), "zip"));
 
-                        Utils.CompressFolder(options.OutputFileOrFolder, zipFile);
+                        System.IO.Compression.ZipFile.CreateFromDirectory(options.OutputFileOrFolder, zipFile);
                     }
                 }
 

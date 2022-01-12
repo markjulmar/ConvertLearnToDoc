@@ -7,19 +7,20 @@ namespace LearnDocUtils
 {
     public static class LearnToDocx
     {
-        public static async Task ConvertFromUrl(string url, string outputFile, string zonePivot, string accessToken,
-                                            Action<string> logger, bool debug, bool usePanDoc)
+        public static async Task ConvertFromUrlAsync(
+            string url, string outputFile, string zonePivot, string accessToken,
+            bool debug, IMarkdownToDocx converter)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
             var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
-            await ConvertFromRepo(repo, branch, folder, outputFile, zonePivot, accessToken, logger, debug, usePanDoc);
+            await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, debug, converter);
         }
 
-        public static async Task ConvertFromRepo(string repo, string branch, string folder,
-                                            string outputFile, string zonePivot, string accessToken, 
-                                            Action<string> logger, bool debug, bool usePanDoc)
+        public static async Task ConvertFromRepoAsync(string repo, string branch, string folder,
+                string outputFile, string zonePivot, string accessToken,
+                bool debug, IMarkdownToDocx converter)
         {
             if (string.IsNullOrEmpty(repo))
                 throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
@@ -32,21 +33,13 @@ namespace LearnDocUtils
                 ? GithubHelper.ReadDefaultSecurityToken()
                 : accessToken;
 
-            if (usePanDoc)
-            {
-                await new LearnToDocxPandoc().Convert(
-                    TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken), 
-                    accessToken, folder, outputFile, null, logger, debug);
-            }
-            else
-            {
-                await new LearnToDocxDXPlus().Convert(
-                    TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken),
-                    accessToken, folder, outputFile, zonePivot, logger, debug);
-            }
+            await Convert(
+                TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken),
+                accessToken, folder, outputFile, zonePivot, debug, converter);
         }
 
-        public static async Task ConvertFromFolder(string learnFolder, string zonePivot, string outputFile, Action<string> logger, bool debug, bool usePanDoc)
+        public static async Task ConvertFromFolderAsync(string learnFolder, string zonePivot, string outputFile,
+                bool debug, IMarkdownToDocx converter)
         {
             if (string.IsNullOrWhiteSpace(learnFolder))
                 throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
@@ -54,17 +47,39 @@ namespace LearnDocUtils
             if (!Directory.Exists(learnFolder))
                 throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
 
-            if (usePanDoc)
+            await Convert(
+                TripleCrownGitHubService.CreateLocal(learnFolder),
+                null, learnFolder, outputFile, zonePivot, debug, converter);
+        }
+
+        private static async Task Convert(ITripleCrownGitHubService tcService,
+            string accessToken, string moduleFolder, string docxFile,
+            string zonePivot, bool debug, IMarkdownToDocx converter)
+        {
+            if (converter is null)
+                throw new ArgumentNullException(nameof(converter));
+
+            var rootTemp = debug ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
+            var tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
+            while (Directory.Exists(tempFolder))
             {
-                await new LearnToDocxPandoc().Convert(
-                    TripleCrownGitHubService.CreateLocal(learnFolder),
-                    null, learnFolder, outputFile, zonePivot, logger, debug);
+                tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
             }
-            else
+
+            // Download the module
+            var (module, markdownFile) = await new LearnUtilities().DownloadModuleAsync(tcService, accessToken, moduleFolder, tempFolder);
+
+            try
             {
-                await new LearnToDocxDXPlus().Convert(
-                    TripleCrownGitHubService.CreateLocal(learnFolder),
-                    null, learnFolder, outputFile, zonePivot, logger, debug);
+                // Convert the file.
+                await converter.Convert(module, markdownFile, docxFile, zonePivot);
+            }
+            finally
+            {
+                if (!debug)
+                {
+                    Directory.Delete(tempFolder);
+                }
             }
         }
     }

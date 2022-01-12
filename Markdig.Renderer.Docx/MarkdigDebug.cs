@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -33,41 +31,41 @@ namespace Markdig.Renderer.Docx
         {
             string prefix = new('\t', tabs);
 
-            string details = string.Empty;
-            if (item is QuoteSectionNoteBlock qsb)
+            string details = item switch
             {
-                if (qsb.VideoLink != null)
-                    details = "video: " + qsb.VideoLink;
-                else
-                    details = qsb.NoteTypeString ?? qsb.SectionAttributeString;
-            }
-            else if (item is FencedCodeBlock fcb)
-                details = $"{fcb.Info} - {fcb.Lines.Count} lines";
-            else if (item is TripleColonBlock tcb)
-                details = $"{tcb.Extension.Name}: {string.Join($", ", tcb.Attributes.Select(a => $"{a.Key}={a.Value}"))}";
+                QuoteSectionNoteBlock {VideoLink: { }} qsb => "video: " + qsb.VideoLink,
+                QuoteSectionNoteBlock qsb => qsb.NoteTypeString ?? qsb.SectionAttributeString,
+                FencedCodeBlock fcb => $"{fcb.Info} - {fcb.Lines.Count} lines",
+                TripleColonBlock tcb => $"{tcb.Extension.Name}: {string.Join(", ", tcb.Attributes.Select(a => $"{a.Key}={a.Value}"))}",
+                _ => string.Empty
+            };
 
             sb.AppendLine($"{prefix}{item} {details}");
 
-            if (item is LeafBlock pb)
+            switch (item)
             {
-                var inlines = pb.Inline;
-                if (inlines != null)
+                case LeafBlock pb:
                 {
-                    foreach (var child in inlines)
+                    var containerInline = pb.Inline;
+                    if (containerInline != null)
                     {
-                        DumpInline(child, tabs + 1, sb);
+                        foreach (var child in containerInline)
+                        {
+                            DumpInline(child, tabs + 1, sb);
+                        }
                     }
-                }
 
-                if (pb.Lines.Count > 0)
-                {
-                    foreach (var str in pb.Lines.Cast<StringLine>().Take(pb.Lines.Count))
-                        sb.AppendLine($"{prefix} > {str}");
+                    if (pb.Lines.Count > 0)
+                    {
+                        foreach (var str in pb.Lines.Cast<StringLine>().Take(pb.Lines.Count))
+                            sb.AppendLine($"{prefix} > {str}");
+                    }
+
+                    break;
                 }
-            }
-            else if (item is ContainerBlock cb)
-            {
-                DumpContainerBlock(cb, tabs + 1, sb);
+                case ContainerBlock cb:
+                    DumpContainerBlock(cb, tabs + 1, sb);
+                    break;
             }
         }
 

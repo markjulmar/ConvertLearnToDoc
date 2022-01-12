@@ -10,12 +10,11 @@ namespace LearnDocUtils
 {
     public sealed class LearnUtilities
     {
-        private Action<string> logger;
         private string accessToken;
 
         public async Task<(TripleCrownModule module, string markdownFile)> DownloadModuleAsync(
             ITripleCrownGitHubService tcService, string token,
-            string learnFolder, string outputFolder, Action<string> log = null)
+            string learnFolder, string outputFolder)
         {
             if (string.IsNullOrEmpty(outputFolder))
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or empty.", nameof(outputFolder));
@@ -23,8 +22,6 @@ namespace LearnDocUtils
             this.accessToken = string.IsNullOrEmpty(token)
                 ? GithubHelper.ReadDefaultSecurityToken()
                 : token;
-
-            this.logger = log ?? Console.WriteLine;
 
             var module = await tcService.GetModuleAsync(learnFolder);
             if (module == null)
@@ -34,8 +31,6 @@ namespace LearnDocUtils
 
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
-
-            this.logger?.Invoke($"Copying \"{module.Title}\" to {outputFolder}");
 
             var markdownFile = Path.Combine(outputFolder, Path.ChangeExtension(Path.GetFileNameWithoutExtension(learnFolder)??"temp-markdown",".md"));
 
