@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using DXPlus;
+using GenMarkdown.DocFx.Extensions;
 using Julmar.GenMarkdown;
 using DXText = DXPlus.Text;
 using Image = DXPlus.Image;
@@ -22,11 +23,15 @@ namespace Docx.Renderer.Markdown.Renderers
 
            var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
             if (element.Properties.Bold)
-                tf.Bold = element.Properties.Bold;
+                tf.Bold = true;
             if (element.Properties.Italic)
-                tf.Italic = element.Properties.Italic;
+                tf.Italic = true;
+            if (element.Properties.CapsStyle == CapsStyle.SmallCaps)
+                tf.KbdTag = true;
             if (!string.IsNullOrEmpty(tf.StyleName))
                 tf.StyleName = element.StyleName;
+            if (TextFormatting.IsMonospaceFont(element.Properties.Font))
+                tf.Monospace = true;
 
             foreach (var e in element.Elements)
             {
@@ -42,7 +47,9 @@ namespace Docx.Renderer.Markdown.Renderers
                         }
                         else
                         {
-                            if (tf.Bold && tf.Italic)
+                            if (tf.KbdTag)
+                                p.Add($"<kbd>{t.Value}</kbd>");
+                            else if (tf.Bold && tf.Italic)
                                 p.Add($"**_{t.Value}_**");
                             else if (tf.Bold)
                                 p.Add(Text.Bold(t.Value));
@@ -67,8 +74,19 @@ namespace Docx.Renderer.Markdown.Renderers
                         var block = ProcessDrawing(renderer, d);
                         if (block != null)
                         {
-                            document.Remove(blockOwner);
-                            document.Add(block);
+
+                            // See if we're in a list.
+                            if (document.Last() is MarkdownList theList)
+                            {
+                                var lastBlock = theList[^1];
+                                lastBlock.Remove(blockOwner);
+                                lastBlock.Add(block);
+                            }
+                            else
+                            {
+                                document.Remove(blockOwner);
+                                document.Add(block);
+                            }
                         }
                         break;
                     }
@@ -126,8 +144,9 @@ namespace Docx.Renderer.Markdown.Renderers
             using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
             input.CopyTo(output);
 
-            return new Julmar.GenMarkdown.Image(p.Description,
-                Path.Combine(renderer.RelativeMediaFolder, filename));
+            string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\','/');
+            return new DocfxImage(d.Description, imagePath);
+            //return new Julmar.GenMarkdown.Image(d.Description, imagePath);
         }
     }
 }

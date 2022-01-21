@@ -33,7 +33,14 @@ namespace Markdig.Renderer.Docx.Blocks
                 return;
             }
 
-            WriteChildren(block, owner, document, currentParagraph);
+            // Write all the paragraphs with newlines between.
+            for (var index = 0; index < block.Count; index++)
+            {
+                var paragraphBlock = block[index];
+                if (index > 0)
+                    currentParagraph.AppendLine();
+                Write(paragraphBlock, owner, document, currentParagraph);
+            }
         }
     }
 }

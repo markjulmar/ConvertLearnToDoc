@@ -26,7 +26,7 @@ namespace Markdig.Renderer.Docx.Inlines
                         r.AddFormatting(new Formatting {
                             Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
                             Color = Color.Black,
-                            ShadeFill = Color.FromArgb(0xf0,0xf0,0xf0)
+                            ShadeFill = Globals.CodeBoxShade
                         });
                     }
 

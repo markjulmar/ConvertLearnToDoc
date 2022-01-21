@@ -5,13 +5,15 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc", "src\ConvertLearnToDoc.csproj", "{13787258-BA5C-4104-83FE-DEC2F633E85E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LearnDocUtils", "LearnDocUtils\LearnDocUtils.csproj", "{448F0B25-0590-4626-B96F-0F8478403DE7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDocWeb", "ConvertLearnToDocWeb\ConvertLearnToDocWeb.csproj", "{C29D0F25-BBDB-4B00-BFFC-7EC8579C148A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Markdig.Renderer.Docx", "Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj", "{911F9FB9-3308-476F-BA71-E3A1BD63715D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Docx.Renderer.Markdown", "Docx.Renderer.Markdown\Docx.Renderer.Markdown.csproj", "{57AB7888-5053-481F-B2E6-0C81BAB7FBF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Docx.Renderer.Markdown", "Docx.Renderer.Markdown\Docx.Renderer.Markdown.csproj", "{57AB7888-5053-481F-B2E6-0C81BAB7FBF8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenMarkdown.DocFx.Extensions", "GenMarkdown.DocFx.Extensions\GenMarkdown.DocFx.Extensions.csproj", "{9F293264-0EB2-4E23-8959-08728359DEDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{57AB7888-5053-481F-B2E6-0C81BAB7FBF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57AB7888-5053-481F-B2E6-0C81BAB7FBF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57AB7888-5053-481F-B2E6-0C81BAB7FBF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F293264-0EB2-4E23-8959-08728359DEDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F293264-0EB2-4E23-8959-08728359DEDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F293264-0EB2-4E23-8959-08728359DEDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F293264-0EB2-4E23-8959-08728359DEDE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

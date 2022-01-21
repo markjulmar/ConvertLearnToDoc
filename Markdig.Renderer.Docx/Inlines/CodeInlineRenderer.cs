@@ -1,4 +1,3 @@
-using System.Drawing;
 using DXPlus;
 using Markdig.Syntax.Inlines;
 
@@ -13,8 +12,8 @@ namespace Markdig.Renderer.Docx.Inlines
                 .Append(code)
                 .WithFormatting(new Formatting
                 {
-                    Font = new FontFamily("Consolas"), 
-                    ShadeFill = Color.FromArgb(0xf0,0xf0,0xf0)
+                    Font = Globals.CodeFont, 
+                    ShadeFill = Globals.CodeBoxShade
                 });
         }
     }

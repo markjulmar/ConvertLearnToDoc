@@ -55,13 +55,20 @@ namespace Markdig.Renderer.Docx.Blocks
 
                         Write(childBlock, owner, document, currentParagraph);
 
-                        if (childBlock is MDTable && currentParagraph.Table != null)
+                        // Catch all the paragraphs added.
+                        var paragraphs = document.Paragraphs.ToList();
+                        int cp = paragraphs.IndexOf(currentParagraph);
+                        for (int indentCheck = cp; indentCheck < paragraphs.Count; indentCheck++)
                         {
-                            currentParagraph.Table.Indent = 36.0;
-                        }
-                        else if (currentParagraph.Properties.StyleName != "ListParagraph")
-                        {
-                            currentParagraph.Properties.LeftIndent = 36.0;
+                            currentParagraph = paragraphs[indentCheck];
+                            if (childBlock is MDTable && currentParagraph.Table != null)
+                            {
+                                currentParagraph.Table.Indent = Uom.FromInches(.5);
+                            }
+                            else if (currentParagraph.Properties.StyleName != "ListParagraph")
+                            {
+                                currentParagraph.Properties.LeftIndent = Uom.FromInches(.5);
+                            }
                         }
                     }
                 }

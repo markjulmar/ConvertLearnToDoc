@@ -39,8 +39,20 @@ namespace LearnDocUtils
                 {
                     var line = await reader.ReadLineAsync();
                     if (line == null) break;
+
+                    // Skip starting blank lines.
+                    if (string.IsNullOrWhiteSpace(line) && (currentFile == null || currentFile.Count==0))
+                        continue;
+
                     if (line.StartsWith("# "))
                     {
+                        if (currentFile != null)
+                        {
+                            // Remove any trailing empty lines.
+                            while (string.IsNullOrWhiteSpace(currentFile[^1]))
+                                currentFile.RemoveAt(currentFile.Count-1);
+                        }
+
                         currentFile = new List<string>();
                         var title = line[2..];
 
@@ -92,7 +104,7 @@ namespace LearnDocUtils
                 await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")),
                     unitYaml);
                 await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")),
-                    string.Join("\r\n", lines));
+                    PostProcessMarkdown(string.Join("\r\n", lines)));
                 unitIds.Add($"- {moduleUid}.{baseFn}");
                 index++;
             }
@@ -112,7 +124,13 @@ namespace LearnDocUtils
 
             await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"),
                 PopulateTemplate("index.yml", moduleValues));
+        }
 
+        private static string PostProcessMarkdown(string text)
+        {
+            text = text.Replace("(./media/", "(../media/");
+            text = text.Replace("\"media/", "\"../media/");
+            return text;
         }
 
         private static string PopulateTemplate(string templateKey, Dictionary<string, string> values)

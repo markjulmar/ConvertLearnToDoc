@@ -1,10 +1,9 @@
-﻿using System.Data.Common;
-using System.Linq;
+﻿using System.Linq;
 using DXPlus;
+using GenMarkdown.DocFx.Extensions;
 using Julmar.GenMarkdown;
 using DXTable = DXPlus.Table;
 using Paragraph = Julmar.GenMarkdown.Paragraph;
-using Table = Julmar.GenMarkdown.Table;
 using TableRow = Julmar.GenMarkdown.TableRow;
 
 namespace Docx.Renderer.Markdown.Renderers
@@ -17,7 +16,7 @@ namespace Docx.Renderer.Markdown.Renderers
         {
             tags ??= new RenderBag();
             
-            var mdTable = new Table(TableTypes.Standard, element.ColumnCount);
+            var mdTable = new DocfxTable(element.ColumnCount);
             var tcf = element.ConditionalFormatting;
             
             // TODO: pass bold flags down on rows/columns

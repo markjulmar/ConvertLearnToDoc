@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/Downloads/dxplus.docx -o /users/mark/Downloads/module"
+      "commandLineArgs": "-i /users/mark/downloads/unix.docx -o /users/mark/downloads/output"
     }
   }
 }
