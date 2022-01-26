@@ -76,16 +76,18 @@ namespace LearnDocUtils
                 {
                     string title = unit.Title;
                     var p = headers.SingleOrDefault(p => p.Text == title);
-                    string commentText = "Sandbox";
+                    string commentText = "sandbox";
                     if (!string.IsNullOrEmpty(unit.InteractivityType))
-                        commentText += $", {unit.InteractivityType}";
+                        commentText += $" interactivity:{unit.InteractivityType}";
+                    if (!string.IsNullOrEmpty(unit.Notebook))
+                        commentText += $" notebook:{unit.Notebook.Trim()}";
                     p?.AttachComment(document.CreateComment(user,  commentText));
                 }
                 else if (unit.LabId != null)
                 {
                     string title = unit.Title;
                     var p = headers.SingleOrDefault(p => p.Text == title);
-                    p?.AttachComment(document.CreateComment(user, $"LabId:{unit.LabId}"));
+                    p?.AttachComment(document.CreateComment(user, $"labId:{unit.LabId}"));
                 }
                 else if (!string.IsNullOrEmpty(unit.InteractivityType))
                 {

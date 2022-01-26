@@ -10,5 +10,5 @@ metadata:
   ms.topic: {mstopic}
   ms.prod: {msproduct}
 durationInMinutes: {duration}
-content: {unit-content}
+{unit-content}
 {quizText}

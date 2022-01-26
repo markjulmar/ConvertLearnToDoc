@@ -80,13 +80,21 @@ namespace ConvertLearnToDoc
             }
             catch (AggregateException aex)
             {
+#if DEBUG
+                Console.WriteLine(aex.Flatten());
+#else
                 if (options.Debug) throw;
                 Console.WriteLine(aex.Flatten().Message);
+#endif
             }
             catch (Exception ex)
             {
+#if DEBUG
+                Console.WriteLine(ex);
+#else
                 if (options.Debug) throw;
                 Console.WriteLine(ex.Message);
+#endif
             }
         }
     }

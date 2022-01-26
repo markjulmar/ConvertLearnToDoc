@@ -44,7 +44,7 @@ namespace LearnDocUtils
                 var text = await tcService.ReadContentForUnitAsync(unit);
                 if (text != null)
                 {
-                    text = await DownloadAllImagesForUnit(text, tcService, learnFolder, outputFolder);
+                    text = await DownloadAllImagesForUnit(unit.GetContentFilename(), text, tcService, learnFolder, outputFolder);
                     await tempFile.WriteLineAsync(text);
                     await tempFile.WriteLineAsync();
                 }
@@ -86,7 +86,7 @@ namespace LearnDocUtils
                 .Build();
         }
 
-        private async Task<string> DownloadAllImagesForUnit(string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
+        private async Task<string> DownloadAllImagesForUnit(string markdownFilename, string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
             var markdownDocument = Markdown.Parse(markdownText, markdownPipeline.Value);
             Dictionary<string, string> imageReplacements = new();
@@ -119,7 +119,7 @@ namespace LearnDocUtils
                 // Download the image.
                 if (!string.IsNullOrEmpty(imageUrl) && !imageReplacements.ContainsKey(imageUrl))
                 {
-                    string newUrl = await DownloadImageAsync(imageUrl, gitHub, moduleFolder, tempFolder);
+                    string newUrl = await DownloadImageAsync(markdownFilename, imageUrl, gitHub, moduleFolder, tempFolder);
                     if (newUrl != null)
                         imageReplacements.Add(imageUrl, newUrl);
                 }
@@ -131,7 +131,7 @@ namespace LearnDocUtils
             
         }
 
-        private static async Task<string> DownloadImageAsync(string imagePath, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
+        private static async Task<string> DownloadImageAsync(string markdownFilename, string imagePath, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
             // Ignore urls.
             if (imagePath.StartsWith("http"))
@@ -143,6 +143,11 @@ namespace LearnDocUtils
             // Remove any relative path info
             if (imagePath.StartsWith(@"../") || imagePath.StartsWith(@"..\"))
                 imagePath = imagePath[3..];
+            else
+            {
+                string includeFolder = Path.GetDirectoryName(markdownFilename)??"";
+                imagePath = Path.Combine(includeFolder, imagePath);
+            }
 
             string properImagePath = imagePath;
             int index = properImagePath.IndexOf('?');
@@ -185,6 +190,7 @@ namespace LearnDocUtils
                         }
                     }
                     remotePath = lastMatch == -1 ? rootFolder : string.Join(Path.DirectorySeparatorChar, parts.Take(lastMatch + 1));
+                    remotePath = Path.Combine(remotePath, properImagePath.TrimStart('/','\\'));
                 }
             }
             else

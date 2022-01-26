@@ -42,7 +42,8 @@ namespace LearnDocUtils
             {
                 if (!debug)
                 {
-                    File.Delete(markdownFile);
+                    if (File.Exists(markdownFile))
+                        File.Delete(markdownFile);
                 }
             }
         }

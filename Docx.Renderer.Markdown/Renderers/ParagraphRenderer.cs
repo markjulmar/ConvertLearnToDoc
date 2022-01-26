@@ -96,8 +96,16 @@ namespace Docx.Renderer.Markdown.Renderers
             else
             {
                 blockQuote = new BlockQuote();
-                document.Add(blockQuote);
                 newBlockQuote = true;
+
+                // See if we're in a list.
+                if (document.LastOrDefault() is MarkdownList theList && element.Properties.LeftIndent > 0)
+                {
+                    var blocks = theList[^1];
+                    blocks.Add(blockQuote);
+                }
+                else 
+                    document.Add(blockQuote);
             }
 
             var runs = element.Runs.ToList();
@@ -195,11 +203,11 @@ namespace Docx.Renderer.Markdown.Renderers
             switch (format)
             {
                 case NumberingFormat.Bullet:
-                    CreateUnorderedListBlock(renderer, document, blockOwner, element, tags);
+                    CreateListBlock<List>(renderer, document, blockOwner, element, tags);
                     break;
                 case NumberingFormat.None:
                 {
-                    // Just add to existing list.
+                    // Add to existing list.
                     var list = (MarkdownList) document.Last();
                     var blocks = list[^1];
                     var paragraph = new Paragraph();
@@ -209,37 +217,48 @@ namespace Docx.Renderer.Markdown.Renderers
                 }
                 // Numbered list
                 default:
-                    CreateOrderedListBlock(renderer, document, blockOwner, element, tags);
+                    CreateListBlock<OrderedList>(renderer, document, blockOwner, element, tags);
                     break;
             }
         }
 
-        private static void CreateOrderedListBlock(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
+        private static void CreateListBlock<TList>(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
+                where TList : MarkdownList, new()
         {
-            int? level = element.GetListLevel() ?? 0;
+            MarkdownList theList = document.Last() as MarkdownList;
             int? index = (element.GetListIndex() ?? 0) + 1;
+            int? level = element.GetListLevel() ?? 0;
 
-            // If this is a new list, then create it.
-            if (document.Last() is not OrderedList theList)
+            // See if we're in a list already.
+            if (theList != null)
             {
-                theList = new OrderedList(index.Value);
-                document.Add(theList);
+                while (level > 0)
+                {
+                    if (theList[^1][^1] is MarkdownList checkList)
+                    {
+                        theList = checkList;
+                        level--;
+                    }
+                    else
+                    {
+                        Debug.Assert(level == 1);
+                        var list = new TList();
+                        if (list is OrderedList ol)
+                            ol.StartingNumber = index.Value;
+                        theList[^1].Add(list);
+                        theList = list;
+                        break;
+                    }
+                }
             }
 
-            blockOwner = new Paragraph();
-            theList.Add(blockOwner);
-
-            renderer.WriteContainer(document, blockOwner, element.Runs, tags);
-        }
-
-        private static void CreateUnorderedListBlock(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
-        {
-            int? level = element.GetListLevel() ?? 0;
-
             // If this is a new list, then create it.
-            if (document.Last() is not List theList)
+            if (theList == null)
             {
-                theList = new List();
+                Debug.Assert(level == 0);
+                theList = new TList();
+                if (theList is OrderedList ol)
+                    ol.StartingNumber = index.Value;
                 document.Add(theList);
             }
 

@@ -31,45 +31,43 @@ namespace LearnDocUtils
             Directory.CreateDirectory(includeFolder);
 
             // Read all the lines
-            var files = new Dictionary<string, (string title, List<string> lines)>();
+            var files = new Dictionary<string, UnitMetadata>();
             using (var reader = new StreamReader(markdownFile))
             {
-                List<string> currentFile = null;
+                UnitMetadata currentUnit = null;
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
                     if (line == null) break;
 
                     // Skip starting blank lines.
-                    if (string.IsNullOrWhiteSpace(line) && (currentFile == null || currentFile.Count==0))
+                    if (string.IsNullOrWhiteSpace(line) && (currentUnit == null || currentUnit.Lines.Count==0))
                         continue;
 
                     if (line.StartsWith("# "))
                     {
-                        if (currentFile != null)
+                        if (currentUnit?.Lines.Count>0)
                         {
                             // Remove any trailing empty lines.
-                            while (string.IsNullOrWhiteSpace(currentFile[^1]))
-                                currentFile.RemoveAt(currentFile.Count-1);
+                            while (string.IsNullOrWhiteSpace(currentUnit.Lines[^1]))
+                                currentUnit.Lines.RemoveAt(currentUnit.Lines.Count-1);
                         }
 
-                        currentFile = new List<string>();
                         var title = line[2..];
+                        currentUnit = new UnitMetadata(title);
 
                         // Get a unique filename based on the title.
                         var baseFn = GenerateFilenameFromTitle(title);
                         var fn = baseFn;
                         int n = 1;
                         while (files.ContainsKey(fn))
-                        {
                             fn = $"{baseFn}{n++}";
-                        }
 
-                        files.Add(fn, (title, currentFile));
+                        files.Add(fn, currentUnit);
                     }
                     else
                     {
-                        currentFile?.Add(line);
+                        currentUnit?.Lines.Add(line);
                     }
                 }
             }
@@ -82,29 +80,39 @@ namespace LearnDocUtils
             List<string> unitIds = new();
 
             // Write all the units.
-            foreach (var (baseFn, (title, lines)) in files)
+            foreach (var (baseFn, unitMetadata) in files)
             {
                 string unitFileName = $"{index}-{baseFn}";
 
-                var quizText = ExtractQuiz(title, lines);
+                if (!LoadDocumentUnitMetadata(docxFile, unitMetadata))
+                {
+                    throw new Exception($"Failed to identify unit section in document for: \"{unitMetadata.Title}\"");
+                }
+
+                var quizText = ExtractQuiz(unitMetadata.Title, unitMetadata.Lines);
                 var values = new Dictionary<string, string>
                 {
                     { "module-uid", moduleUid },
                     { "unit-uid", baseFn },
-                    { "title", title },
-                    { "duration", EstimateDuration(lines, quizText).ToString() },
+                    { "title", unitMetadata.Title },
+                    { "duration", EstimateDuration(unitMetadata.Lines, quizText).ToString() },
                     { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
                     { "msproduct", metadata.MsProduct ?? "learning-azure" },
                     { "author", metadata.MsAuthor ?? "TBD" },
-                    { "unit-content", $"  |\r\n  [!include[](includes/{unitFileName}.md)]" },
+                    { "unit-content", unitMetadata.HasContent ? $"content: |\r\n  [!include[](includes/{unitFileName}.md)]" : "" },
                     { "quizText", quizText }
                 };
 
                 string unitYaml = PopulateTemplate("unit.yml", values);
                 await File.WriteAllTextAsync(Path.Combine(outputFolder, Path.ChangeExtension(unitFileName, "yml")),
                     unitYaml);
-                await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")),
-                    PostProcessMarkdown(string.Join("\r\n", lines)));
+
+                if (unitMetadata.HasContent)
+                {
+                    await File.WriteAllTextAsync(Path.Combine(includeFolder, Path.ChangeExtension(unitFileName, "md")),
+                        PostProcessMarkdown(string.Join("\r\n", unitMetadata.Lines)));
+                }
+
                 unitIds.Add($"- {moduleUid}.{baseFn}");
                 index++;
             }
@@ -142,6 +150,37 @@ namespace LearnDocUtils
             }
 
             return template;
+        }
+
+        private static bool LoadDocumentUnitMetadata(string docxFile, UnitMetadata unitMetadata)
+        {
+            var doc = Document.Load(docxFile);
+            foreach (var header in doc.Paragraphs.Where(p => p.Properties.StyleName == "Heading1"))
+            {
+                string text = header.Text;
+                if (unitMetadata.Title == text)
+                {
+                    var tags = string.Join(' ', header.Comments.SelectMany(c =>
+                            c.Comment.Paragraphs.Select(p => p.Text)))
+                        .Split(' ');
+                    foreach (var tag in tags.Where(t => !string.IsNullOrEmpty(t)))
+                    {
+                        string value = tag.Trim().ToLower();
+                        if (value == "sandbox")
+                            unitMetadata.Sandbox = true;
+                        else if (value.StartsWith("labid:"))
+                            unitMetadata.LabId = int.Parse(value["labid:".Length..]);
+                        else if (value.StartsWith("notebook:"))
+                            unitMetadata.Notebook = value["notebook:".Length..].Trim();
+                        if (value.StartsWith("interactivity:"))
+                            unitMetadata.Interactivity = value["interactivity:".Length..].Trim();
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static ModuleMetadata LoadDocumentMetadata(string docxFile)

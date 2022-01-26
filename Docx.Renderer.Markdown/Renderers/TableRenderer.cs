@@ -55,7 +55,11 @@ namespace Docx.Renderer.Markdown.Renderers
                 }
             }
 
-            document.Add(mdTable);
+            if (document.Last() is MarkdownList theList)
+            {
+                theList[^1].Add(mdTable);
+            }
+            else document.Add(mdTable);
         }
     }
 }

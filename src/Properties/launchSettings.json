@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i C:\\users\\mark\\git\\learnrepos\\learn-pr\\learn-pr\\language\\vue-get-started -o /users/mark/downloads/out.docx"
+      "commandLineArgs": "-i /users/mark/downloads/out.docx -o /users/mark/downloads/output"
     }
   }
 }
