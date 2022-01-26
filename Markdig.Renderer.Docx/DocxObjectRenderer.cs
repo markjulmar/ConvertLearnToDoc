@@ -32,9 +32,9 @@ namespace Markdig.Renderer.Docx
                 foreach (var text in leafBlock.Lines.Cast<StringLine>().Take(count))
                 {
                     if (++index < count)
-                        currentParagraph.AppendLine(text.ToString());
+                        currentParagraph.AppendLine(Helpers.CleanText(text.ToString()));
                     else
-                        currentParagraph.Append(text.ToString());
+                        currentParagraph.Append(Helpers.CleanText(text.ToString()));
                 }
             }
         }
@@ -58,10 +58,7 @@ namespace Markdig.Renderer.Docx
         public void Write(MarkdownObject item, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)
         {
             var renderer = owner.FindRenderer(item);
-            if (renderer != null)
-            {
-                renderer.Write(owner, document, currentParagraph, item);
-            }
+            renderer?.Write(owner, document, currentParagraph, item);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using DXPlus;
 using GenMarkdown.DocFx.Extensions;
@@ -64,9 +65,9 @@ namespace Docx.Renderer.Markdown.Renderers
                     }
                     case Break b:
                     {
-                        var p = (Julmar.GenMarkdown.Paragraph)blockOwner;
-                        if (b.Type == BreakType.Line)
-                            p.Add(Text.LineBreak);
+                        //var p = (Julmar.GenMarkdown.Paragraph)blockOwner;
+                        //if (b.Type == BreakType.Line)
+                        //    p.Add(Text.LineBreak);
                         break;
                     }
                     case Drawing d:
@@ -74,16 +75,17 @@ namespace Docx.Renderer.Markdown.Renderers
                         var block = ProcessDrawing(renderer, d);
                         if (block != null)
                         {
-
                             // See if we're in a list.
                             if (document.Last() is MarkdownList theList)
                             {
                                 var lastBlock = theList[^1];
-                                lastBlock.Remove(blockOwner);
+                                if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
+                                    lastBlock.Remove(blockOwner);
                                 lastBlock.Add(block);
                             }
                             else
                             {
+                                Debug.Assert(blockOwner.ToString().TrimEnd('\r', '\n').Length == 0);
                                 document.Remove(blockOwner);
                                 document.Add(block);
                             }
@@ -140,13 +142,28 @@ namespace Docx.Renderer.Markdown.Renderers
                     filename = p.FileName;
             }
 
+            // Strip any parameters
+            string suffix = string.Empty;
+            int index = filename.IndexOf('#');
+            if (index > 0)
+            {
+                suffix = filename[index..];
+                filename = filename[..index];
+            }
+
             using var input = theImage.OpenStream();
             using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
             input.CopyTo(output);
 
-            string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\','/');
-            return new DocfxImage(d.Description, imagePath);
-            //return new Julmar.GenMarkdown.Image(d.Description, imagePath);
+            bool border = p.BorderColor != null;
+            string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\', '/') + suffix;
+
+            if (border || d.IsDecorative)
+            {
+                return new DocfxImage(d.Description, imagePath) { Border = border, LocScope = d.IsDecorative ? "noloc" : null };
+            }
+
+            return new Julmar.GenMarkdown.Image(d.Description, imagePath);
         }
     }
 }

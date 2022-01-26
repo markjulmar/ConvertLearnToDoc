@@ -1,16 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Markdig;
+using Markdig.Renderer.Docx;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
+using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 using MSLearnRepos;
 
 namespace LearnDocUtils
 {
     public sealed class LearnUtilities
     {
-        private string accessToken;
+        public const string AbsolutePathMarker = "_fqurl_";
 
         public async Task<(TripleCrownModule module, string markdownFile)> DownloadModuleAsync(
             ITripleCrownGitHubService tcService, string token,
@@ -18,10 +24,6 @@ namespace LearnDocUtils
         {
             if (string.IsNullOrEmpty(outputFolder))
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or empty.", nameof(outputFolder));
-
-            this.accessToken = string.IsNullOrEmpty(token)
-                ? GithubHelper.ReadDefaultSecurityToken()
-                : token;
 
             var module = await tcService.GetModuleAsync(learnFolder);
             if (module == null)
@@ -70,40 +72,136 @@ namespace LearnDocUtils
             return (module, markdownFile);
         }
 
+        private readonly Lazy<MarkdownPipeline> markdownPipeline = new(CreatePipeline);
+        private static MarkdownPipeline CreatePipeline()
+        {
+            var context = new MarkdownContext();
+            var pipelineBuilder = new MarkdownPipelineBuilder();
+            return pipelineBuilder
+                .UsePipeTables()
+                .UseRow(context)
+                .UseNestedColumn(context)
+                .UseTripleColon(context)
+                .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
+                .Build();
+        }
+
         private async Task<string> DownloadAllImagesForUnit(string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
-            var images = Regex.Matches(markdownText, @"!\[.*\]\((.*?)\)")
-                .Union(Regex.Matches(markdownText, @"<img.+src=(?:\""|\')(.+?)(?:\""|\')(?:.+?)\>"))
-                .Union(Regex.Matches(markdownText, @":::image.+source=(?:\""|\')(.+?)(?:\""|\')(?:.+?):::"))
-                .ToList();
+            var markdownDocument = Markdown.Parse(markdownText, markdownPipeline.Value);
+            Dictionary<string, string> imageReplacements = new();
 
-            foreach (Match match in images)
+            foreach (var item in markdownDocument.EnumerateBlocks())
             {
-                string imagePath = match.Groups[1].Value;
-                if (string.IsNullOrEmpty(imagePath)) continue;
+                string imageUrl = null;
 
-                string newPath = await DownloadImageAsync(imagePath, gitHub, moduleFolder, tempFolder);
-                if (newPath != null)
+                switch (item)
                 {
-                    markdownText = markdownText.Replace(imagePath, newPath);
+                    case LinkInline { IsImage: true } li:
+                        imageUrl = li.Url;
+                        break;
+                    case HtmlBlock html:
+                    {
+                        var tag = html.Lines.ToString();
+                        var result = Regex.Match(tag, @"<img.*\s+src=(?:\""|\')(.+?)(?:\""|\')(?:.+?)\>");
+                        if (result.Success)
+                        {
+                            imageUrl = result.Groups[1].Value;
+                        }
+                        break;
+                    }
+                    case TripleColonInline tci when tci.Extension.Name == "image":
+                        tci.Attributes.TryGetValue("source", out var source);
+                        imageUrl = source;
+                        break;
+                }
+
+                // Download the image.
+                if (!string.IsNullOrEmpty(imageUrl) && !imageReplacements.ContainsKey(imageUrl))
+                {
+                    string newUrl = await DownloadImageAsync(imageUrl, gitHub, moduleFolder, tempFolder);
+                    if (newUrl != null)
+                        imageReplacements.Add(imageUrl, newUrl);
                 }
             }
 
-            return markdownText;
+            // Replace any URLs.
+            return imageReplacements.Aggregate(markdownText, (current, kvp) 
+                => current.Replace(kvp.Key, kvp.Value));
+            
         }
 
-        private async Task<string> DownloadImageAsync(string imagePath, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
+        private static async Task<string> DownloadImageAsync(string imagePath, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
             // Ignore urls.
             if (imagePath.StartsWith("http"))
+                return null;
+
+            if (Path.GetInvalidPathChars().Any(c => imagePath.Contains(c)))
                 return null;
 
             // Remove any relative path info
             if (imagePath.StartsWith(@"../") || imagePath.StartsWith(@"..\"))
                 imagePath = imagePath[3..];
 
-            string remotePath = moduleFolder + "/" + imagePath;
-            string localPath = Path.Combine(tempFolder, imagePath);
+            string properImagePath = imagePath;
+            int index = properImagePath.IndexOf('?');
+            if (index > 0)
+                properImagePath = properImagePath[..index];
+            index = properImagePath.IndexOf('#');
+            if (index > 0)
+                properImagePath = properImagePath[..index];
+
+            var rgh = gitHub as IRemoteTripleCrownGitHubService;
+
+            bool absolutePath = false;
+            string remotePath;
+
+            if (properImagePath.StartsWith('/'))
+            {
+                absolutePath = true;
+
+                // Pull out the composite path. Should start with "/learn"
+                if (properImagePath.ToLower().StartsWith("/learn"))
+                    properImagePath = properImagePath["/learn".Length..];
+
+                if (rgh != null)
+                {
+                    Uri uri = new Uri(gitHub.RootPath, UriKind.Absolute);
+                    remotePath =  uri.Segments.Last() + properImagePath;
+                }
+                else // local
+                {
+                    string rootFolder = gitHub.RootPath;
+                    string[] parts = rootFolder.Split(new[] { '\\', '/' });
+
+                    int lastMatch = -1;
+                    for (var i = 0; i < parts.Length; i++)
+                    {
+                        var item = parts[i];
+                        if (Regex.Match(item, "learn(.*)-pr").Success)
+                        {
+                            lastMatch = i;
+                        }
+                    }
+                    remotePath = lastMatch == -1 ? rootFolder : string.Join(Path.DirectorySeparatorChar, parts.Take(lastMatch + 1));
+                }
+            }
+            else
+            {
+                remotePath = moduleFolder + "/" + properImagePath;
+            }
+
+            string localPath;
+            if (absolutePath)
+            {
+                imagePath = Path.Combine(AbsolutePathMarker, imagePath.TrimStart('/', '\\')).Replace('\\', '/');
+                localPath = Path.Combine(tempFolder, imagePath);
+            }
+            else
+            {
+                localPath = Path.Combine(tempFolder, properImagePath);
+            }
 
             // Already downloaded?
             if (File.Exists(localPath))
@@ -125,15 +223,13 @@ namespace LearnDocUtils
                 }
                 else
                 {
-                    throw new Exception($"{remotePath} did not return an image as expected.");
+                    throw new Exception($"\"{remotePath}\" did not return an image as expected.");
                 }
             }
             catch (Octokit.ForbiddenException)
             {
                 // Image > 1Mb in size, switch to the Git Data API and download based on the sha.
-                var remote = (IRemoteTripleCrownGitHubService)gitHub;
-                await GitHelper.GetAndWriteBlobAsync(Constants.Organization,
-                    gitHub.Repository, remotePath, localPath, accessToken, remote.Branch);
+                await rgh!.Helper.GetAndWriteBlobAsync( remotePath, localPath, rgh.Branch);
             }
 
             return imagePath;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -115,13 +116,28 @@ namespace Markdig.Renderer.Docx
             }
         }
 
-        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText)
+        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder)
         {
             string path = ResolvePath(moduleFolder, imageSource);
             if (File.Exists(path))
             {
                 var image = document.AddImage(path);
                 var drawing = image.CreatePicture(imageSource, altText);
+
+                if (drawing.Width > 600)
+                {
+                    double ratio = drawing.Height / drawing.Width;
+                    drawing.Width = drawing.Picture.Width = 600;
+                    drawing.Height = drawing.Picture.Height = Math.Round(600 * ratio);
+                }
+
+                if (hasBorder)
+                {
+                    drawing.Picture.BorderColor = Color.DarkGray;
+                }
+
+                drawing.Picture.Description = imageSource;
+
                 currentParagraph.Append(drawing);
                 return drawing;
             }
@@ -136,12 +152,25 @@ namespace Markdig.Renderer.Docx
         /// <returns></returns>
         public Stream GetEmbeddedResource(string name) => Assembly.GetExecutingAssembly().GetManifestResourceStream("Markdig.Renderer.Docx.Resources."+name);
 
+        /// <summary>
+        /// Resolve the image path to our local root folder.
+        /// </summary>
+        /// <param name="rootFolder">Folder we downloaded images to</param>
+        /// <param name="path">Image path in content</param>
+        /// <returns>Resolved path</returns>
         private static string ResolvePath(string rootFolder, string path)
-            => path.Contains(':')
+        {
+            path = path.Contains(':')
                 ? path
                 : Path.IsPathRooted(path)
                     ? path
                     : Path.Combine(rootFolder, path);
 
+            int index = path.IndexOf('#');
+            if (index>0)
+                path = path[..index];
+
+            return path;
+        }
     }
 }

@@ -15,8 +15,13 @@ namespace Docx.Renderer.Markdown.Renderers
             DXTable element, RenderBag tags)
         {
             tags ??= new RenderBag();
-            
-            var mdTable = new DocfxTable(element.ColumnCount);
+
+            bool complexStructure = element.Rows.Any(r => r.Cells.Count != element.ColumnCount);
+
+            var mdTable = complexStructure
+                ? new DocfxTable(element.ColumnCount)
+                : new Julmar.GenMarkdown.Table(element.ColumnCount);
+
             var tcf = element.ConditionalFormatting;
             
             // TODO: pass bold flags down on rows/columns

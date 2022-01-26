@@ -19,6 +19,7 @@ namespace LearnDocUtils
         {
             text = text.Trim('\r').Trim('\n');
             text = text.Replace("(media/", "(../media/");
+            text = text.Replace(LearnUtilities.AbsolutePathMarker, "");
 
             return text;
         }

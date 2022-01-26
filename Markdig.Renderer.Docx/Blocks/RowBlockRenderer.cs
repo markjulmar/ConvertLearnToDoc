@@ -12,7 +12,7 @@ namespace Markdig.Renderer.Docx.Blocks
             int totalColumns = rows.Max(r => r.Count);
 
             var documentTable = document.AddTable(rows.Count, totalColumns);
-            documentTable.Design = TableDesign.TableNormal;
+            documentTable.Design = TableDesign.None;
 
             for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
             {
@@ -23,7 +23,11 @@ namespace Markdig.Renderer.Docx.Blocks
                     var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
 
                     var cellParagraph = documentCell.Paragraphs.First();
-                    WriteChildren(cell, owner, document, cellParagraph);
+                    foreach (var child in cell)
+                    {
+                        Write(child, owner, document, cellParagraph);
+                        cellParagraph = documentCell.AddParagraph();
+                    }
                 }
             }
 

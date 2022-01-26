@@ -31,6 +31,14 @@ namespace Markdig.Renderer.Docx.Inlines
                     }
 
                     break;
+                case "b":
+                    if (!isClose)
+                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true });
+                    break;
+                case "i":
+                    if (!isClose)
+                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true });
+                    break;
                 case "a":
                     if (!isClose)
                         ProcessRawAnchor(html, owner, document, currentParagraph);
@@ -42,12 +50,21 @@ namespace Markdig.Renderer.Docx.Inlines
                 case "rgn":
                     if (!isClose)
                         currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
-                            new Formatting() { Highlight = Highlight.Cyan });
+                            new Formatting { Highlight = Highlight.Cyan });
                     break;
                 default:
-                    Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
+                    if (!ValidHtmlTag(html))
+                    {
+                        currentParagraph.Append(html.ToString());
+                    }
+                    else Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
                     break;
             }
+        }
+
+        private bool ValidHtmlTag(HtmlInline html)
+        {
+            return html.ToString() == $"<{html.Tag}>";
         }
 
         private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)

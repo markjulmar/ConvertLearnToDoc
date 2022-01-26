@@ -18,6 +18,7 @@ namespace ConvertLearnToDoc
                 return; // bad arguments or help.
 
             Console.WriteLine("Learn/Docx converter");
+            Console.WriteLine($"Converting {options.InputFileOrFolder} to {options.OutputFileOrFolder}");
 
             try
             {
@@ -76,8 +77,6 @@ namespace ConvertLearnToDoc
                         System.IO.Compression.ZipFile.CreateFromDirectory(options.OutputFileOrFolder, zipFile);
                     }
                 }
-
-                Console.WriteLine($"Converted {options.InputFileOrFolder} to {options.OutputFileOrFolder}.");
             }
             catch (AggregateException aex)
             {

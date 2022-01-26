@@ -72,13 +72,26 @@ namespace LearnDocUtils
 
             foreach (var unit in moduleData.Units)
             {
-                if (unit.UsesSandbox || unit.LabId != null || !string.IsNullOrEmpty(unit.InteractivityType))
+                if (unit.UsesSandbox)
                 {
                     string title = unit.Title;
                     var p = headers.SingleOrDefault(p => p.Text == title);
-                    p?.AttachComment(
-                        document.CreateComment(user,
-                            $"Sandbox: {unit.UsesSandbox}, LabId: {unit.LabId}, Interactivity: {unit.InteractivityType}"));
+                    string commentText = "Sandbox";
+                    if (!string.IsNullOrEmpty(unit.InteractivityType))
+                        commentText += $", {unit.InteractivityType}";
+                    p?.AttachComment(document.CreateComment(user,  commentText));
+                }
+                else if (unit.LabId != null)
+                {
+                    string title = unit.Title;
+                    var p = headers.SingleOrDefault(p => p.Text == title);
+                    p?.AttachComment(document.CreateComment(user, $"LabId:{unit.LabId}"));
+                }
+                else if (!string.IsNullOrEmpty(unit.InteractivityType))
+                {
+                    string title = unit.Title;
+                    var p = headers.SingleOrDefault(p => p.Text == title);
+                    p?.AttachComment(document.CreateComment(user, $"{unit.InteractivityType}"));
                 }
             }
         }

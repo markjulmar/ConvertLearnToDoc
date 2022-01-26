@@ -35,7 +35,8 @@ namespace Docx.Renderer.Markdown.Renderers
             {"note", "NOTE"},
             {"tip", "TIP"},
             {"warning", "WARNING"},
-            {"error", "ERROR"}
+            {"error", "ERROR"},
+            {"caution","CAUTION"}
         };
         
         protected override void Render(IMarkdownRenderer renderer, 
@@ -161,15 +162,6 @@ namespace Docx.Renderer.Markdown.Renderers
             }
             
             renderer.WriteContainer(document, blockOwner, element.Runs, tags);
-
-            if (document.Last() != blockOwner)
-            {
-                blockOwner = document.Last();
-                if (blockOwner is Paragraph p)
-                {
-
-                }
-            }
         }
 
         private static void CreateCodeBlock(IMarkdownRenderer renderer, MarkdownDocument document, 
@@ -184,7 +176,8 @@ namespace Docx.Renderer.Markdown.Renderers
                 language = next.Text;
             }
 
-            var codeBlock = new CodeBlock(language, element.Text);
+            var codeBlock = string.IsNullOrEmpty(language) ? new CodeBlock() : new CodeBlock(language);
+            codeBlock.Add(element.Text);
 
             // See if we're in a list.
             if (document.Last() is MarkdownList theList && element.Properties.LeftIndent > 0)

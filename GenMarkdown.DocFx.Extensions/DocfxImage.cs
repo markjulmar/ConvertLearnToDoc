@@ -45,7 +45,7 @@ namespace GenMarkdown.DocFx.Extensions
             LocScope = string.Empty;
             Lightbox = string.Empty;
             Link = string.Empty;
-            Border = true;
+            Border = false;
         }
 
         /// <inheritdoc />
@@ -54,7 +54,10 @@ namespace GenMarkdown.DocFx.Extensions
             writer.Write($":::image type=\"{ImageType}\"");
             writer.Write($" source=\"{ImagePath}\"");
             writer.Write($" alt-text=\"{AltText}\"");
-            writer.Write($" border=\"{Border.ToString().ToLower()}\"");
+            if (Border)
+            {
+                writer.Write($" border=\"{Border.ToString().ToLower()}\"");
+            }
 
             if (!string.IsNullOrEmpty(Link))
             {

@@ -74,7 +74,8 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
             extension.Attributes.TryGetValue("type", out string type);
             extension.Attributes.TryGetValue("alt-text", out string title);
             extension.Attributes.TryGetValue("source", out string source);
-            owner.InsertImage(currentParagraph, source, title);
+            extension.Attributes.TryGetValue("border", out string hasBorder);
+            owner.InsertImage(currentParagraph, source, title, hasBorder?.ToLower()=="true");
         }
     }
 }

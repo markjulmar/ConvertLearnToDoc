@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,8 +11,45 @@ using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 
 namespace Markdig.Renderer.Docx
 {
-    public static class MarkdigDebug
+    public static class MarkdigExtensions
     {
+        public static IEnumerable<MarkdownObject> EnumerateBlocks(this ContainerBlock container)
+        {
+            foreach (var item in container)
+            {
+                yield return item;
+
+                if (item is ContainerBlock cb)
+                {
+                    foreach (var child in EnumerateBlocks(cb))
+                        yield return child;
+                }
+                else if (item is LeafBlock lb)
+                {
+                    var containerInline = lb.Inline;
+                    if (containerInline != null)
+                    {
+                        foreach (var child in EnumerateInline(containerInline))
+                            yield return child;
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<MarkdownObject> EnumerateInline(this Inline inline)
+        {
+            if (inline is ContainerInline cil)
+            {
+                foreach (var child in cil)
+                {
+                    yield return child;
+                    foreach (var sil in EnumerateInline(child))
+                        yield return sil;
+                }
+            }
+        }
+
+
         public static string Dump(ContainerBlock block, int tabs = 0)
         {
             StringBuilder sb = new StringBuilder();

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using DXPlus;
 using Markdig.Syntax;
 
@@ -8,9 +7,9 @@ namespace Markdig.Renderer.Docx.Blocks
     {
         public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, HeadingBlock heading)
         {
-            Debug.Assert(currentParagraph == null);
+            // Allowed in a row extension.
+            currentParagraph ??= document.AddParagraph();
 
-            currentParagraph = document.AddParagraph();
             switch (heading.Level)
             {
                 case 1: currentParagraph.Style(HeadingType.Heading1); break;
