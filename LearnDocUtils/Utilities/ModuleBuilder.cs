@@ -99,6 +99,7 @@ namespace LearnDocUtils
                     { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
                     { "msproduct", metadata.MsProduct ?? "learning-azure" },
                     { "author", metadata.MsAuthor ?? "TBD" },
+                    { "interactivity", unitMetadata.BuildInteractivityOptions() },
                     { "unit-content", unitMetadata.HasContent ? $"content: |\r\n  [!include[](includes/{unitFileName}.md)]" : "" },
                     { "quizText", quizText }
                 };
@@ -144,12 +145,34 @@ namespace LearnDocUtils
         private static string PopulateTemplate(string templateKey, Dictionary<string, string> values)
         {
             string template = GetTemplate(templateKey);
-            foreach (var item in values)
+            string result = template;
+            foreach (var value in values)
             {
-                template = template.Replace("{" + item.Key + "}", item.Value);
+                string lookFor = "{" + value.Key + "}";
+                if (value.Value != "")
+                {
+                    result = result.Replace(lookFor, value.Value.TrimEnd('\r','\n'));
+                }
+                else
+                {
+                    while (result.Contains(lookFor))
+                    {
+                        int start = result.IndexOf(lookFor, StringComparison.Ordinal);
+                        int end = start + lookFor.Length-1;
+
+                        while (result.Length > end+1)
+                        {
+                            if (result[end + 1] == '\r' || result[end + 1] == '\n')
+                                end++;
+                            else break;
+                        }
+
+                        result = result.Remove(start, end-start+1);
+                    }
+                }
             }
 
-            return template;
+            return result;
         }
 
         private static bool LoadDocumentUnitMetadata(string docxFile, UnitMetadata unitMetadata)

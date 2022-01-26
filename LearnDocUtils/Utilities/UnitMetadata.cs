@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 
 namespace LearnDocUtils
 {
@@ -16,6 +17,21 @@ namespace LearnDocUtils
         public UnitMetadata(string title)
         {
             Title = title;
+        }
+
+        public string BuildInteractivityOptions()
+        {
+            var sb = new StringBuilder();
+            if (Sandbox)
+                sb.AppendLine("sandbox: true");
+            if (!string.IsNullOrEmpty(Interactivity))
+                sb.AppendLine($"interactivity: {Interactivity}");
+            if (LabId > 0)
+                sb.AppendLine($"labId: {LabId}");
+            if (!string.IsNullOrEmpty(Notebook))
+                sb.AppendLine($"notebook: {Notebook}");
+            
+            return sb.ToString();
         }
     }
 }
