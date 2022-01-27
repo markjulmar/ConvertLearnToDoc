@@ -3,8 +3,10 @@
   "name": "asp.net",
   "private": true,
   "devDependencies": {
-    "bootstrap": "4.0.0",
-    "jquery": "3.3.1",
-    "popper.js": "1.12.9"
+    "bootstrap": "^4.6.1",
+    "jquery": "^3.6.0"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.2"
   }
 }
