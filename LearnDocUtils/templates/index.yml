@@ -1,28 +1,27 @@
 ﻿### YamlMime:Module
 uid: {module-uid}
 metadata:
-  title: {title}
-  description: {summary}
+  title: {seotitle}
+  description: {seodescription}
   ms.date: {saveDate}
-  author: TBD
-  ms.author: {author}
+  author: {author}
+  ms.author: {msauthor}
   ms.topic: {mstopic}
   ms.prod: {msproduct}
 title: {title}
 summary: {summary}
-abstract:  |
-  In this module, you will:
-  - TBD
-prerequisites: None
-iconUrl: /learn/achievements/generic-badge.svg
+abstract: |
+{abstract}
+prerequisites: |
+{prerequisites}
+iconUrl: {iconUrl}
 levels:
-- beginner
+{levels-list}
 roles:
-- administrator
-- developer
+{roles-list}
 products:
-- azure
+{products-list}
 units:
 {unit-uid-list}
 badge:
-  uid: {module-uid}.badge
+  uid: {badge-uid}

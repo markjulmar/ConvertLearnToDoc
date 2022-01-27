@@ -167,21 +167,40 @@ namespace LearnDocUtils
             }
         }
 
+        private static void SetProperty(IDocument document, DocumentPropertyName name, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+                document.SetPropertyValue(name, value);
+        }
+
+        private static void SetCustomProperty(IDocument document, string name, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+                document.AddCustomProperty(name, value);
+        }
+
         private static void AddMetadata(TripleCrownModule moduleData, IDocument document)
         {
-            document.SetPropertyValue(DocumentPropertyName.Title, moduleData.Title);
-            document.SetPropertyValue(DocumentPropertyName.Subject, moduleData.Summary);
-            document.SetPropertyValue(DocumentPropertyName.Keywords, string.Join(',', moduleData.Products));
-            document.SetPropertyValue(DocumentPropertyName.Comments, string.Join(',', moduleData.FriendlyLevels));
-            document.SetPropertyValue(DocumentPropertyName.Category, string.Join(',', moduleData.FriendlyRoles));
-            document.SetPropertyValue(DocumentPropertyName.CreatedDate, moduleData.LastUpdated.ToString("yyyy-MM-ddT00:00:00Z"));
-            document.SetPropertyValue(DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
+            SetCustomProperty(document, nameof(ModuleMetadata.ModuleUid), moduleData.Uid);
+            SetProperty(document, DocumentPropertyName.Title, moduleData.Title);
 
-            // Add custom data.
-            document.AddCustomProperty("ModuleUid", moduleData.Uid);
-            document.AddCustomProperty("MsTopic", moduleData.Metadata.MsTopic);
-            document.AddCustomProperty("MsProduct", moduleData.Metadata.MsProduct);
-            document.AddCustomProperty("Abstract", moduleData.Abstract);
+            SetProperty(document, DocumentPropertyName.Subject, moduleData.Summary);
+            SetCustomProperty(document, nameof(ModuleMetadata.Abstract), moduleData.Abstract);
+            SetCustomProperty(document, nameof(ModuleMetadata.Prerequisites), moduleData.Prerequisites);
+            SetCustomProperty(document, nameof(ModuleMetadata.IconUrl), moduleData.IconUrl);
+
+            SetCustomProperty(document, nameof(ModuleMetadata.BadgeUid), moduleData.Badge?.Uid);
+            SetCustomProperty(document, nameof(ModuleMetadata.SEOTitle), moduleData.Metadata.Title);
+            SetCustomProperty(document, nameof(ModuleMetadata.SEODescription), moduleData.Metadata.Description);
+            SetProperty(document, DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
+            SetCustomProperty(document, nameof(ModuleMetadata.GitHubAlias), moduleData.Metadata.Author);
+            SetCustomProperty(document, nameof(ModuleMetadata.MsTopic), moduleData.Metadata.MsTopic);
+            SetCustomProperty(document, nameof(ModuleMetadata.MsProduct), moduleData.Metadata.MsProduct);
+
+            SetProperty(document, DocumentPropertyName.Comments, string.Join(',', moduleData.Levels));
+            SetProperty(document, DocumentPropertyName.Category, string.Join(',', moduleData.Roles));
+            SetProperty(document, DocumentPropertyName.Keywords, string.Join(',', moduleData.Products));
+            SetProperty(document, DocumentPropertyName.CreatedDate, (moduleData.LastUpdated == default ? DateTime.Now : moduleData.LastUpdated).ToString("yyyy-MM-ddT00:00:00Z"));
         }
 
         private static void WriteTitle(TripleCrownModule moduleData, IDocument document)

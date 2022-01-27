@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -98,7 +99,8 @@ namespace LearnDocUtils
                     { "duration", EstimateDuration(unitMetadata.Lines, quizText).ToString() },
                     { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
                     { "msproduct", metadata.MsProduct ?? "learning-azure" },
-                    { "author", metadata.MsAuthor ?? "TBD" },
+                    { "msauthor", metadata.MsAuthor ?? "TBD" },
+                    { "author", metadata.GitHubAlias ?? "TBD" },
                     { "interactivity", unitMetadata.BuildInteractivityOptions() },
                     { "unit-content", unitMetadata.HasContent ? $"content: |\r\n  [!include[](includes/{unitFileName}.md)]" : "" },
                     { "quizText", quizText }
@@ -124,10 +126,20 @@ namespace LearnDocUtils
                 { "module-uid", moduleUid },
                 { "title", metadata.Title ?? "TBD" },
                 { "summary", metadata.Summary ?? "TBD" },
+                { "seotitle", metadata.SEOTitle ?? "TBD" },
+                { "seodescription", metadata.SEODescription ?? "TBD" },
+                { "abstract", metadata.Abstract ?? "TBD" },
+                { "prerequisites", metadata.Prerequisites ?? "TBD" },
+                { "iconUrl", metadata.IconUrl ?? "/learn/achievements/generic-badge.svg" },
                 { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
                 { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
                 { "msproduct", metadata.MsProduct ?? "learning-azure" },
-                { "author", metadata.MsAuthor ?? "TBD" },
+                { "msauthor", metadata.MsAuthor ?? "TBD" },
+                { "author", metadata.GitHubAlias ?? "TBD" },
+                { "badge-uid", metadata.BadgeUid ?? $"{moduleUid}-badge" },
+                { "levels-list", metadata.GetList(metadata.Levels, "- beginner") },
+                { "roles-list", metadata.GetList(metadata.Roles, "- developer") },
+                { "products-list", metadata.GetList(metadata.Products, "- azure") },
                 { "unit-uid-list", string.Join("\r\n", unitIds) }
             };
 
@@ -206,6 +218,16 @@ namespace LearnDocUtils
             return false;
         }
 
+        private static string GetProperty(IDocument doc, DocumentPropertyName name) =>
+            doc.DocumentProperties.TryGetValue(name, out var text) && !string.IsNullOrWhiteSpace(text)
+                ? text
+                : null;
+
+        private static string GetCustomProperty(IDocument doc, string name) =>
+            doc.CustomProperties.TryGetValue(name, out var text) && text != null
+                ? text.ToString()
+                : null;
+
         private static ModuleMetadata LoadDocumentMetadata(string docxFile)
         {
             var doc = Document.Load(docxFile);
@@ -229,56 +251,33 @@ namespace LearnDocUtils
                 }
             }
 
-            if (metadata.Title == null
-                && doc.DocumentProperties.TryGetValue(DocumentPropertyName.Title, out var title)
-                && !string.IsNullOrWhiteSpace(title))
-            {
-                metadata.Title = title;
-            }
+            metadata.Title ??= GetProperty(doc, DocumentPropertyName.Title);
+            metadata.Summary ??= GetProperty(doc, DocumentPropertyName.Subject);
+            metadata.MsAuthor ??= GetProperty(doc, DocumentPropertyName.Creator);
 
-            if (metadata.Summary == null
-                && doc.DocumentProperties.TryGetValue(DocumentPropertyName.Subject, out var summary)
-                && !string.IsNullOrWhiteSpace(summary))
-            {
-                metadata.Summary = summary;
-            }
-
-            if (metadata.MsAuthor == null
-                && doc.DocumentProperties.TryGetValue(DocumentPropertyName.Creator, out var author)
-                && !string.IsNullOrWhiteSpace(author))
-            {
-                metadata.MsAuthor = author;
-            }
-
+            // Use SaveDate first, then CreatedDate if unavailable.
             if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.SaveDate, out var dtText)
                 && !string.IsNullOrWhiteSpace(dtText))
-            {
                 metadata.LastModified = DateTime.Parse(dtText);
-            }
+            else if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.CreatedDate, out dtText)
+                     && !string.IsNullOrWhiteSpace(dtText))
+                metadata.LastModified = DateTime.Parse(dtText);
 
-            if (doc.CustomProperties.TryGetValue(nameof(ModuleMetadata.ModuleUid), out var uid)
-                && uid != null)
-            {
-                metadata.ModuleUid = uid.ToString();
-            }
+            metadata.ModuleUid = GetCustomProperty(doc, nameof(ModuleMetadata.ModuleUid));
+            metadata.MsTopic = GetCustomProperty(doc, nameof(ModuleMetadata.MsTopic));
+            metadata.MsProduct = GetCustomProperty(doc, nameof(ModuleMetadata.MsProduct));
+            metadata.Abstract = GetCustomProperty(doc, nameof(ModuleMetadata.Abstract));
+            metadata.Prerequisites = GetCustomProperty(doc, nameof(ModuleMetadata.Prerequisites));
+            metadata.GitHubAlias = GetCustomProperty(doc, nameof(ModuleMetadata.GitHubAlias));
+            metadata.IconUrl = GetCustomProperty(doc, nameof(ModuleMetadata.IconUrl));
 
-            if (doc.CustomProperties.TryGetValue(nameof(ModuleMetadata.MsTopic), out var topic)
-                && topic != null)
-            {
-                metadata.MsTopic = topic.ToString();
-            }
-
-            if (doc.CustomProperties.TryGetValue(nameof(ModuleMetadata.MsProduct), out var product)
-                && product != null)
-            {
-                metadata.MsProduct = product.ToString();
-            }
-
-            if (doc.CustomProperties.TryGetValue(nameof(ModuleMetadata.Abstract), out var @abstract)
-                && @abstract != null)
-            {
-                metadata.Abstract = @abstract.ToString();
-            }
+            metadata.Levels = GetProperty(doc, DocumentPropertyName.Comments);
+            metadata.Roles = GetProperty(doc, DocumentPropertyName.Category);
+            metadata.Products = GetProperty(doc, DocumentPropertyName.Keywords);
+            metadata.BadgeUid = GetCustomProperty(doc, nameof(ModuleMetadata.BadgeUid));
+            metadata.GitHubAlias = GetCustomProperty(doc, nameof(ModuleMetadata.GitHubAlias));
+            metadata.SEOTitle = GetCustomProperty(doc, nameof(ModuleMetadata.SEOTitle));
+            metadata.SEODescription = GetCustomProperty(doc, nameof(ModuleMetadata.SEODescription));
 
             return metadata;
         }

@@ -6,7 +6,7 @@ metadata:
   description: {title}
   ms.date: 09/24/2018
   author: {author}
-  ms.author: {author}
+  ms.author: {msauthor}
   ms.topic: {mstopic}
   ms.prod: {msproduct}
 durationInMinutes: {duration}

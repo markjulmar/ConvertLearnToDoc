@@ -4,6 +4,10 @@
     return;
 }
 
+string docPath = Path.Combine(GetDownloadFolderPath(), "learnDocs");
+if (!Directory.Exists(docPath))
+    Directory.CreateDirectory(docPath);
+
 foreach (var index in Directory.GetFiles(args[0], "index.yml", SearchOption.AllDirectories))
 {
     string folder = Path.GetDirectoryName(index);
@@ -11,14 +15,12 @@ foreach (var index in Directory.GetFiles(args[0], "index.yml", SearchOption.AllD
         continue;
 
     string docFile = Path.ChangeExtension(Path.GetFileName(folder), "docx");
-
-    string fullDocPath = Path.Combine(GetDownloadFolderPath(), "learnDocs", docFile);
-
+    string fullDocPath = Path.Combine(docPath, docFile);
+    
     if (!File.Exists(fullDocPath))
     {
-        await ConvertLearnToDoc.Program.Main(new[] { $"-i{folder}", $"-o{fullDocPath}" });
-        //Console.WriteLine("Press [ENTER] to continue.");
-        //Console.ReadLine();
+        if (await ConvertLearnToDoc.Program.Main(new[] {$"-i{folder}", $"-o{fullDocPath}"}) != 0)
+            break;
     }
 }
 

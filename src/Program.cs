@@ -8,21 +8,21 @@ namespace ConvertLearnToDoc
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             CommandLineOptions options = null;
             new Parser(cfg => { cfg.HelpWriter = Console.Error; })
                 .ParseArguments<CommandLineOptions>(args)
                 .WithParsed(clo => options = clo);
             if (options == null)
-                return; // bad arguments or help.
+                return -1; // bad arguments or help.
 
-            Console.WriteLine($"Learn/Docx: converting {options.InputFileOrFolder} to {options.OutputFileOrFolder}");
+            Console.WriteLine($"Learn/Docx: converting {Path.GetFileName(options.InputFileOrFolder)}");
 
             try
             {
                 // Input is a Learn module URL
-                if (options.InputFileOrFolder.StartsWith("http"))
+                if (options.InputFileOrFolder!.StartsWith("http"))
                 {
                     await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, options.Debug);
@@ -69,6 +69,7 @@ namespace ConvertLearnToDoc
                 if (options.Debug) throw;
                 Console.WriteLine(aex.Flatten().Message);
 #endif
+                return -2;
             }
             catch (Exception ex)
             {
@@ -78,7 +79,10 @@ namespace ConvertLearnToDoc
                 if (options.Debug) throw;
                 Console.WriteLine(ex.Message);
 #endif
+                return -2;
             }
+
+            return 0;
         }
     }
 }
