@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-n -i C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\tensorflow\\intro-machine-learning-tensorflow -o /users/mark/downloads/out.docx"
+      "commandLineArgs": "-n -i https://docs.microsoft.com/learn/modules/basic-python-nasa -o /users/mark/downloads/out.docx"
     }
   }
 }

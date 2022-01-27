@@ -19,7 +19,7 @@ foreach (var index in Directory.GetFiles(args[0], "index.yml", SearchOption.AllD
     
     if (!File.Exists(fullDocPath))
     {
-        if (await ConvertLearnToDoc.Program.Main(new[] {$"-i{folder}", $"-o{fullDocPath}"}) != 0)
+        if (await ConvertLearnToDoc.Program.Main(new[] {"-n", $"-i{folder}", $"-o{fullDocPath}"}) != 0)
             break;
     }
 }

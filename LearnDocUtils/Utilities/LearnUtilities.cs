@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -52,11 +53,14 @@ namespace LearnDocUtils
                 {
                     string url = DetermineNotebookUrl(tcService, module.Url, unit.Notebook);
                     var nbText = await NotebookConverter.Convert(url);
-
-                    // Images in notebooks are always relative to the YAML.
-                    nbText = await DownloadAllImagesForUnit("", nbText, tcService, learnFolder, outputFolder);
-                    await tempFile.WriteLineAsync(nbText);
-                    await tempFile.WriteLineAsync();
+                    if (nbText != null)
+                    {
+                        nbText = await DownloadAllImagesForUnit("", nbText, tcService, learnFolder, outputFolder);
+                        await tempFile.WriteLineAsync(nbText);
+                        await tempFile.WriteLineAsync();
+                    }
+                    else 
+                        throw new Exception($"Failed to locate and download notebook {url}");
                 }
 
                 if (unit.Quiz != null)
@@ -87,6 +91,18 @@ namespace LearnDocUtils
             if (unitNotebook.ToLower().StartsWith("http"))
                 return unitNotebook;
 
+            // Look for an absolute link.
+            if (unitNotebook.StartsWith('/'))
+            {
+                string path = "/learn/modules/";
+
+                string[] moduleParts = moduleUrl.Split('/', '\\'); // support local and remote paths.
+                path += moduleParts.Last(s => !string.IsNullOrEmpty(s));
+
+                Debug.Assert(unitNotebook.StartsWith(path));
+                unitNotebook = unitNotebook[(path.Length + 1)..];
+            }
+
             if (!service.RootPath.ToLower().StartsWith("http")) 
                 return Path.Combine(service.RootPath, unitNotebook);
             
@@ -113,6 +129,8 @@ namespace LearnDocUtils
 
         private async Task<string> DownloadAllImagesForUnit(string markdownFilename, string markdownText, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
         {
+            Debug.Assert(!string.IsNullOrEmpty(markdownText));
+
             var markdownDocument = Markdown.Parse(markdownText, markdownPipeline.Value);
             Dictionary<string, string> imageReplacements = new();
 
