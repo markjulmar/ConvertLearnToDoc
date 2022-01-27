@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -35,6 +34,7 @@ namespace LearnDocUtils
             var files = new Dictionary<string, UnitMetadata>();
             using (var reader = new StreamReader(markdownFile))
             {
+                bool inCodeBlock = false;
                 UnitMetadata currentUnit = null;
                 while (!reader.EndOfStream)
                 {
@@ -45,7 +45,12 @@ namespace LearnDocUtils
                     if (string.IsNullOrWhiteSpace(line) && (currentUnit == null || currentUnit.Lines.Count==0))
                         continue;
 
-                    if (line.StartsWith("# "))
+                    if (line.Trim().StartsWith("```"))
+                    {
+                        inCodeBlock = !inCodeBlock;
+                    }
+
+                    if (!inCodeBlock && line.StartsWith("# "))
                     {
                         if (currentUnit?.Lines.Count>0)
                         {
@@ -86,9 +91,7 @@ namespace LearnDocUtils
                 string unitFileName = $"{index}-{baseFn}";
 
                 if (!LoadDocumentUnitMetadata(docxFile, unitMetadata))
-                {
-                    throw new Exception($"Failed to identify unit section in document for: \"{unitMetadata.Title}\"");
-                }
+                    continue;
 
                 var quizText = ExtractQuiz(unitMetadata.Title, unitMetadata.Lines);
                 var values = new Dictionary<string, string>

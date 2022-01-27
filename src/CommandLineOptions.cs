@@ -27,5 +27,8 @@ namespace ConvertLearnToDoc
         
         [Option('p', "Pivot", HelpText = "Zone pivot to render to doc")]
         public string ZonePivot { get; set; }
+        
+        [Option('n', "Notebook", HelpText = "Convert notebooks into document")]
+        public bool ConvertNotebooks { get; set; }
     }
 }

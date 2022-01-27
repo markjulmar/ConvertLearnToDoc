@@ -15,17 +15,17 @@ namespace LearnDocUtils
     public static class LearnToDocx
     {
         public static async Task ConvertFromUrlAsync(string url, string outputFile, 
-            string zonePivot = null, string accessToken = null, bool debug = false)
+            string zonePivot = null, string accessToken = null, DocumentOptions options = null)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
             var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
-            await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, debug);
+            await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, options);
         }
 
         public static async Task ConvertFromRepoAsync(string repo, string branch, string folder,
-                string outputFile, string zonePivot = null, string accessToken = null, bool debug = false)
+                string outputFile, string zonePivot = null, string accessToken = null, DocumentOptions options = null)
         {
             if (string.IsNullOrEmpty(repo))
                 throw new ArgumentException($"'{nameof(repo)}' cannot be null or empty.", nameof(repo));
@@ -34,16 +34,11 @@ namespace LearnDocUtils
             if (string.IsNullOrEmpty(folder))
                 throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
 
-            accessToken = string.IsNullOrEmpty(accessToken)
-                ? GithubHelper.ReadDefaultSecurityToken()
-                : accessToken;
-
-            await Convert(
-                TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken),
-                accessToken, folder, outputFile, zonePivot, debug);
+            accessToken = string.IsNullOrEmpty(accessToken) ? GithubHelper.ReadDefaultSecurityToken() : accessToken;
+            await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken), folder, outputFile, zonePivot, options);
         }
 
-        public static async Task ConvertFromFolderAsync(string learnFolder, string outputFile, string zonePivot = null, bool debug = false)
+        public static async Task ConvertFromFolderAsync(string learnFolder, string outputFile, string zonePivot = null, DocumentOptions options = null)
         {
             if (string.IsNullOrWhiteSpace(learnFolder))
                 throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
@@ -51,15 +46,14 @@ namespace LearnDocUtils
             if (!Directory.Exists(learnFolder))
                 throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
 
-            await Convert(
-                TripleCrownGitHubService.CreateLocal(learnFolder), null, learnFolder, outputFile, zonePivot, debug);
+            await Convert(TripleCrownGitHubService.CreateLocal(learnFolder), learnFolder, outputFile, zonePivot, options);
         }
 
         private static async Task Convert(ITripleCrownGitHubService tcService,
-            string accessToken, string moduleFolder, string docxFile,
-            string zonePivot, bool debug)
+            string moduleFolder, string docxFile,
+            string zonePivot, DocumentOptions options)
         {
-            var rootTemp = debug ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
+            var rootTemp = options?.Debug == true ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
             var tempFolder = Path.Combine(rootTemp, Path.GetRandomFileName());
             while (Directory.Exists(tempFolder))
             {
@@ -67,7 +61,9 @@ namespace LearnDocUtils
             }
 
             // Download the module
-            var (module, markdownFile) = await new LearnUtilities().DownloadModuleAsync(tcService, accessToken, moduleFolder, tempFolder);
+            var (module, markdownFile) = await new LearnUtilities().DownloadModuleAsync(
+                    tcService, moduleFolder, tempFolder,
+                    options?.EmbedNotebookContent == true);
 
             try
             {
@@ -76,7 +72,7 @@ namespace LearnDocUtils
             }
             finally
             {
-                if (!debug)
+                if (options is {Debug: false})
                 {
                     Directory.Delete(tempFolder, true);
                 }

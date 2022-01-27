@@ -13,6 +13,7 @@ namespace ConvertLearnToDocWeb.Models
         [RegularExpression("^(/[\\w-]+)+/*$", ErrorMessage = "Please specify the folder leading to the module index.yml.")]
         public string GithubFolder { get; set; }
         public string ZonePivot { get; set; }
+        public bool EmbedNotebookData { get; set; }
 
         // Doc to learn
         public IFormFile WordDoc { get; set; }

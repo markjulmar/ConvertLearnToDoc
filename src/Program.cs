@@ -25,20 +25,20 @@ namespace ConvertLearnToDoc
                 if (options.InputFileOrFolder!.StartsWith("http"))
                 {
                     await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
-                        options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, options.Debug);
+                        options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, new DocumentOptions { Debug = options.Debug, EmbedNotebookContent = options.ConvertNotebooks});
                 }
 
                 // Input is a repo + folder + branch
                 else if (!string.IsNullOrEmpty(options.GitHubRepo))
                 {
                     await LearnToDocx.ConvertFromRepoAsync(options.GitHubRepo, options.GitHubBranch,
-                        options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, options.Debug);
+                        options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, new DocumentOptions { Debug = options.Debug, EmbedNotebookContent = options.ConvertNotebooks });
 
                 }
                 // Input is a local folder containing a Learn module
                 else if (Directory.Exists(options.InputFileOrFolder))
                 {
-                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, options.Debug);
+                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, new DocumentOptions { Debug = options.Debug, EmbedNotebookContent = options.ConvertNotebooks });
                 }
                 // Input is a docx file
                 else

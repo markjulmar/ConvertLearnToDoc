@@ -68,7 +68,7 @@ namespace ConvertLearnToDocWeb.Controllers
             {
                 logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder}: outputFile={outputFile})");
                 await LearnToDocx.ConvertFromRepoAsync(repo, branch, folder, outputFile, viewModel.ZonePivot,
-                    configuration.GetValue<string>("GitHub:Token"));
+                    configuration.GetValue<string>("GitHub:Token"), new DocumentOptions { EmbedNotebookContent = viewModel.EmbedNotebookData });
             }
             catch (Exception ex)
             {

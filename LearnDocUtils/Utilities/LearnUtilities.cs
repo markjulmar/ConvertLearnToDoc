@@ -19,8 +19,7 @@ namespace LearnDocUtils
         public const string AbsolutePathMarker = "_fqurl_";
 
         public async Task<(TripleCrownModule module, string markdownFile)> DownloadModuleAsync(
-            ITripleCrownGitHubService tcService, string token,
-            string learnFolder, string outputFolder)
+            ITripleCrownGitHubService tcService, string learnFolder, string outputFolder, bool embedNotebooks)
         {
             if (string.IsNullOrEmpty(outputFolder))
                 throw new ArgumentException($"'{nameof(outputFolder)}' cannot be null or empty.", nameof(outputFolder));
@@ -41,17 +40,28 @@ namespace LearnDocUtils
             foreach (var unit in module.Units)
             {
                 await tempFile.WriteLineAsync($"# {unit.Title}");
-                var text = await tcService.ReadContentForUnitAsync(unit);
-                if (text != null)
+                var mdText = await tcService.ReadContentForUnitAsync(unit);
+                if (mdText != null)
                 {
-                    text = await DownloadAllImagesForUnit(unit.GetContentFilename(), text, tcService, learnFolder, outputFolder);
-                    await tempFile.WriteLineAsync(text);
+                    mdText = await DownloadAllImagesForUnit(unit.GetContentFilename(), mdText, tcService, learnFolder, outputFolder);
+                    await tempFile.WriteLineAsync(mdText);
+                    await tempFile.WriteLineAsync();
+                }
+
+                if (!string.IsNullOrEmpty(unit.Notebook) && embedNotebooks)
+                {
+                    string url = DetermineNotebookUrl(tcService, module.Url, unit.Notebook);
+                    var nbText = await NotebookConverter.Convert(url);
+
+                    // Images in notebooks are always relative to the YAML.
+                    nbText = await DownloadAllImagesForUnit("", nbText, tcService, learnFolder, outputFolder);
+                    await tempFile.WriteLineAsync(nbText);
                     await tempFile.WriteLineAsync();
                 }
 
                 if (unit.Quiz != null)
                 {
-                    if (text == null)
+                    if (!string.IsNullOrEmpty(unit.Quiz.Title))
                         await tempFile.WriteLineAsync($"## {unit.Quiz.Title}\r\n");
 
                     foreach (var question in unit.Quiz.Questions)
@@ -70,6 +80,21 @@ namespace LearnDocUtils
             }
 
             return (module, markdownFile);
+        }
+
+        private static string DetermineNotebookUrl(ITripleCrownGitHubService service, string moduleUrl, string unitNotebook)
+        {
+            if (unitNotebook.ToLower().StartsWith("http"))
+                return unitNotebook;
+
+            if (!service.RootPath.ToLower().StartsWith("http")) 
+                return Path.Combine(service.RootPath, unitNotebook);
+            
+            string url = moduleUrl;
+            if (!moduleUrl.EndsWith('/'))
+                url += '/';
+            url += unitNotebook;
+            return url;
         }
 
         private readonly Lazy<MarkdownPipeline> markdownPipeline = new(CreatePipeline);

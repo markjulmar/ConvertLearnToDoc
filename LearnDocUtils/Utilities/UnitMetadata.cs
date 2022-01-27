@@ -13,7 +13,7 @@ namespace LearnDocUtils
         public string Notebook { get; set; }
         public string Interactivity { get; set; }
 
-        public bool HasContent => Lines.Count > 0 && Lines.Any(s => !string.IsNullOrWhiteSpace(s));
+        public bool HasContent => string.IsNullOrEmpty(Notebook) && Lines.Count > 0 && Lines.Any(s => !string.IsNullOrWhiteSpace(s));
 
         public UnitMetadata(string title)
         {
