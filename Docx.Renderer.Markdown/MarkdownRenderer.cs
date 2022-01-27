@@ -10,11 +10,17 @@ namespace Docx.Renderer.Markdown
 {
     public class MarkdownRenderer : IMarkdownRenderer
     {
+        private readonly MarkdownFormatting options;
         private readonly List<IMarkdownObjectRenderer> renderers;
 
-        public MarkdownRenderer()
+        public MarkdownRenderer() : this (null)
         {
-            renderers = new List<IMarkdownObjectRenderer>()
+        }
+
+        public MarkdownRenderer(MarkdownFormatting options)
+        {
+            this.options = options;
+            renderers = new List<IMarkdownObjectRenderer>
             {
                 new ParagraphRenderer(),
                 new TableRenderer(),
@@ -54,7 +60,7 @@ namespace Docx.Renderer.Markdown
             renderer.WriteContainer(markdownDocument, null, wordDocument.Blocks, null);
 
             using var writer = new StreamWriter(markdownFile);
-            markdownDocument.Write(writer);
+            markdownDocument.Write(writer, options);
         }
 
         public IMarkdownObjectRenderer FindRenderer(object element)

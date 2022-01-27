@@ -27,8 +27,5 @@ namespace ConvertLearnToDoc
         
         [Option('p', "Pivot", HelpText = "Zone pivot to render to doc")]
         public string ZonePivot { get; set; }
-        
-        [Option('l', "Legacy", HelpText = "Use Legacy (pandoc) renderer")]
-        public bool UsePandoc { get; set; }
     }
 }

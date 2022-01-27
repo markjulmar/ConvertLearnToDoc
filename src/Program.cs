@@ -17,8 +17,7 @@ namespace ConvertLearnToDoc
             if (options == null)
                 return; // bad arguments or help.
 
-            Console.WriteLine("Learn/Docx converter");
-            Console.WriteLine($"Converting {options.InputFileOrFolder} to {options.OutputFileOrFolder}");
+            Console.WriteLine($"Learn/Docx: converting {options.InputFileOrFolder} to {options.OutputFileOrFolder}");
 
             try
             {
@@ -26,33 +25,20 @@ namespace ConvertLearnToDoc
                 if (options.InputFileOrFolder.StartsWith("http"))
                 {
                     await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
-                        options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, options.Debug,
-                        options.UsePandoc
-                            ? MarkdownConverterFactory.WithPandoc
-                            : MarkdownConverterFactory.WithDxPlus);
+                        options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, options.Debug);
                 }
 
                 // Input is a repo + folder + branch
                 else if (!string.IsNullOrEmpty(options.GitHubRepo))
                 {
                     await LearnToDocx.ConvertFromRepoAsync(options.GitHubRepo, options.GitHubBranch,
-                        options.InputFileOrFolder,
-                        options.OutputFileOrFolder, options.ZonePivot,
-                        options.AccessToken, options.Debug,
-                        options.UsePandoc
-                            ? MarkdownConverterFactory.WithPandoc
-                            : MarkdownConverterFactory.WithDxPlus);
+                        options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, options.Debug);
 
                 }
                 // Input is a local folder containing a Learn module
                 else if (Directory.Exists(options.InputFileOrFolder))
                 {
-                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.ZonePivot,
-                        options.OutputFileOrFolder, options.Debug,
-                        options.UsePandoc
-                            ? MarkdownConverterFactory.WithPandoc
-                            : MarkdownConverterFactory.WithDxPlus);
+                    await LearnToDocx.ConvertFromFolderAsync(options.InputFileOrFolder, options.OutputFileOrFolder, options.ZonePivot, options.Debug);
                 }
                 // Input is a docx file
                 else
@@ -60,10 +46,7 @@ namespace ConvertLearnToDoc
                     if (string.IsNullOrEmpty(options.OutputFileOrFolder))
                         options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
 
-                    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder,
-                        options.Debug, options.UsePandoc
-                            ? DocxConverterFactory.WithPandoc
-                            : DocxConverterFactory.WithDxPlus);
+                    await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, new MarkdownOptions { Debug = options.Debug });
 
                     if (options.ZipOutput)
                     {
