@@ -307,12 +307,21 @@ namespace LearnDocUtils
             if (title.Trim().ToLower() is not ("knowledge check" or "check your knowledge"))
                 return string.Empty;
 
+            // If we have an H2, then make that the title.
             // Find the start of the quiz. We're going to assume it's the first H3.
             int firstLine = -1;
+            int titleLine = -1;
             for (int i = 0; i < lines.Count; i++)
             {
                 string check = lines[i].Trim().ToLower();
-                if (check.StartsWith("### "))
+
+                if (check.StartsWith("## "))
+                {
+                    title = lines[i][2..].Trim();
+                    titleLine = i;
+                }
+
+                else if (check.StartsWith("### "))
                 {
                     firstLine = i;
                     break;
@@ -325,7 +334,9 @@ namespace LearnDocUtils
 
             // Get the lines specific to the quiz and remove them from content.
             var quiz = new List<string>(lines.GetRange(firstLine, lines.Count - firstLine));
-            lines.RemoveRange(firstLine, lines.Count - firstLine);
+
+            // Make sure to remove the title since we're pulling it into the quiz.
+            lines.RemoveRange(titleLine >= 0 ? titleLine : firstLine, lines.Count - (titleLine >= 0 ? titleLine : firstLine));
 
             // Now build the quiz.
             var sb = new StringBuilder();
@@ -342,8 +353,14 @@ namespace LearnDocUtils
                 }
                 else
                 {
-                    var isCorrect = line.Contains("[x]") || line.Contains("☒");
-                    sb.AppendLine($"    - content: \"{line.Replace("☒", "")[(line.IndexOf(']') + 1)..].TrimStart()}\"");
+                    var isCorrect = line.Contains("❎");
+
+                    var content = line.Replace("❎", "")
+                        .Replace("⬜", "")
+                        .TrimStart(' ', '-')
+                        .TrimEnd();
+
+                    sb.AppendLine($"    - content: \"{content}\"");
                     sb.AppendLine("      explanation: \"\"");
                     sb.AppendLine($"      isCorrect: {isCorrect.ToString().ToLower()}");
                 }

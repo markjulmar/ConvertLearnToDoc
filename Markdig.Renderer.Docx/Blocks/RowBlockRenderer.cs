@@ -19,14 +19,21 @@ namespace Markdig.Renderer.Docx.Blocks
                 var row = rows[rowIndex];
                 for (int colIndex = 0; colIndex < row.Count; colIndex++)
                 {
-                    var cell = (NestedColumnBlock) row[colIndex];
                     var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
-
                     var cellParagraph = documentCell.Paragraphs.First();
-                    foreach (var child in cell)
+
+                    if (row[colIndex] is NestedColumnBlock cell)
                     {
+                        foreach (var child in cell)
+                        {
+                            Write(child, owner, document, cellParagraph);
+                            cellParagraph = documentCell.AddParagraph();
+                        }
+                    }
+                    else
+                    {
+                        var child = row[colIndex];
                         Write(child, owner, document, cellParagraph);
-                        cellParagraph = documentCell.AddParagraph();
                     }
                 }
             }

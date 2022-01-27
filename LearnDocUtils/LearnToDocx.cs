@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using MSLearnRepos;
 using System.IO;
 using System.Linq;
@@ -141,30 +142,36 @@ namespace LearnDocUtils
 
             foreach (var unit in moduleData.Units)
             {
+                var unitHeaderParagraph = FindParagraphByTitle(headers, moduleData.Units, unit);
+                if (unitHeaderParagraph == null) continue;
+
                 if (unit.UsesSandbox)
                 {
-                    string title = unit.Title;
-                    var p = headers.SingleOrDefault(p => p.Text == title);
                     string commentText = "sandbox";
                     if (!string.IsNullOrEmpty(unit.InteractivityType))
                         commentText += $" interactivity:{unit.InteractivityType}";
                     if (!string.IsNullOrEmpty(unit.Notebook))
                         commentText += $" notebook:{unit.Notebook.Trim()}";
-                    p?.AttachComment(document.CreateComment(user, commentText));
+                    unitHeaderParagraph.AttachComment(document.CreateComment(user, commentText));
                 }
                 else if (unit.LabId != null)
                 {
-                    string title = unit.Title;
-                    var p = headers.SingleOrDefault(p => p.Text == title);
-                    p?.AttachComment(document.CreateComment(user, $"labId:{unit.LabId}"));
+                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"labId:{unit.LabId}"));
                 }
                 else if (!string.IsNullOrEmpty(unit.InteractivityType))
                 {
-                    string title = unit.Title;
-                    var p = headers.SingleOrDefault(p => p.Text == title);
-                    p?.AttachComment(document.CreateComment(user, $"{unit.InteractivityType}"));
+                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"{unit.InteractivityType}"));
                 }
             }
+        }
+
+        private static Paragraph FindParagraphByTitle(IEnumerable<Paragraph> headers, IEnumerable<TripleCrownUnit> moduleDataUnits, TripleCrownUnit unit)
+        {
+            // Multiple units can have the same title .. not a good practice, but it happens.
+            // Find the specific title we are looking for by index.
+            string title = unit.Title;
+            int pos = moduleDataUnits.Where(u => u.Title == title).ToList().IndexOf(unit);
+            return headers.Where(p => p.Text == title).Skip(pos).FirstOrDefault();
         }
 
         private static void SetProperty(IDocument document, DocumentPropertyName name, string value)

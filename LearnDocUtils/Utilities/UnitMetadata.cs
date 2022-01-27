@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace LearnDocUtils
@@ -12,7 +13,7 @@ namespace LearnDocUtils
         public string Notebook { get; set; }
         public string Interactivity { get; set; }
 
-        public bool HasContent => Lines.Count > 0;
+        public bool HasContent => Lines.Count > 0 && Lines.Any(s => !string.IsNullOrWhiteSpace(s));
 
         public UnitMetadata(string title)
         {
