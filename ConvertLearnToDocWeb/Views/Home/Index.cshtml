@@ -20,19 +20,12 @@
                 <form asp-action="convertLearnToDoc">
                     <div class="form-row">
                         <div class="col">
-                            <div class="form-group pb-2">
+                            <div class="form-group">
                                 <label for="moduleUrl">MS Learn module URL</label>
-                                <div class="row">
-                                    <div class="col-10">
-                                        <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="Public MS Learn Module URL">
-                                    </div>
-                                    <div class="col-2">
-                                        <a href="https://docs.microsoft.com/learn/browse/?resource_type=module" target="_blank">
-                                            <input type="button" class="btn btn-primary" value="Browse Learn Catalog"/>
-                                        </a>
-                                    </div>
-                                </div>
-                                <small id="urlHelp" class="form-text text-muted">ex: https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts</small>
+                                <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts">
+                                <small id="urlHelp" class="form-text text-muted">
+                                    <a href="https://docs.microsoft.com/learn/browse/?resource_type=module" target="_blank">Browse all Learn modules</a>
+                                </small>
                             </div>
                             <b>OR</b>
                             <div class="form-group pt-2">
