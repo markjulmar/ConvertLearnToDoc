@@ -6,6 +6,7 @@ using GenMarkdown.DocFx.Extensions;
 using Julmar.GenMarkdown;
 using DXText = DXPlus.Text;
 using Image = DXPlus.Image;
+using Paragraph = DXPlus.Paragraph;
 using Text = Julmar.GenMarkdown.Text;
 
 namespace Docx.Renderer.Markdown.Renderers
@@ -101,7 +102,15 @@ namespace Docx.Renderer.Markdown.Renderers
             }
             else
             {
-                paragraph.Add(new Text(text));
+                var t = typeof(T).Name switch
+                {
+                    nameof(BoldText) => new BoldText(text),
+                    nameof(ItalicText) => new ItalicText(text),
+                    nameof(BoldItalicText) => new BoldItalicText(text),
+                    nameof(InlineCode) => new InlineCode(text),
+                    _ => new Text(text)
+                };
+                paragraph.Add(t);
             }
         }
 
@@ -181,9 +190,12 @@ namespace Docx.Renderer.Markdown.Renderers
             bool border = p.BorderColor != null;
             string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\', '/') + suffix;
 
-            if (border || d.IsDecorative)
+            var paragraph = d.Parent.Parent as Paragraph;
+            bool isLightbox = paragraph?.Comments.Any(c => c.Comment.Paragraphs.Any(p => p.Text == "lightbox")) == true;
+
+            if (border || d.IsDecorative || isLightbox)
             {
-                return new DocfxImage(d.Description, imagePath) { Border = border, LocScope = d.IsDecorative ? "noloc" : null };
+                return new DocfxImage(d.Description, imagePath) { Border = border, LocScope = d.IsDecorative ? "noloc" : null, Lightbox = imagePath+"#lightbox" };
             }
 
             return new Julmar.GenMarkdown.Image(d.Description, imagePath);

@@ -15,7 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Docx.Renderer.Markdown", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenMarkdown.DocFx.Extensions", "GenMarkdown.DocFx.Extensions\GenMarkdown.DocFx.Extensions.csproj", "{9F293264-0EB2-4E23-8959-08728359DEDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrabAllLearnModules", "GrabAllLearnModules\GrabAllLearnModules.csproj", "{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrabAllLearnModules", "GrabAllLearnModules\GrabAllLearnModules.csproj", "{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{217F168B-D681-4A01-AA3D-752EE599C31B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +58,14 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{13787258-BA5C-4104-83FE-DEC2F633E85E} = {217F168B-D681-4A01-AA3D-752EE599C31B}
+		{448F0B25-0590-4626-B96F-0F8478403DE7} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
+		{911F9FB9-3308-476F-BA71-E3A1BD63715D} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
+		{57AB7888-5053-481F-B2E6-0C81BAB7FBF8} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
+		{9F293264-0EB2-4E23-8959-08728359DEDE} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
+		{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF} = {217F168B-D681-4A01-AA3D-752EE599C31B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6BABCC68-20CA-4717-9E38-F209B49935BD}
