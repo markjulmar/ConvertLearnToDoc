@@ -42,7 +42,7 @@ namespace LearnDocUtils
             {
                 await tempFile.WriteLineAsync($"# {unit.Title}");
                 var mdText = await tcService.ReadContentForUnitAsync(unit);
-                if (mdText != null)
+                if (!string.IsNullOrEmpty(mdText))
                 {
                     mdText = await DownloadAllImagesForUnit(unit.GetContentFilename(), mdText, tcService, learnFolder, outputFolder);
                     await tempFile.WriteLineAsync(mdText);

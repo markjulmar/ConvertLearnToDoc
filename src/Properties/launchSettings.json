@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/onedrive/desktop/out.docx -o /users/mark/onedrive/desktop/get-data"
+      "commandLineArgs": "-i  C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\azure\\aks-governance-azure-policy -o /users/mark/onedrive/desktop/out.docx"
     }
   }
 }
