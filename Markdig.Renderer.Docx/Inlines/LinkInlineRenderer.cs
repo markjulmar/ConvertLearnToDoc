@@ -1,7 +1,6 @@
 using System;
-using System.Drawing;
+using System.Linq;
 using DXPlus;
-using Markdig.Renderer.Docx.Blocks;
 using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 
@@ -11,6 +10,18 @@ namespace Markdig.Renderer.Docx.Inlines
     {
         public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, LinkInline link)
         {
+            bool isLightboxImage = false;
+            var quoteBlockOwner = link.Parent?.ParentBlock?.Parent as QuoteSectionNoteBlock;
+
+            // Look for a lightbox image
+            // [![{alt-text}](image-url)](image-url#lightbox)
+            if (link.FirstOrDefault() is LinkInline li)
+            {
+                // Render that as the image
+                link = li;
+                isLightboxImage = true;
+            }
+
             var url = link.GetDynamicUrl?.Invoke() ?? link.Url;
 
             string title = link.Title;
@@ -23,14 +34,14 @@ namespace Markdig.Renderer.Docx.Inlines
             if (link.IsImage)
             {
                 bool addBorder = false;
-                if (link.Parent?.ParentBlock?.Parent is QuoteSectionNoteBlock qsnr)
+                if (quoteBlockOwner != null)
                 {
-                    if (qsnr.SectionAttributeString != null
-                        && qsnr.SectionAttributeString.Contains("mx-imgBorder"))
+                    if (quoteBlockOwner.SectionAttributeString != null
+                        && quoteBlockOwner.SectionAttributeString.Contains("mx-imgBorder"))
                         addBorder = true;
                 }
 
-                owner.InsertImage(currentParagraph, url, title, addBorder);
+                owner.InsertImage(currentParagraph, url, title, addBorder, isLightboxImage);
             }
             else
             {

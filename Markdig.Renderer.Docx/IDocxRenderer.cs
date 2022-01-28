@@ -10,7 +10,7 @@ namespace Markdig.Renderer.Docx
         IList<MarkdownObject> OutOfPlaceRendered { get; }
         string ZonePivot { get; }
         IDocxObjectRenderer FindRenderer(MarkdownObject obj);
-        Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder);
+        Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder, bool isLightbox);
         Stream GetEmbeddedResource(string name);
     }
 }

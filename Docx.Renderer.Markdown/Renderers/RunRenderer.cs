@@ -38,6 +38,7 @@ namespace Docx.Renderer.Markdown.Renderers
             {
                 switch (e)
                 {
+                    // Simple text
                     case DXText t:
                     {
                         var p = (Julmar.GenMarkdown.Paragraph) blockOwner;
@@ -46,23 +47,18 @@ namespace Docx.Renderer.Markdown.Renderers
                         {
                             p.Add(Text.Link(hl.Text, hl.Uri.ToString()));
                         }
-                        else
+                        else if (t.Value.Length > 0)
                         {
-                            if (tf.KbdTag)
-                                p.Add($"<kbd>{t.Value}</kbd>");
-                            else if (tf.Bold && tf.Italic)
-                                p.Add($"**_{t.Value}_**");
-                            else if (tf.Bold)
-                                p.Add(Text.Bold(t.Value));
-                            else if (tf.Italic)
-                                p.Add(Text.Italic(t.Value));
-                            else if (tf.Monospace)
-                                p.Add(Text.Code(t.Value));
-                            else
-                                p.Add(t.Value);
+                            if (tf.KbdTag) AppendText(p, t.Value, "<kbd>", "</kbd>");
+                            else if (tf.Bold && tf.Italic) AppendText<BoldItalicText>(p, t.Value);
+                            else if (tf.Bold) AppendText<BoldText>(p, t.Value);
+                            else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
+                            else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
+                            else p.Add(t.Value);
                         }
                         break;
                     }
+                    // Some kind of line break
                     case Break b:
                     {
                         //var p = (Julmar.GenMarkdown.Paragraph)blockOwner;
@@ -70,6 +66,7 @@ namespace Docx.Renderer.Markdown.Renderers
                         //    p.Add(Text.LineBreak);
                         break;
                     }
+                    // Picture/image/video
                     case Drawing d:
                     {
                         var block = ProcessDrawing(renderer, d);
@@ -96,6 +93,32 @@ namespace Docx.Renderer.Markdown.Renderers
             }
         }
 
+        private static void AppendText<T>(Julmar.GenMarkdown.Paragraph paragraph, string text) where T : Text
+        {
+            if (paragraph.LastOrDefault() is T li)
+            {
+                li.Text += text;
+            }
+            else
+            {
+                paragraph.Add(new Text(text));
+            }
+        }
+
+        private static void AppendText(Julmar.GenMarkdown.Paragraph paragraph, string text, string prefix, string suffix)
+        {
+            // Check to see if the _previous_ text has the same emphasis. If so, we'll add this.
+            if (paragraph.LastOrDefault()?.Text.EndsWith(suffix) == true)
+            {
+                var lastItem = paragraph.Last();
+                lastItem.Text += text;
+            }
+            else
+            {
+                paragraph.Add($"{prefix}{text}{suffix}");
+            }
+        }
+
         private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d)
         {
             var p = d.Picture;
@@ -111,7 +134,7 @@ namespace Docx.Renderer.Markdown.Renderers
                     videoUrl = p.Hyperlink?.OriginalString;
                 }
 
-                return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO]({videoUrl})") : null;
+                return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO {videoUrl}]") : null;
             }
 
             // Get the filename for the image.

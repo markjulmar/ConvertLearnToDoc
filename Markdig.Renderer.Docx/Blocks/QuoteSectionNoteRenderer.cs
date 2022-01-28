@@ -1,5 +1,7 @@
 ﻿using System;
 using DXPlus;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 
 namespace Markdig.Renderer.Docx.Blocks
@@ -20,8 +22,6 @@ namespace Markdig.Renderer.Docx.Blocks
             else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
             {
                 string videoLink = block.VideoLink;
-                // currentParagraph.Append($"{{video: {videoLink}}}",
-                //     new Formatting { Highlight = Highlight.Magenta, Color = Color.White });
 
                 using var placeholder = owner.GetEmbeddedResource("video-placeholder.png");
                 currentParagraph.Properties.Alignment = Alignment.Center;

@@ -36,7 +36,8 @@ namespace Docx.Renderer.Markdown.Renderers
             {"tip", "TIP"},
             {"warning", "WARNING"},
             {"error", "ERROR"},
-            {"caution","CAUTION"}
+            { "important", "IMPORTANT" },
+            { "caution","CAUTION"}
         };
         
         protected override void Render(IMarkdownRenderer renderer, 

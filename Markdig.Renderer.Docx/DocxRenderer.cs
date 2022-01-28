@@ -22,6 +22,7 @@ namespace Markdig.Renderer.Docx
         private readonly List<IDocxObjectRenderer> renderers;
         private readonly string moduleFolder;
         private readonly Action<string> logger;
+        private MarkdownDocument markdownDocument;
 
         /// <summary>
         /// This holds elements where previous inline renderers had to reach into the stream
@@ -76,8 +77,10 @@ namespace Markdig.Renderer.Docx
             return renderer;
         }
 
-        public void Render(MarkdownDocument markdownDocument)
+        public void Render(MarkdownDocument mdDoc)
         {
+            this.markdownDocument = mdDoc ?? throw new ArgumentNullException(nameof(mdDoc));
+
             for (var index = 0; index < markdownDocument.Count; index++)
             {
                 var block = markdownDocument[index];
@@ -89,7 +92,7 @@ namespace Markdig.Renderer.Docx
                     do
                     {
                         rows.Add((RowBlock) block);
-                        block = markdownDocument[++index];
+                        block = mdDoc[++index];
                     } while (block is RowBlock);
 
                     new RowBlockRenderer().Write(this, document, rows);
@@ -116,7 +119,7 @@ namespace Markdig.Renderer.Docx
             }
         }
 
-        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder)
+        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder, bool isLightbox)
         {
             string path = ResolvePath(moduleFolder, imageSource);
             if (File.Exists(path))
@@ -139,6 +142,18 @@ namespace Markdig.Renderer.Docx
                 drawing.Picture.Description = imageSource;
 
                 currentParagraph.Append(drawing);
+
+                if (isLightbox)
+                {
+                    string user = Environment.UserName;
+                    if (string.IsNullOrEmpty(user))
+                        user = "Office User";
+
+                    currentParagraph.AttachComment(
+                        document.CreateComment(user, "lightbox"), 
+                        currentParagraph.Runs.Last());
+                }
+
                 return drawing;
             }
 

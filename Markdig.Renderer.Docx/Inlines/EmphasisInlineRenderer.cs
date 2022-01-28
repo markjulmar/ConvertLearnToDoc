@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using DXPlus;
-using Markdig.Renderer.Docx.Blocks;
 using Markdig.Syntax.Inlines;
 
 namespace Markdig.Renderer.Docx.Inlines

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/onedrive/desktop/get-data.docx -o /users/mark/onedrive/desktop/get-data"
+      "commandLineArgs": "-d -i C:\\Users\\mark\\Git\\LearnRepos\\learn-bizapps-pr\\learn-bizapps-pr\\power-bi\\get-data -o /users/mark/onedrive/desktop/out.docx"
     }
   }
 }

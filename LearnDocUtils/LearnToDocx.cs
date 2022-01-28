@@ -68,7 +68,7 @@ namespace LearnDocUtils
             try
             {
                 // Convert the file.
-                await ConvertMarkdownToDocx(module, markdownFile, docxFile, zonePivot);
+                await ConvertMarkdownToDocx(module, markdownFile, docxFile, zonePivot, options?.Debug==true);
             }
             finally
             {
@@ -79,12 +79,8 @@ namespace LearnDocUtils
             }
         }
 
-        private static async Task ConvertMarkdownToDocx(TripleCrownModule moduleData, string markdownFile, string docxFile, string zonePivot)
+        private static async Task ConvertMarkdownToDocx(TripleCrownModule moduleData, string markdownFile, string docxFile, string zonePivot, bool dumpMarkdownDocument)
         {
-            using var document = Document.Create(docxFile);
-            AddMetadata(moduleData, document);
-            WriteTitle(moduleData, document);
-
             var context = new MarkdownContext();
             var pipelineBuilder = new MarkdownPipelineBuilder();
             var pipeline = pipelineBuilder
@@ -114,12 +110,28 @@ namespace LearnDocUtils
                 .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
                 .Build();
 
+            // Parse the Markdown tree
             string markdownText = await File.ReadAllTextAsync(markdownFile);
             var markdownDocument = Markdown.Parse(markdownText, pipeline);
 
+            // Dump the markdown contents.
+            if (dumpMarkdownDocument)
+            {
+                var text = MarkdigExtensions.Dump(markdownDocument);
+                var folder = Path.GetDirectoryName(docxFile) ?? "";
+                await File.WriteAllTextAsync(Path.Combine(folder, "markdown-tree.g.txt"), text);
+            }
+
+            // Create the Word document
+            using var document = Document.Create(docxFile);
+            AddMetadata(moduleData, document);
+            WriteTitle(moduleData, document);
+
+            // Render the markdown tree into the Word document.
             var docWriter = new DocxObjectRenderer(document, Path.GetDirectoryName(markdownFile), zonePivot);
             docWriter.Render(markdownDocument);
 
+            // Add Learn-specific unit metadata to the document - lab info, etc.
             AddUnitMetadata(moduleData, document);
 
             document.Save();
