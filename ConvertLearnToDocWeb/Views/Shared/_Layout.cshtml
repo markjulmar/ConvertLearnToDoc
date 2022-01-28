@@ -9,16 +9,22 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark mb-3">
+            <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MS Learn conversions</a>
-                <small>V @Program.GetLinkerTime().ToString("yyyyMMdd.HHmmss")</small>
+                <small class="text-light">V @Program.GetLinkerTime().ToString("yyyyMMdd.HHmmss")</small>
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container-fluid">
         <main role="main" class="pb-3">
-            @RenderBody()
+            <div class="row">
+                <div class="col-1"></div>
+                <div class="col-8">
+                    @RenderBody()
+                </div>
+                <div class="col-3"></div>
+            </div>
         </main>
     </div>
 

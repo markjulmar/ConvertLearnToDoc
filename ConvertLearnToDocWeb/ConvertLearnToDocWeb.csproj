@@ -22,7 +22,7 @@
           <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         </PropertyGroup>
 		-->
-		<Exec Command="npm ci"      Condition="$(RestorePackagesWithLockFile) == 'true'" />
+		<Exec Command="npm ci" Condition="$(RestorePackagesWithLockFile) == 'true'" />
 		<Exec Command="npm install" Condition="$(RestorePackagesWithLockFile) != 'true'" />
 
 		<!-- Write the stamp file, so incremental builds work -->
@@ -39,6 +39,8 @@
 
 	<ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
+    <PackageReference Include="Julmar.MSLearnCatalogAPI" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.13" />
   </ItemGroup>
 
   <ItemGroup>

@@ -100,6 +100,7 @@ namespace LearnDocUtils
                     { "unit-uid", baseFn },
                     { "title", unitMetadata.Title },
                     { "duration", EstimateDuration(unitMetadata.Lines, quizText).ToString() },
+                    { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
                     { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
                     { "msproduct", metadata.MsProduct ?? "learning-azure" },
                     { "msauthor", metadata.MsAuthor ?? "TBD" },
@@ -128,11 +129,11 @@ namespace LearnDocUtils
             {
                 { "module-uid", moduleUid },
                 { "title", metadata.Title ?? "TBD" },
-                { "summary", metadata.Summary ?? "TBD" },
+                { "summary", FormatMultiLineYaml(metadata.Summary) ?? "TBD" },
                 { "seotitle", metadata.SEOTitle ?? "TBD" },
                 { "seodescription", metadata.SEODescription ?? "TBD" },
-                { "abstract", metadata.Abstract ?? "TBD" },
-                { "prerequisites", metadata.Prerequisites ?? "TBD" },
+                { "abstract", FormatMultiLineYaml(metadata.Abstract) ?? "TBD" },
+                { "prerequisites", FormatMultiLineYaml(metadata.Prerequisites) ?? "TBD" },
                 { "iconUrl", metadata.IconUrl ?? "/learn/achievements/generic-badge.svg" },
                 { "saveDate", metadata.LastModified.ToString("MM/dd/yyyy") }, // 09/24/2018
                 { "mstopic", metadata.MsTopic ?? "interactive-tutorial" },
@@ -148,6 +149,11 @@ namespace LearnDocUtils
 
             await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"),
                 PopulateTemplate("index.yml", moduleValues));
+        }
+
+        private static string FormatMultiLineYaml(string text)
+        {
+            return text.Contains('\n') ? "|" + Environment.NewLine + text : text;
         }
 
         private static string PostProcessMarkdown(string text)

@@ -1,5 +1,4 @@
 using DXPlus;
-using Markdig.Renderer.Docx.Blocks;
 using Markdig.Syntax.Inlines;
 
 namespace Markdig.Renderer.Docx.Inlines
@@ -8,8 +7,15 @@ namespace Markdig.Renderer.Docx.Inlines
     {
         public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, LineBreakInline inline)
         {
-            //bool hardBreak = inline.IsHard;
-            currentParagraph?.AppendLine();
+            if (inline.IsHard)
+                currentParagraph?.AppendLine();
+            // Soft break - author didn't use word-wrap in the editor and put CRLF
+            // in between lines. Add a space if the paragraph doesn't have one.
+            else
+            {
+                if (currentParagraph != null && !currentParagraph.Text.EndsWith(' '))
+                    currentParagraph.Append(" ");
+            }
         }
     }
 }

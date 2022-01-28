@@ -10,10 +10,8 @@ metadata:
   ms.prod: {msproduct}
 title: {title}
 summary: {summary}
-abstract: |
-{abstract}
-prerequisites: |
-{prerequisites}
+abstract: {abstract}
+prerequisites: {prerequisites}
 iconUrl: {iconUrl}
 levels:
 {levels-list}

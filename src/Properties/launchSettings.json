@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-n -i https://docs.microsoft.com/learn/modules/basic-python-nasa -o /users/mark/downloads/out.docx"
+      "commandLineArgs": "-i /users/mark/onedrive/desktop/get-data.docx -o /users/mark/onedrive/desktop/get-data"
     }
   }
 }

@@ -18,40 +18,59 @@
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertLearnToDoc">
-                    <div class="form-group pb-2">
-                        <label class="form-label" for="moduleUrl">MS Learn module URL</label>
-                        <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="Public MS Learn Module URL">
-                        <small id="urlHelp" class="form-text text-muted">ex: https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts</small>
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="form-group pb-2">
+                                <label for="moduleUrl">MS Learn module URL</label>
+                                <div class="row">
+                                    <div class="col-10">
+                                        <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="Public MS Learn Module URL">
+                                    </div>
+                                    <div class="col-2">
+                                        <a href="https://docs.microsoft.com/learn/browse/?resource_type=module" target="_blank">
+                                            <input type="button" class="btn btn-primary" value="Browse Learn Catalog"/>
+                                        </a>
+                                    </div>
+                                </div>
+                                <small id="urlHelp" class="form-text text-muted">ex: https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts</small>
+                            </div>
+                            <b>OR</b>
+                            <div class="form-group pt-2">
+                                <label class="form-label" for="githubRepo">GitHub repo</label>
+                                <select asp-for="GithubRepo" class="form-control" id="githubRepo">
+                                    <option>learn-pr</option>
+                                    <option>learn-bizapps-pr</option>
+                                    <option>learn-dynamics-pr</option>
+                                    <option>learn-m365-pr</option>
+                                </select>
+                                <label class="form-label" for="githubBranch">Branch</label>
+                                <input asp-for="GithubBranch" type="text" class="form-control" id="githubBranch" placeholder="live">
+                                <label class="form-label" for="githubFolder">Folder</label>
+                                <input asp-for="GithubFolder" type="text" class="form-control" id="githubFolder" aria-describedby="folderHelp" placeholder="MS Learn module folder from root of repo">
+                                <small id="folderHelp" class="form-text text-muted">ex: /learn-pr/wwl-azure/configure-storage-accounts</small>
+                            </div>
+                        </div>
                     </div>
-                    <b>OR</b>
-                    <div class="form-group pt-2">
-                        <label class="form-label" for="githubRepo">GitHub repo</label>
-                        <select asp-for="GithubRepo" class="form-control" id="githubRepo">
-                            <option>learn-pr</option>
-                            <option>learn-bizapps-pr</option>
-                            <option>learn-dynamics-pr</option>
-                            <option>learn-m365-pr</option>
-                        </select>
-                        <label class="form-label" for="githubBranch">Branch</label>
-                        <input asp-for="GithubBranch" type="text" class="form-control" id="githubBranch" placeholder="live">
-                        <label class="form-label" for="githubFolder">Folder</label>
-                        <input asp-for="GithubFolder" type="text" class="form-control" id="githubFolder" aria-describedby="folderHelp" placeholder="MS Learn module folder from root of repo">
-                        <small id="folderHelp" class="form-text text-muted">ex: /learn-pr/wwl-azure/configure-storage-accounts</small>
+                    <div class="form-row">
+                        <div class="col-12">
+                            <hr />
+                            <label><b>Options</b></label>
+
+                            <div class="form-group">
+                                <label class="form-label" for="zonePivot">Zone Pivot (leave blank to render all pivots)</label>
+                                <input asp-for="ZonePivot" class="form-control" id="zonePivot">
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="EmbedNotebookData" id="EmbedNotebookData"/>
+                                <label class="form-check-label" for="EmbedNotebookData">
+                                    Embed any associated Jupyter Notebook content into document
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group pb-2">
-                        <label class="form-label" for="zonePivot">Zone Pivot (leave blank to render all pivots)</label>
-                        <input asp-for="ZonePivot" class="form-control" id="zonePivot">
-                    </div>
-                    
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="EmbedNotebookData" id="EmbedNotebookData"/>
-                        <label class="form-check-label" for="EmbedNotebookData">
-                            Embed any associated Jupyter Notebook content into document
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary mt-2 mb-2">Convert</button>
+                    <button type="submit" class="btn btn-primary mt-4">Convert</button>
                 </form>
             </div>
         </div>
@@ -62,18 +81,23 @@
             <div class="panel-body">
                 <form asp-action="convertDocToLearn" enctype="multipart/form-data">
                     
-                    <div class="form-group pb-2">
-                        <label>Choose a .docx file</label>
-                        <div class="custom-file">
-                            <input type="file" class="form-control-file custom-file-input" id="wordDoc"
-                                   name="wordDoc" aria-describedby="inputGroupFileAddon01">
-                            <label class="custom-file-label" for="wordDoc">Choose file...</label>
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="form-group pb-2">
+                                <label>Choose a .docx file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="form-control-file custom-file-input" id="wordDoc"
+                                           name="wordDoc" aria-describedby="inputGroupFileAddon01">
+                                    <label class="custom-file-label" for="wordDoc">Choose file...</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <fieldset class="row mb-3 pt-3">
-                        <legend class="col-form-label col-sm-2 pt-0"><b>Markdown options</b></legend>
-                        <div class="col-sm-10">
+                    
+                    <div class="form-row">
+                        <div class="col">
+                            <hr/>
+                            <label><b>Markdown options</b></label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" asp-for="UseAsterisksForBullets" id="UseAsterisksForBullets"/>
                                 <label class="form-check-label" for="UseAsterisksForBullets">
@@ -105,8 +129,8 @@
                                 </label>
                             </div>
                         </div>
-                    </fieldset>
-                    <button type="submit" class="btn btn-primary mt-2 mb-2">Convert</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Convert</button>
                 </form>
             </div>
         </div>
