@@ -1,15 +1,21 @@
-name: Build and deploy .NET Core app to Windows WebApp ConvertLearnToDocWeb
+name: Build and deploy ConvertLearnToDocWeb and Function app
 on:
   push:
     branches:
     - main
 env:
+  CONFIGURATION: Release
+  DOTNET_CORE_VERSION: 6.0.x
+
   AZURE_WEBAPP_NAME: ConvertLearnToDocWeb
   AZURE_WEBAPP_PACKAGE_PATH: ConvertLearnToDocWeb/publish
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.ConvertLearnToDocWeb_4514 }}
-  CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 5.0.x
-  WORKING_DIRECTORY: ConvertLearnToDocWeb
+  WEBAPP_WORKING_DIRECTORY: ConvertLearnToDocWeb
+
+  AZURE_FUNCTIONAPP_NAME: ConvertLearnToDocAzureFunctions
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: ConvertLearnToDoc.AzureFunctions/publish
+  FUNCTIONAPP_WORKING_DIRECTORY: ConvertLearnToDoc.AzureFunctions
+
 jobs:
   build-and-deploy:
     runs-on: windows-latest
@@ -20,13 +26,17 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
     - name: Restore
-      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+      run: |
+        dotnet restore "${{ env.WEBAPP_WORKING_DIRECTORY }}"
+        dotnet restore "${{ env.FUNCTIONAPP_WORKING_DIRECTORY }}"
     - name: Build
-      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    - name: Test
-      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
+      run: |
+        dotnet build "${{ env.WEBAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet build "${{ env.FUNCTIONAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
     - name: Publish
-      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+      run: |
+        dotnet publish "${{ env.WEBAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+        dotnet publish "${{ env.FUNCTIONAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
@@ -38,3 +48,9 @@ jobs:
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: Deploy to Azure Function App
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        publish-profile: ${{ secrets.ConvertLearnToDocAzureFunctions_f963 }}
+        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
