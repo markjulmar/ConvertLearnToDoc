@@ -2,9 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ConvertLearnToDocWeb.Models;
-using LearnDocUtils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,6 +17,7 @@ namespace ConvertLearnToDocWeb.Controllers
     public class HomeController : Controller
     {
         const string WordMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
         private readonly ILogger<HomeController> logger;
         private readonly IConfiguration configuration;
 
@@ -39,12 +43,10 @@ namespace ConvertLearnToDocWeb.Controllers
                 viewModel.ZonePivot = null;
 
             string repo, branch, folder;
-            string outputFile = null;
-
             if (!string.IsNullOrEmpty(viewModel.ModuleUrl)
                 && viewModel.ModuleUrl.ToLower().StartsWith("https"))
             {
-                (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(viewModel.ModuleUrl);
+                (repo, branch, folder) = await RetrieveLearnLocationFromUrlAsync(viewModel.ModuleUrl);
             }
             else if (!string.IsNullOrEmpty(viewModel.GithubRepo)
                 && !string.IsNullOrEmpty(viewModel.GithubFolder))
@@ -61,14 +63,30 @@ namespace ConvertLearnToDocWeb.Controllers
                 return View(nameof(Index));
             }
 
-            outputFile = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(
-                folder.Split('/').Last(s => !string.IsNullOrWhiteSpace(s)), "docx"));
-
             try
             {
-                logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder}: outputFile={outputFile})");
-                await LearnToDocx.ConvertFromRepoAsync(repo, branch, folder, outputFile, viewModel.ZonePivot,
-                    configuration.GetValue<string>("GitHub:Token"), new DocumentOptions { EmbedNotebookContent = viewModel.EmbedNotebookData });
+                logger.LogDebug($"LearnToDocX(repo:{repo}, branch:{branch}, folder:{folder})");
+                var result = await CallLearnToDocConverter(new LearnToDocModel
+                {
+                    Repository = repo,
+                    Branch = branch,
+                    Folder = folder,
+                    ZonePivot = viewModel.ZonePivot,
+                    EmbedNotebookData = viewModel.EmbedNotebookData
+                });
+
+                if (result is {IsSuccessStatusCode: true})
+                {
+                    return new FileStreamResult(await result.Content.ReadAsStreamAsync(),
+                        result.Content.Headers.ContentType?.MediaType ?? WordMimeType)
+                    {
+                        FileDownloadName = result.Content.Headers.ContentDisposition?.FileName ?? Path.Combine(Path.GetTempPath(), Path.ChangeExtension(
+                            folder.Split('/').Last(s => !string.IsNullOrWhiteSpace(s)), "docx"))
+
+                };
+                }
+
+                throw new Exception(result.ReasonPhrase);
             }
             catch (Exception ex)
             {
@@ -76,14 +94,50 @@ namespace ConvertLearnToDocWeb.Controllers
                 ModelState.AddModelError(string.Empty, ex.Message);
             }
 
-            if (System.IO.File.Exists(outputFile))
-            {
-                var fs = new FileStream(outputFile, FileMode.Open, FileAccess.Read);
-                Response.RegisterForDispose(new TempFileRemover(logger, fs, outputFile));
-                return File(fs, WordMimeType, Path.GetFileName(outputFile));
-            }
-
             return View(nameof(Index));
+        }
+
+        private static async Task<(string repo, string branch, string folder)> RetrieveLearnLocationFromUrlAsync(string moduleUrl)
+        {
+            using var client = new HttpClient();
+            string html = await client.GetStringAsync(moduleUrl);
+
+            string pageKind = Regex.Match(html, @"<meta name=""page_kind"" content=""(.*?)""\s/>").Groups[1].Value;
+            if (pageKind != "module")
+                throw new ArgumentException("URL does not identify a Learn module - use the module landing page URL", nameof(moduleUrl));
+
+            string lastCommit = Regex.Match(html, @"<meta name=""original_content_git_url"" content=""(.*?)""\s/>").Groups[1].Value;
+            var uri = new Uri(lastCommit);
+            if (uri.Host.ToLower() != "github.com")
+                throw new ArgumentException("Identified module not hosted on GitHub", nameof(moduleUrl));
+
+            var path = uri.LocalPath.ToLower().Split('/').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+            if (path[0] != "microsoftdocs")
+                throw new ArgumentException("Identified module not in MicrosoftDocs organization", nameof(moduleUrl));
+
+            string repo = path[1];
+            if (!repo.StartsWith("learn-"))
+                throw new ArgumentException("Identified module not in recognized MS Learn GitHub repo", nameof(moduleUrl));
+
+            if (path.Last() == "index.yml")
+                path.RemoveAt(path.Count - 1);
+
+            string branch = path[3];
+            string folder = string.Join('/', path.Skip(4));
+
+            return (repo, branch, folder);
+        }
+
+
+        private async Task<HttpResponseMessage> CallLearnToDocConverter(LearnToDocModel model)
+        {
+            string endpoint = configuration.GetValue<string>("Service:LearnToDoc");
+            if (string.IsNullOrEmpty(endpoint))
+                throw new InvalidOperationException("Missing configuration for conversion function endpoints.");
+
+            using var client = new HttpClient();
+            return await client.PostAsync(endpoint, new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json"));
         }
 
         [HttpPost]
@@ -92,7 +146,6 @@ namespace ConvertLearnToDocWeb.Controllers
             using var scope = logger.BeginScope("ConvertDocToLearn");
 
             var contentType = viewModel.WordDoc?.ContentType;
-
             if (string.IsNullOrEmpty(viewModel.WordDoc?.FileName) || contentType != WordMimeType)
             {
                 ModelState.AddModelError(string.Empty, "You must upload a Word document.");
@@ -100,92 +153,63 @@ namespace ConvertLearnToDocWeb.Controllers
             }
 
             var filename = Path.GetFileName(viewModel.WordDoc.FileName);
-            string baseFolder = Path.GetTempPath();
-            string tempFile = Path.Combine(baseFolder, filename);
-
-            // Copy the input file.
-            await using (var stream = System.IO.File.Create(tempFile))
-            {
-                await viewModel.WordDoc.CopyToAsync(stream);
-            }
-
-            // Create the output folder.
-            string moduleFolder = Path.GetFileNameWithoutExtension(filename);
-            string outputPath = Path.Combine(baseFolder, moduleFolder);
-            Directory.CreateDirectory(outputPath);
 
             try
             {
-                logger.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
-                await DocxToLearn.ConvertAsync(tempFile, outputPath, new MarkdownOptions {
-                    UseAsterisksForBullets = viewModel.UseAsterisksForBullets,
-                    UseAsterisksForEmphasis = viewModel.UseAsterisksForEmphasis,
+                logger.LogDebug($"DocxToLearn(inputFile:{filename})");
+                var result = await CallDocToLearnConverter(new DocToLearnModel
+                {
+                    WordDoc = viewModel.WordDoc,
                     OrderedListUsesSequence = viewModel.OrderedListUsesSequence,
                     UseAlternateHeaderSyntax = viewModel.UseAlternateHeaderSyntax,
+                    UseAsterisksForBullets = viewModel.UseAsterisksForBullets,
+                    UseAsterisksForEmphasis = viewModel.UseAsterisksForEmphasis,
                     UseIndentsForCodeBlocks = viewModel.UseIndentsForCodeBlocks
                 });
+
+                if (result is { IsSuccessStatusCode: true })
+                {
+                    return new FileStreamResult(await result.Content.ReadAsStreamAsync(),
+                        result.Content.Headers.ContentType?.MediaType ?? "application/zip")
+                    {
+                        FileDownloadName = result.Content.Headers.ContentDisposition?.FileName 
+                                           ?? Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".zip")
+                    };
+                }
+                
+                throw new Exception(result.ReasonPhrase);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex.ToString());
                 ModelState.AddModelError(string.Empty, ex.Message);
-                return View(nameof(Index));
             }
 
-            string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(moduleFolder, "zip"));
-            if (System.IO.File.Exists(zipFile))
-            {
-                logger.LogDebug($"DELETE {zipFile}");
-                System.IO.File.Delete(zipFile);
-            }
-            logger.LogDebug($"ZIP {outputPath} => {zipFile}");
-            System.IO.Compression.ZipFile.CreateFromDirectory(outputPath, zipFile);
+            return View(nameof(Index));
+        }
 
-            // Delete the temp stuff.
-            logger.LogDebug($"RMDIR {outputPath}");
-            Directory.Delete(outputPath, true);
-            logger.LogDebug($"DELETE {tempFile}");
-            System.IO.File.Delete(tempFile);
+        private async Task<HttpResponseMessage> CallDocToLearnConverter(DocToLearnModel model)
+        {
+            string endpoint = configuration.GetValue<string>("Service:DocToLearn");
+            if (string.IsNullOrEmpty(endpoint))
+                throw new InvalidOperationException("Missing configuration for conversion function endpoints.");
 
-            if (!System.IO.File.Exists(zipFile)) return View(nameof(Index));
+            var multiForm = new MultipartFormDataContent();
+            multiForm.Add(new StringContent(model.UseAsterisksForBullets.ToString()), nameof(DocToLearnModel.UseAsterisksForBullets));
+            multiForm.Add(new StringContent(model.UseAsterisksForEmphasis.ToString()), nameof(DocToLearnModel.UseAsterisksForEmphasis));
+            multiForm.Add(new StringContent(model.OrderedListUsesSequence.ToString()), nameof(DocToLearnModel.OrderedListUsesSequence));
+            multiForm.Add(new StringContent(model.UseAlternateHeaderSyntax.ToString()), nameof(DocToLearnModel.UseAlternateHeaderSyntax));
+            multiForm.Add(new StringContent(model.UseIndentsForCodeBlocks.ToString()), nameof(DocToLearnModel.UseIndentsForCodeBlocks));
+            
+            var content = new StreamContent(model.WordDoc.OpenReadStream());
+            content.Headers.ContentType = new MediaTypeHeaderValue(WordMimeType);
+            multiForm.Add(content, nameof(DocToLearnModel.WordDoc), model.WordDoc.FileName);
 
-            // Send back the zip file.
-            var fs = new FileStream(zipFile, FileMode.Open, FileAccess.Read);
-            Response.RegisterForDispose(new TempFileRemover(logger, fs, zipFile));
-            return File(fs, "application/zip", Path.GetFileName(zipFile));
+            using var client = new HttpClient();
+            return await client.PostAsync(endpoint, multiForm);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
-
-    internal class TempFileRemover : IDisposable
-    {
-        private readonly ILogger _logger;
-        private readonly IDisposable _innerDispoable;
-        private readonly string _path;
-
-        public TempFileRemover(ILogger logger, IDisposable fs, string path)
-        {
-            _logger = logger;
-            this._innerDispoable = fs;
-            this._path = path;
-        }
-
-        public void Dispose()
-        {
-            _innerDispoable?.Dispose();
-            if (File.Exists(_path))
-            {
-                try
-                {
-                    _logger.LogDebug($"DELETE {_path}");
-                    File.Delete(_path);
-                }
-                catch
-                {
-                }
-            }
-        }
     }
 }

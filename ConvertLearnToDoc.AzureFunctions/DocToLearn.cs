@@ -1,0 +1,109 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Web.Http;
+using ConvertLearnToDoc.AzureFunctions.Models;
+using LearnDocUtils;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+
+namespace ConvertLearnToDoc.AzureFunctions;
+
+public static class DocToLearn
+{
+    [FunctionName("DocToLearn")]
+    public static async Task<IActionResult> Run(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log)
+    {
+        log.LogInformation("DocToLearn invoked.");
+
+        var input = await req.ReadFormAsync();
+        var model = new DocToLearnModel
+        {
+            WordDoc = input.Files[nameof(DocToLearnModel.WordDoc)],
+            UseAsterisksForBullets = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForBullets)], out var useAsterisksForBullets) && useAsterisksForBullets,
+            UseAsterisksForEmphasis = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForEmphasis)], out var useAsterisksForEmphasis) && useAsterisksForEmphasis,
+            OrderedListUsesSequence = bool.TryParse(input[nameof(DocToLearnModel.OrderedListUsesSequence)], out var orderedListUsesSequence) && orderedListUsesSequence,
+            UseAlternateHeaderSyntax = bool.TryParse(input[nameof(DocToLearnModel.UseAlternateHeaderSyntax)], out var useAlternateHeaderSyntax) && useAlternateHeaderSyntax,
+            UseIndentsForCodeBlocks = bool.TryParse(input[nameof(DocToLearnModel.UseIndentsForCodeBlocks)], out var useIndentsForCodeBlocks) && useIndentsForCodeBlocks
+        };
+
+        var contentType = model.WordDoc?.ContentType;
+        if (string.IsNullOrEmpty(model.WordDoc?.FileName) || contentType != Constants.WordMimeType)
+        {
+            return new BadRequestErrorMessageResult("Invalid request.");
+        }
+
+        string baseFolder = Path.GetTempPath();
+        string tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
+
+        // Copy the input file.
+        await using (var stream = File.Create(tempFile))
+        {
+            await model.WordDoc.CopyToAsync(stream);
+        }
+
+        // Create the output folder.
+        string moduleFolder = Path.GetFileNameWithoutExtension(model.WordDoc.FileName) ?? Constants.DefaultModuleName;
+        if (Path.GetInvalidPathChars().Any(ch => moduleFolder.Contains(ch)))
+        {
+            moduleFolder = Constants.DefaultModuleName;
+        }
+        string outputPath = Path.Combine(baseFolder, moduleFolder);
+        Directory.CreateDirectory(outputPath);
+
+        try
+        {
+            log.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
+            await DocxToLearn.ConvertAsync(tempFile, outputPath, new MarkdownOptions
+            {
+                UseAsterisksForBullets = model.UseAsterisksForBullets,
+                UseAsterisksForEmphasis = model.UseAsterisksForEmphasis,
+                OrderedListUsesSequence = model.OrderedListUsesSequence,
+                UseAlternateHeaderSyntax = model.UseAlternateHeaderSyntax,
+                UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks
+            });
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex.ToString());
+            return new BadRequestErrorMessageResult($"Error: {ex.Message}");
+        }
+
+        string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(moduleFolder, "zip"));
+        if (File.Exists(zipFile))
+        {
+            log.LogDebug($"DELETE {zipFile}");
+            File.Delete(zipFile);
+        }
+        log.LogDebug($"ZIP {outputPath} => {zipFile}");
+        System.IO.Compression.ZipFile.CreateFromDirectory(outputPath, zipFile);
+
+        // Delete the temp stuff.
+        log.LogDebug($"RMDIR {outputPath}");
+        Directory.Delete(outputPath, true);
+        log.LogDebug($"DELETE {tempFile}");
+        File.Delete(tempFile);
+
+        if (File.Exists(zipFile))
+        {
+            try
+            {
+                return new FileContentResult(await File.ReadAllBytesAsync(zipFile), "application/zip")
+                    { FileDownloadName = Path.GetFileName(zipFile) };
+            }
+            finally
+            {
+                File.Delete(zipFile);
+            }
+
+        }
+
+        return new BadRequestErrorMessageResult(
+            $"Unable to convert {model.WordDoc.FileName} to a Learn module.");
+    }
+}

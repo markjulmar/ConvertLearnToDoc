@@ -305,10 +305,16 @@ namespace LearnDocUtils
                             .ToArray());
         }
 
-        private static string GetTemplate(string templateKey) =>
-            File.ReadAllText(Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? @".\",
-                "templates", templateKey));
+        private static string GetTemplate(string templateKey)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var stream = assembly.GetManifestResourceStream($"LearnDocUtils.templates.{templateKey}");
+            if (stream == null)
+                throw new ArgumentException($"Embedded resource {templateKey} missing from assembly", nameof(templateKey));
+
+            using var sr = new StreamReader(stream);
+            return sr.ReadToEnd();
+        }
 
         private static string ExtractQuiz(string title, List<string> lines)
         {
