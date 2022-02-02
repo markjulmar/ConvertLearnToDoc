@@ -10,18 +10,19 @@ The GitHub repo has several related projects:
 
 | Project | Description |
 |---------|-------------|
-| **ConvertLearnToDoc** | A simple CLI to convert a Learn module to a Word doc, or vice-versa. |
-| **ConvertLearnToDocWeb** | A web portal version of the conversion tool. |
-| **GrabAllLearnModules** | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
+| [ConvertLearnToDoc](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src) | A simple CLI to convert a Learn module to a Word doc, or vice-versa. |
+| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/ConvertLearnToDocWeb) | A web portal version of the conversion tool. |
+| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. |
+| [GrabAllLearnModules](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/GrabAllLearnModules) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
 
 In addition, there are four libraries used by the above projects.
 
 | Library project | Description |
 |-----------------|-------------|
-| **Docx.Renderer.Markdown** | A library to convert a .docx file to Markdown |
-| **GenMarkdown.DocFX.Extensions** | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
-| **LearnDocUtils** | The main conversion library. |
-| **Markdig.Renderer.Docx** | A Markdig library to read a Markdig document and turn it into a .docx file. |
+| [Docx.Renderer.Markdown](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Docx.Renderer.Markdown) | A library to convert a .docx file to Markdown |
+| [GenMarkdown.DocFX.Extensions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/GenMarkdown.DocFx.Extensions) | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
+| [LearnDocUtils](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/LearnDocUtils) | The main conversion library. |
+| [Markdig.Renderer.Docx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Markdig.Renderer.Docx) | A Markdig library to read a Markdig document and turn it into a .docx file. |
 
 ## Project dependencies
 
@@ -29,10 +30,11 @@ The project also depends on several NuGet packages:
 
 | Package | Description |
 |---------|-------------|
-| **DxPlus** | A library to read/write .docx files. |
-| **GenMarkdown** | A library to generate Markdown content. |
-| **Markdig** | A markdown parsing library |
-| **Microsoft.DocAsCode.MarkdigEngine.Extensions** | Extensions for Markdig and DocFX. |
+| [DxPlus](https://www.nuget.org/packages/Julmar.DxPlus/) | A library to read/write .docx files. |
+| [GenMarkdown](https://github.com/markjulmar/genmarkdown) | A library to generate Markdown content. |
+| [Markdig](https://github.com/xoofx/markdig) | A markdown parsing library |
+| [MSLearnRepos](https://www.nuget.org/packages/julmar.mslearnrepos) | A .NET library to work with GitHub and the Learn repo structure |
+| [Microsoft.DocAsCode.MarkdigEngine.Extensions](https://www.nuget.org/packages/Microsoft.DocAsCode.MarkdigEngine.Extensions) | Extensions for Markdig and DocFX. |
 
 ## Converting a Learn module to a Word document
 
