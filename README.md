@@ -18,8 +18,8 @@ In addition, there are four libraries used by the above projects.
 
 | Library project | Description |
 |-----------------|-------------|
-| **Docx.Renderer.Markdown | A library to convert a .docx file to Markdown |
-| **GenMarkdown.DocFX.Extensions | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
+| **Docx.Renderer.Markdown** | A library to convert a .docx file to Markdown |
+| **GenMarkdown.DocFX.Extensions** | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
 | **LearnDocUtils** | The main conversion library. |
 | **Markdig.Renderer.Docx** | A Markdig library to read a Markdig document and turn it into a .docx file. |
 
