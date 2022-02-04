@@ -151,10 +151,8 @@ namespace LearnDocUtils
                 PopulateTemplate("index.yml", moduleValues));
         }
 
-        private static string FormatMultiLineYaml(string text)
-        {
-            return text.Contains('\n') ? "|" + Environment.NewLine + text : text;
-        }
+        private static string FormatMultiLineYaml(string text) 
+            => text==null ? null : text.Contains('\n') ? "|" + Environment.NewLine + text : text;
 
         private static string PostProcessMarkdown(string text)
         {
@@ -285,8 +283,8 @@ namespace LearnDocUtils
             metadata.Products = GetProperty(doc, DocumentPropertyName.Keywords);
             metadata.BadgeUid = GetCustomProperty(doc, nameof(ModuleMetadata.BadgeUid));
             metadata.GitHubAlias = GetCustomProperty(doc, nameof(ModuleMetadata.GitHubAlias));
-            metadata.SEOTitle = GetCustomProperty(doc, nameof(ModuleMetadata.SEOTitle));
-            metadata.SEODescription = GetCustomProperty(doc, nameof(ModuleMetadata.SEODescription));
+            metadata.SEOTitle = GetCustomProperty(doc, nameof(ModuleMetadata.SEOTitle)) ?? metadata.Title;
+            metadata.SEODescription = GetCustomProperty(doc, nameof(ModuleMetadata.SEODescription)) ?? metadata.Summary;
 
             return metadata;
         }

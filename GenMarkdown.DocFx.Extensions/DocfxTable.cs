@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using Julmar.GenMarkdown;
 
@@ -28,14 +29,12 @@ namespace GenMarkdown.DocFx.Extensions
         /// <inheritdoc />
         public override void Write(TextWriter writer, MarkdownFormatting formatting)
         {
-            int columnCount = ColumnAlignments.Length;
-
             var sb = new StringBuilder();
             foreach (var row in Children)
             {
                 sb.AppendLine(":::row:::");
 
-                for (int colIndex = 0; colIndex < columnCount; colIndex++)
+                for (int colIndex = 0; colIndex < row.Count; colIndex++)
                 {
                     var cell = row[colIndex];
                     var sw = new StringWriter();

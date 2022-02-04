@@ -206,14 +206,23 @@ namespace Docx.Renderer.Markdown.Renderers
                 case NumberingFormat.Bullet:
                     CreateListBlock<List>(renderer, document, blockOwner, element, tags);
                     break;
+                case NumberingFormat.Removed:
+                    CreateParagraph(renderer, document, blockOwner, element, tags);
+                    break;
                 case NumberingFormat.None:
                 {
-                    // Add to existing list.
-                    var list = (MarkdownList) document.Last();
-                    var blocks = list[^1];
-                    var paragraph = new Paragraph();
-                    blocks.Add(paragraph);
-                    CreateParagraph(renderer, document, paragraph, element, tags);
+                    if (document.LastOrDefault() is MarkdownList list)
+                    {
+                        var blocks = list[^1];
+                        var paragraph = new Paragraph();
+                        blocks.Add(paragraph);
+                        CreateParagraph(renderer, document, paragraph, element, tags);
+                    }
+                    else
+                    {
+                        // Default to a bullet list.
+                        CreateListBlock<List>(renderer, document, blockOwner, element, tags);
+                    }
                     break;
                 }
                 // Numbered list

@@ -70,7 +70,7 @@ namespace Docx.Renderer.Markdown.Renderers
                     // Picture/image/video
                     case Drawing d:
                     {
-                        var block = ProcessDrawing(renderer, d);
+                        var block = ProcessDrawing(renderer, d, element);
                         if (block != null)
                         {
                             // See if we're in a list.
@@ -128,7 +128,7 @@ namespace Docx.Renderer.Markdown.Renderers
             }
         }
 
-        private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d)
+        private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d, Run runOwner)
         {
             var p = d.Picture;
             if (p == null)
@@ -146,15 +146,39 @@ namespace Docx.Renderer.Markdown.Renderers
                 return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO {videoUrl}]") : null;
             }
 
-            // Get the filename for the image.
+            // Get the filename for the image. Pandoc stores it in the description, check there first.
             var filename = p.Description;
             if (!string.IsNullOrEmpty(filename))
             {
                 filename = Path.GetFileName(filename);
-                if (string.IsNullOrEmpty(filename) 
-                    || !Path.HasExtension(filename)
-                    || Path.GetInvalidFileNameChars().Any(filename.Contains))
+                if (!IsPossibleFilename(filename))
                     filename = null;
+            }
+
+            // Next, see if there's a comment. We can strip off any prefix like "ImageFilename:"
+            if (filename == null)
+            {
+                var comments = (runOwner.Parent as Paragraph)?.Comments?.ToList();
+                if (comments?.Count > 0)
+                {
+                    foreach (var text in comments.SelectMany(c => c.Comment.Paragraphs.Select(pp => pp.Text))
+                                                                 .Where(t => !string.IsNullOrEmpty(t))
+                                                                 .Select(t => t.Trim()))
+                    {
+                        if (text.Length > 3 && !text.Contains('\n'))
+                        {
+                            for (int i = 0; i < text.Length; i++)
+                            {
+                                string fn = text.Substring(i, text.Length - i).Trim();
+                                if (IsPossibleFilename(fn))
+                                {
+                                    filename = fn;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             Image theImage;
@@ -200,5 +224,16 @@ namespace Docx.Renderer.Markdown.Renderers
 
             return new Julmar.GenMarkdown.Image(d.Description, imagePath);
         }
+
+        /// <summary>
+        /// Test for a possible filename.
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <returns>True/False</returns>
+        private static bool IsPossibleFilename(string text) =>
+            !string.IsNullOrEmpty(text)
+            && Path.HasExtension(text)
+            && !Path.GetInvalidPathChars().Any(text.Contains)
+            && !Path.GetInvalidFileNameChars().Any(text.Contains);
     }
 }

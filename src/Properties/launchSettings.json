@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i  C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\azure\\aks-governance-azure-policy -o /users/mark/onedrive/desktop/out.docx"
+      "commandLineArgs": "-i \"C:\\Users\\mark\\Downloads\\AZ-700 Azure Networking Solutions.docx\" -o /users/mark/onedrive/desktop/T"
     }
   }
 }
