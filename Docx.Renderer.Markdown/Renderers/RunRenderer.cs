@@ -73,7 +73,8 @@ namespace Docx.Renderer.Markdown.Renderers
                         var block = ProcessDrawing(renderer, d, element);
                         if (block != null)
                         {
-                            // See if we're in a list.
+                            // See if we're in a list. If so, remove the empty paragraph from the 
+                            // list, and then add the image to the list so it's indented.
                             if (document.Last() is MarkdownList theList)
                             {
                                 var lastBlock = theList[^1];
@@ -81,6 +82,7 @@ namespace Docx.Renderer.Markdown.Renderers
                                     lastBlock.Remove(blockOwner);
                                 lastBlock.Add(block);
                             }
+                            // Remove the empty paragraph from the document and add the image instead.
                             else
                             {
                                 Debug.Assert(blockOwner.ToString().TrimEnd('\r', '\n').Length == 0);

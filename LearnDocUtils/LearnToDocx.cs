@@ -144,7 +144,7 @@ namespace LearnDocUtils
                 .Where(p => p.Properties.StyleName == HeadingType.Heading1.ToString())
                 .ToList();
 
-            string user = Environment.UserName;
+            string user = Environment.UserInteractive ? Environment.UserName : Environment.GetEnvironmentVariable("CommentUserName");
             if (string.IsNullOrEmpty(user))
                 user = "Office User";
 
@@ -168,7 +168,7 @@ namespace LearnDocUtils
                 }
                 else if (!string.IsNullOrEmpty(unit.InteractivityType))
                 {
-                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"{unit.InteractivityType}"));
+                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"interactivity:{unit.InteractivityType}"));
                 }
             }
         }
