@@ -16,7 +16,10 @@ namespace Markdig.Renderer.Docx.Inlines
 
             // Rendered (or will be) by another element?
             if (owner.OutOfPlaceRendered.Contains(literal))
+            {
+                owner.OutOfPlaceRendered.Remove(literal);
                 return;
+            }
 
             string text = Helpers.CleanText(literal.Content.ToString());
 

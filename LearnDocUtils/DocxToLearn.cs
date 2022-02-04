@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Docx.Renderer.Markdown;
 
@@ -50,14 +51,23 @@ namespace LearnDocUtils
             }
         }
 
+        /// <summary>
+        /// Do some post-conversion cleanup of markers, paths, and triple-colon placeholders.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
         private static string PostProcessMarkdown(string text)
         {
             text = text.Trim('\r').Trim('\n');
             text = text.Replace("(media/", "(../media/");
             text = text.Replace(LearnUtilities.AbsolutePathMarker, string.Empty);
 
+            text = Regex.Replace(text, @"{rgn (.*?)}", m => $"<rgn>{m.Groups[1].Value}</rgn>");
+            text = Regex.Replace(text, @"{zonePivot:(.*?)}", m => $":::zone pivot={m.Groups[1].Value}");
+            text = Regex.Replace(text, @"{end-zonePivot:(.*?)}", m => $":::zone-end");
+            text = Regex.Replace(text, @"{include ""(.*?)"".*}", m => $"[!include []({m.Groups[1].Value})]");
+
             return text;
         }
-
     }
 }

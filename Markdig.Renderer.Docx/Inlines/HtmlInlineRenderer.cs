@@ -44,7 +44,7 @@ namespace Markdig.Renderer.Docx.Inlines
                         ProcessRawAnchor(html, owner, document, currentParagraph);
                     break;
                 case "br":
-                    if (html.Parent.ParentBlock is not HeadingBlock)
+                    if (html.Parent?.ParentBlock is not HeadingBlock)
                         currentParagraph.AppendLine();
                     break;
                 case "rgn":

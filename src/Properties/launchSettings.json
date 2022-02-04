@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i \"C:\\Users\\mark\\Downloads\\AZ-700 Azure Networking Solutions.docx\" -o /users/mark/onedrive/desktop/T"
+      "commandLineArgs": "-i /users/mark/downloads/out.docx -o /users/mark/downloads/out"
     }
   }
 }

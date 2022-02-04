@@ -28,7 +28,7 @@ namespace Markdig.Renderer.Docx
         /// This holds elements where previous inline renderers had to reach into the stream
         /// and render siblings. It's used to avoid double rendering.
         /// </summary>
-        public IList<MarkdownObject> OutOfPlaceRendered => new List<MarkdownObject>();
+        public IList<MarkdownObject> OutOfPlaceRendered { get; }
 
         public string ZonePivot { get; }
 
@@ -37,6 +37,7 @@ namespace Markdig.Renderer.Docx
             this.moduleFolder = moduleFolder;
             this.document = document;
             this.ZonePivot = zonePivot;
+            this.OutOfPlaceRendered = new List<MarkdownObject>();
             this.logger = logger;
 
             renderers = new List<IDocxObjectRenderer>
