@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using DXPlus;
@@ -46,6 +47,11 @@ namespace Docx.Renderer.Markdown.Renderers
 
                         if (element.Parent is Hyperlink hl)
                         {
+                            // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
+                            // I'm handling the links. This will catch that edge case and ignore the second appearance.
+                            if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.ToString() && ll.Text == hl.Text)
+                                continue;
+
                             p.Add(Text.Link(hl.Text, hl.Uri.ToString()));
                         }
                         else if (t.Value.Length > 0)
@@ -136,9 +142,9 @@ namespace Docx.Renderer.Markdown.Renderers
             if (p == null)
                 return null;
 
-            if (p.Extensions.Contains(VideoExtension.ExtensionId))
+            if (p.ImageExtensions.Contains(VideoExtension.ExtensionId))
             {
-                string videoUrl = ((VideoExtension) p.Extensions.Get(VideoExtension.ExtensionId)).Source;
+                string videoUrl = ((VideoExtension) p.ImageExtensions.Get(VideoExtension.ExtensionId)).Source;
                 if (string.IsNullOrEmpty(videoUrl) || !videoUrl.ToLower().StartsWith("http"))
                 {
                     // See if there's a hyperlink.
@@ -186,7 +192,7 @@ namespace Docx.Renderer.Markdown.Renderers
             Image theImage;
 
             // If we have an SVG version, we'll use that.
-            var svgExtension = (SvgExtension) p.Extensions.Get(SvgExtension.ExtensionId);
+            var svgExtension = (SvgExtension) p.ImageExtensions.Get(SvgExtension.ExtensionId);
             if (svgExtension != null)
             {
                 theImage = svgExtension.Image;
@@ -217,14 +223,40 @@ namespace Docx.Renderer.Markdown.Renderers
             string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\', '/') + suffix;
 
             var paragraph = d.Parent.Parent as Paragraph;
-            bool isLightbox = paragraph?.Comments.Any(c => c.Comment.Paragraphs.Any(p => p.Text == "lightbox")) == true;
 
-            if (border || d.IsDecorative || isLightbox)
+            string imageType = FindCommentValue(paragraph, "type:");
+            string locScope = FindCommentValue(paragraph, "loc-scope");
+            bool isLightbox = FindCommentValue(paragraph, "lightbox:") != null;
+
+            if (border || d.IsDecorative || isLightbox || !string.IsNullOrEmpty(locScope) || !string.IsNullOrEmpty(imageType))
             {
-                return new DocfxImage(d.Description, imagePath) { Border = border, LocScope = d.IsDecorative ? "noloc" : null, Lightbox = imagePath+"#lightbox" };
+                var image = new DocfxImage(d.Description, imagePath) { Border = border };
+                if (!string.IsNullOrEmpty(locScope) || d.IsDecorative)
+                    image.LocScope = "other";
+                if (isLightbox)
+                    image.Lightbox = imagePath + "#lightbox";
+                
+                return image;
             }
 
             return new Julmar.GenMarkdown.Image(d.Description, imagePath);
+        }
+
+        private static string FindCommentValue(Paragraph paragraph, string prefix)
+        {
+            if (paragraph != null)
+            {
+                var comments = paragraph.Comments.SelectMany(c => c.Comment.Paragraphs.Select(p => p.Text ?? ""));
+                var found = comments.FirstOrDefault(c =>
+                    c.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+                if (!string.IsNullOrEmpty(found))
+                {
+                    found = found.TrimEnd('\r', '\n');
+                    return found.Length == prefix.Length ? found : found.Substring(prefix.Length);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

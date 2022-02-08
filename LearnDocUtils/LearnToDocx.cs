@@ -20,7 +20,7 @@ namespace LearnDocUtils
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
-            var (repo, branch, folder) = await LearnUtilities.RetrieveLearnLocationFromUrlAsync(url);
+            var (repo, branch, folder) = await LearnResolver.LocationFromUrlAsync(url);
             await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, options);
         }
 
@@ -61,7 +61,7 @@ namespace LearnDocUtils
             }
 
             // Download the module
-            var (module, markdownFile) = await new LearnUtilities().DownloadModuleAsync(
+            var (module, markdownFile) = await new ModuleDownloader().DownloadModuleAsync(
                     tcService, moduleFolder, tempFolder,
                     options?.EmbedNotebookContent == true);
 
@@ -132,13 +132,13 @@ namespace LearnDocUtils
             docWriter.Render(markdownDocument);
 
             // Add Learn-specific unit metadata to the document - lab info, etc.
-            AddUnitMetadata(moduleData, document);
+            AddUnitMetadata(docWriter, moduleData, document);
 
             document.Save();
             document.Close();
         }
 
-        private static void AddUnitMetadata(TripleCrownModule moduleData, IDocument document)
+        private static void AddUnitMetadata(IDocxRenderer renderer, TripleCrownModule moduleData, IDocument document)
         {
             var headers = document.Paragraphs
                 .Where(p => p.Properties.StyleName == HeadingType.Heading1.ToString())
@@ -153,22 +153,27 @@ namespace LearnDocUtils
                 var unitHeaderParagraph = FindParagraphByTitle(headers, moduleData.Units, unit);
                 if (unitHeaderParagraph == null) continue;
 
+                string commentText = null;
                 if (unit.UsesSandbox)
                 {
-                    string commentText = "sandbox";
+                    commentText = "sandbox";
                     if (!string.IsNullOrEmpty(unit.InteractivityType))
                         commentText += $" interactivity:{unit.InteractivityType}";
                     if (!string.IsNullOrEmpty(unit.Notebook))
                         commentText += $" notebook:{unit.Notebook.Trim()}";
-                    unitHeaderParagraph.AttachComment(document.CreateComment(user, commentText));
                 }
                 else if (unit.LabId != null)
                 {
-                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"labId:{unit.LabId}"));
+                    commentText = $"labId:{unit.LabId}";
                 }
                 else if (!string.IsNullOrEmpty(unit.InteractivityType))
                 {
-                    unitHeaderParagraph.AttachComment(document.CreateComment(user, $"interactivity:{unit.InteractivityType}"));
+                    commentText = $"interactivity:{unit.InteractivityType}";
+                }
+
+                if (commentText != null)
+                {
+                    renderer.AddComment(unitHeaderParagraph, commentText);
                 }
             }
         }
@@ -196,26 +201,17 @@ namespace LearnDocUtils
 
         private static void AddMetadata(TripleCrownModule moduleData, IDocument document)
         {
-            SetCustomProperty(document, nameof(ModuleMetadata.ModuleUid), moduleData.Uid);
             SetProperty(document, DocumentPropertyName.Title, moduleData.Title);
-
             SetProperty(document, DocumentPropertyName.Subject, moduleData.Summary);
-            SetCustomProperty(document, nameof(ModuleMetadata.Abstract), moduleData.Abstract);
-            SetCustomProperty(document, nameof(ModuleMetadata.Prerequisites), moduleData.Prerequisites);
-            SetCustomProperty(document, nameof(ModuleMetadata.IconUrl), moduleData.IconUrl);
-
-            SetCustomProperty(document, nameof(ModuleMetadata.BadgeUid), moduleData.Badge?.Uid);
-            SetCustomProperty(document, nameof(ModuleMetadata.SEOTitle), moduleData.Metadata.Title);
-            SetCustomProperty(document, nameof(ModuleMetadata.SEODescription), moduleData.Metadata.Description);
             SetProperty(document, DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
-            SetCustomProperty(document, nameof(ModuleMetadata.GitHubAlias), moduleData.Metadata.Author);
-            SetCustomProperty(document, nameof(ModuleMetadata.MsTopic), moduleData.Metadata.MsTopic);
-            SetCustomProperty(document, nameof(ModuleMetadata.MsProduct), moduleData.Metadata.MsProduct);
+            SetProperty(document, DocumentPropertyName.LastSavedBy, moduleData.Metadata.MsAuthor);
 
-            SetProperty(document, DocumentPropertyName.Comments, string.Join(',', moduleData.Levels));
-            SetProperty(document, DocumentPropertyName.Category, string.Join(',', moduleData.Roles));
-            SetProperty(document, DocumentPropertyName.Keywords, string.Join(',', moduleData.Products));
-            SetProperty(document, DocumentPropertyName.CreatedDate, (moduleData.LastUpdated == default ? DateTime.Now : moduleData.LastUpdated).ToString("yyyy-MM-ddT00:00:00Z"));
+            SetProperty(document, DocumentPropertyName.Comments, moduleData.Uid);
+            SetCustomProperty(document, nameof(TripleCrownModule.Metadata), JsonHelper.ToJson(moduleData));
+
+            var dt = (moduleData.LastUpdated == default ? DateTime.Now : moduleData.LastUpdated).ToString("yyyy-MM-ddT00:00:00Z");
+            SetProperty(document, DocumentPropertyName.CreatedDate, dt);
+            SetProperty(document, DocumentPropertyName.SaveDate, dt);
         }
 
         private static void WriteTitle(TripleCrownModule moduleData, IDocument document)

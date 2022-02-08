@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/downloads/out.docx -o /users/mark/downloads/out"
+      "commandLineArgs": " -i /users/mark/downloads/AZ-700_AzureNetworkingSolutions.docx -o /users/mark/downloads/out"
     }
   }
 }

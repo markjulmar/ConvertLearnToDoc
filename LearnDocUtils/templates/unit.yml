@@ -1,15 +1,17 @@
 ﻿### YamlMime:ModuleUnit
-uid: {module-uid}.{unit-uid}
+uid: {unit-uid}
 title: {title}
 metadata:
-  title: {title}
-  description: {title}
+  title: {seotitle}
+  description: {seodescription}
   ms.date: {saveDate}
   author: {author}
   ms.author: {msauthor}
   ms.topic: {mstopic}
   ms.prod: {msproduct}
+{zonePivots}
 durationInMinutes: {duration}
 {interactivity}
 {unit-content}
 {quizText}
+{task-validation}

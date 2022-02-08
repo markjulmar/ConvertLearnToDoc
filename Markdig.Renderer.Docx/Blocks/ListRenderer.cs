@@ -14,12 +14,23 @@ namespace Markdig.Renderer.Docx.Blocks
             currentLevel++;
             try
             {
-                NumberingDefinition nd;
+                NumberingDefinition nd = null;
                 if (block.IsOrdered)
                 {
                     if (!int.TryParse(block.OrderedStart, out int startNumber))
                         startNumber = 1;
-                    nd = document.NumberingStyles.Create(NumberingFormat.Numbered, startNumber);
+
+                    if (startNumber > 1)
+                    {
+                        // Backup and find the previous active list and see if this should fit in.
+                        var foundList = document.Paragraphs.Reverse().FirstOrDefault(p => p.IsListItem() && p.GetNumberingFormat() == NumberingFormat.Numbered);
+                        if (foundList != null)
+                        {
+                            nd = foundList.GetListNumberingDefinition();
+                        }
+                    }
+
+                    nd ??= document.NumberingStyles.Create(NumberingFormat.Numbered, startNumber);
                 }
                 else
                 {
