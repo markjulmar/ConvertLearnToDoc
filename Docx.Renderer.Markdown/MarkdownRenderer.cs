@@ -24,7 +24,8 @@ namespace Docx.Renderer.Markdown
             {
                 new ParagraphRenderer(),
                 new TableRenderer(),
-                new RunRenderer()
+                new RunRenderer(),
+                new IgnoredBlocks()
             };
         }
 
@@ -80,8 +81,13 @@ namespace Docx.Renderer.Markdown
             var renderer = FindRenderer(element);
             if (renderer != null) 
                 renderer.Render(this, document, blockOwner, element, tags);
-            else 
-                Console.WriteLine($"Missing renderer for {element.GetType().Name}");
+            else
+            {
+                if (element is UnknownBlock ub)
+                    Console.WriteLine($"Missing renderer for unknown block type: {ub.Name}");
+                else
+                    Console.WriteLine($"Missing renderer for {element.GetType().Name}");
+            }
         }
     }
 }

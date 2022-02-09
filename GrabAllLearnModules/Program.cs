@@ -20,7 +20,11 @@ foreach (var index in Directory.GetFiles(args[0], "index.yml", SearchOption.AllD
     if (!File.Exists(fullDocPath))
     {
         if (await ConvertLearnToDoc.Program.Main(new[] {"-n", $"-i{folder}", $"-o{fullDocPath}"}) != 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Error processing: {folder}");
             break;
+        }
     }
 }
 

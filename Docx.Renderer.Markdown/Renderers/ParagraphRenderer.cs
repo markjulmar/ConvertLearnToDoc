@@ -180,7 +180,7 @@ namespace Docx.Renderer.Markdown.Renderers
             Debug.Assert(blockOwner == null);
 
             string language = null;
-            var next = element.NextParagagraph;
+            var next = element.NextParagraph;
             if (next.Properties.StyleName == "CodeFooter")
             {
                 language = next.Text;
