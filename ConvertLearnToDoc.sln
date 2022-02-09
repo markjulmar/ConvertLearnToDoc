@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{217F168B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDoc.AzureFunctions", "ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj", "{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.AzureFunctions", "ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj", "{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDoc.Tests.Int", "Tests\ConvertLearnToDoc.Tests.Int\ConvertLearnToDoc.Tests.Int.csproj", "{2B45F7EF-A608-4688-9D1F-E6A7ABD6F2CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +63,10 @@ Global
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B45F7EF-A608-4688-9D1F-E6A7ABD6F2CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B45F7EF-A608-4688-9D1F-E6A7ABD6F2CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B45F7EF-A608-4688-9D1F-E6A7ABD6F2CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B45F7EF-A608-4688-9D1F-E6A7ABD6F2CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
