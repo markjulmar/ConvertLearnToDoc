@@ -4,19 +4,22 @@ using Markdig.Syntax;
 
 namespace Markdig.Renderer.Docx.Blocks
 {
-    public class FencedCodeBlockRenderer : DocxObjectRenderer<FencedCodeBlock>
+    public class CodeBlockRenderer : DocxObjectRenderer<CodeBlock>
     {
-        public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, FencedCodeBlock fencedCodeBlock)
+        public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, CodeBlock codeBlock)
         {
             AddBlockedCodeStyle(document);
-
-            string language = fencedCodeBlock?.Info;
-
             currentParagraph ??= document.AddParagraph();
+            WriteChildren(codeBlock, owner, document, currentParagraph);
 
-            WriteChildren(fencedCodeBlock, owner, document, currentParagraph);
             currentParagraph.Style("CodeBlock");
-            currentParagraph.Append(new Paragraph(language).Style("CodeFooter"));
+
+            if (codeBlock is FencedCodeBlock fencedCodeBlock)
+            {
+                string language = fencedCodeBlock.Info;
+                if (!string.IsNullOrEmpty(language))
+                    currentParagraph.Append(new Paragraph(language).Style("CodeFooter"));
+            }
         }
 
         private static void AddBlockedCodeStyle(IDocument document)

@@ -1,36 +1,39 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MSLearnRepos;
 
 namespace LearnDocUtils
 {
-    internal class UnitMetadata
+    /// <summary>
+    /// Representation of the unit metadata
+    /// </summary>
+    public class UnitMetadata
     {
         public string Title { get; }
+        public TripleCrownUnit Metadata { get; }
+
         public List<string> Lines { get; } = new();
-        public bool Sandbox { get; set; }
-        public int LabId { get; set; }
-        public string Notebook { get; set; }
-        public string Interactivity { get; set; }
+        public bool HasContent => string.IsNullOrEmpty(Metadata.Notebook) && Lines.Count > 0 && Lines.Any(s => !string.IsNullOrWhiteSpace(s));
 
-        public bool HasContent => string.IsNullOrEmpty(Notebook) && Lines.Count > 0 && Lines.Any(s => !string.IsNullOrWhiteSpace(s));
-
-        public UnitMetadata(string title)
+        public UnitMetadata(string title, TripleCrownUnit metadata)
         {
             Title = title;
+            Metadata = metadata ?? new TripleCrownUnit();
+            Metadata.Metadata ??= new MSLearnRepos.UnitMetadata();
         }
 
         public string BuildInteractivityOptions()
         {
             var sb = new StringBuilder();
-            if (Sandbox)
+            if (Metadata.UsesSandbox)
                 sb.AppendLine("sandbox: true");
-            if (!string.IsNullOrEmpty(Interactivity))
-                sb.AppendLine($"interactivity: {Interactivity}");
-            if (LabId > 0)
-                sb.AppendLine($"labId: {LabId}");
-            if (!string.IsNullOrEmpty(Notebook))
-                sb.AppendLine($"notebook: {Notebook}");
+            if (!string.IsNullOrEmpty(Metadata.InteractivityType))
+                sb.AppendLine($"interactivity: {Metadata.InteractivityType}");
+            if (Metadata.LabId > 0)
+                sb.AppendLine($"labId: {Metadata.LabId}");
+            if (!string.IsNullOrEmpty(Metadata.Notebook))
+                sb.AppendLine($"notebook: {Metadata.Notebook}");
             
             return sb.ToString();
         }

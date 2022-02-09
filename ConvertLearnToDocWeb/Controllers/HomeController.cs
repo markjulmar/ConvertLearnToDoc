@@ -11,6 +11,7 @@ using ConvertLearnToDocWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MSLearnRepos;
 using Newtonsoft.Json;
 
 namespace ConvertLearnToDocWeb.Controllers
@@ -47,7 +48,7 @@ namespace ConvertLearnToDocWeb.Controllers
             if (!string.IsNullOrEmpty(viewModel.ModuleUrl)
                 && viewModel.ModuleUrl.ToLower().StartsWith("https"))
             {
-                (repo, branch, folder) = await RetrieveLearnLocationFromUrlAsync(viewModel.ModuleUrl);
+                (repo, branch, folder) = await LearnResolver.LocationFromUrlAsync(viewModel.ModuleUrl);
             }
             else if (!string.IsNullOrEmpty(viewModel.GithubRepo)
                 && !string.IsNullOrEmpty(viewModel.GithubFolder))
@@ -97,39 +98,6 @@ namespace ConvertLearnToDocWeb.Controllers
 
             return View(nameof(Index));
         }
-
-        private static async Task<(string repo, string branch, string folder)> RetrieveLearnLocationFromUrlAsync(string moduleUrl)
-        {
-            using var client = new HttpClient();
-            string html = await client.GetStringAsync(moduleUrl);
-
-            string pageKind = Regex.Match(html, @"<meta name=""page_kind"" content=""(.*?)""\s/>").Groups[1].Value;
-            if (pageKind != "module")
-                throw new ArgumentException("URL does not identify a Learn module - use the module landing page URL", nameof(moduleUrl));
-
-            string lastCommit = Regex.Match(html, @"<meta name=""original_content_git_url"" content=""(.*?)""\s/>").Groups[1].Value;
-            var uri = new Uri(lastCommit);
-            if (uri.Host.ToLower() != "github.com")
-                throw new ArgumentException("Identified module not hosted on GitHub", nameof(moduleUrl));
-
-            var path = uri.LocalPath.ToLower().Split('/').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-
-            if (path[0] != "microsoftdocs")
-                throw new ArgumentException("Identified module not in MicrosoftDocs organization", nameof(moduleUrl));
-
-            string repo = path[1];
-            if (!repo.StartsWith("learn-"))
-                throw new ArgumentException("Identified module not in recognized MS Learn GitHub repo", nameof(moduleUrl));
-
-            if (path.Last() == "index.yml")
-                path.RemoveAt(path.Count - 1);
-
-            string branch = path[3];
-            string folder = string.Join('/', path.Skip(4));
-
-            return (repo, branch, folder);
-        }
-
 
         private async Task<HttpResponseMessage> CallLearnToDocConverter(LearnToDocModel model)
         {

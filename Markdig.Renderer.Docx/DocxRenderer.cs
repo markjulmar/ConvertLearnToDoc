@@ -48,9 +48,8 @@ namespace Markdig.Renderer.Docx
                 new ListRenderer(),
                 new QuoteBlockRenderer(),
                 new QuoteSectionNoteRenderer(),
-                new FencedCodeBlockRenderer(),
+                new CodeBlockRenderer(),
                 new TripleColonRenderer(),
-                new FencedCodeBlockRenderer(),
                 new TableRenderer(),
                 new InclusionRenderer(),
 
@@ -120,7 +119,16 @@ namespace Markdig.Renderer.Docx
             }
         }
 
-        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, bool hasBorder, bool isLightbox)
+        public void AddComment(Paragraph owner, string commentText)
+        {
+            string user = Environment.UserInteractive ? Environment.UserName : Environment.GetEnvironmentVariable("CommentUserName");
+            if (string.IsNullOrEmpty(user))
+                user = "Office User";
+
+            owner.AttachComment(document.CreateComment(user, commentText));
+        }
+
+        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, string type, string localization, bool hasBorder, bool isLightbox)
         {
             string path = ResolvePath(moduleFolder, imageSource);
             if (File.Exists(path))
@@ -136,24 +144,20 @@ namespace Markdig.Renderer.Docx
                 }
 
                 if (hasBorder)
-                {
                     drawing.Picture.BorderColor = Color.DarkGray;
-                }
 
                 drawing.Picture.Description = imageSource;
-
                 currentParagraph.Append(drawing);
 
-                if (isLightbox)
-                {
-                    string user = Environment.UserName;
-                    if (string.IsNullOrEmpty(user))
-                        user = "Office User";
+                if (!string.IsNullOrEmpty(altText))
+                    drawing.AddCaption(": " + altText);
 
-                    currentParagraph.AttachComment(
-                        document.CreateComment(user, "lightbox"), 
-                        currentParagraph.Runs.Last());
-                }
+                if (isLightbox)
+                    AddComment(currentParagraph, "lightbox:true");
+                if (!string.IsNullOrEmpty(localization))
+                    AddComment(currentParagraph, $"loc-scope:{localization}");
+                if (!string.IsNullOrEmpty(type))
+                    AddComment(currentParagraph, $"type:{type}");
 
                 return drawing;
             }

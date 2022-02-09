@@ -41,7 +41,7 @@ namespace Markdig.Renderer.Docx.Inlines
                         addBorder = true;
                 }
 
-                owner.InsertImage(currentParagraph, url, title, addBorder, isLightboxImage);
+                owner.InsertImage(currentParagraph, url, title, null, null, addBorder, isLightboxImage);
             }
             else
             {

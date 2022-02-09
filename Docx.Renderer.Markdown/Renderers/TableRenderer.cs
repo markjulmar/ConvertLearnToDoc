@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using DXPlus;
 using GenMarkdown.DocFx.Extensions;
 using Julmar.GenMarkdown;
@@ -16,11 +17,12 @@ namespace Docx.Renderer.Markdown.Renderers
         {
             tags ??= new RenderBag();
 
-            bool complexStructure = element.Rows.Any(r => r.Cells.Count != element.ColumnCount);
+            int columnCount = Math.Min(element.ColumnCount, element.Rows.Max(r => r.Cells.Count));
+            bool complexStructure = element.Rows.Any(r => r.Cells.Count != columnCount);
 
             var mdTable = complexStructure
-                ? new DocfxTable(element.ColumnCount)
-                : new Julmar.GenMarkdown.Table(element.ColumnCount);
+                ? new DocfxTable(columnCount)
+                : new Julmar.GenMarkdown.Table(columnCount);
 
             var tcf = element.ConditionalFormatting;
             
@@ -33,8 +35,8 @@ namespace Docx.Renderer.Markdown.Renderers
                 var tr = new TableRow();
                 mdTable.Add(tr);
 
-                bool boldRow = (rowIndex == 0 && (tcf & TableConditionalFormatting.FirstRow) != 0
-                        || rowIndex == rows.Count - 1 && (tcf & TableConditionalFormatting.LastRow) != 0);
+                bool boldRow = rowIndex == 0 && (tcf & TableConditionalFormatting.FirstRow) != 0
+                               || rowIndex == rows.Count - 1 && (tcf & TableConditionalFormatting.LastRow) != 0;
 
                 for (var colIndex = 0; colIndex < row.Cells.Count; colIndex++)
                 {

@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Net.Mail;
 using DXPlus;
 using Markdig.Syntax;
 using IContainer = DXPlus.IContainer;
@@ -73,10 +74,12 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
 
             extension.Attributes.TryGetValue("type", out string type);
             extension.Attributes.TryGetValue("alt-text", out string title);
+            extension.Attributes.TryGetValue("loc-scope", out string localization);
             extension.Attributes.TryGetValue("source", out string source);
             extension.Attributes.TryGetValue("border", out string hasBorder);
             extension.Attributes.TryGetValue("lightbox", out string isLightbox);
-            owner.InsertImage(currentParagraph, source, title, hasBorder?.ToLower()=="true", isLightbox?.ToLower()=="true");
+            
+            owner.InsertImage(currentParagraph, source, title, type, localization, hasBorder?.ToLower()=="true", isLightbox?.ToLower()=="true");
         }
     }
 }

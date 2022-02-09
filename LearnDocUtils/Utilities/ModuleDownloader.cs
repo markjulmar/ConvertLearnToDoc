@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Markdig;
@@ -15,7 +14,7 @@ using MSLearnRepos;
 
 namespace LearnDocUtils
 {
-    public sealed class LearnUtilities
+    public sealed class ModuleDownloader
     {
         public const string AbsolutePathMarker = "_fqurl_";
 
@@ -66,20 +65,22 @@ namespace LearnDocUtils
                 if (unit.Quiz != null)
                 {
                     if (!string.IsNullOrEmpty(unit.Quiz.Title))
-                        await tempFile.WriteLineAsync($"## {unit.Quiz.Title}\r\n");
+                        await tempFile.WriteLineAsync($"## {unit.Quiz.Title}{Environment.NewLine}");
 
                     foreach (var question in unit.Quiz.Questions)
                     {
                         await tempFile.WriteLineAsync($"### {question.Content}");
                         foreach (var choice in question.Choices)
                         {
-                            await tempFile.WriteAsync(choice.IsCorrect ? "- [X] " : "- [ ]");
+                            await tempFile.WriteAsync(choice.IsCorrect ? "- [X]" : "- [ ]");
                             await tempFile.WriteLineAsync(choice.Content);
-                            await tempFile.WriteLineAsync();
+                            if (!string.IsNullOrEmpty(choice.Explanation))
+                            {
+                                await tempFile.WriteLineAsync($"    - {choice.Explanation}");
+                            }
                         }
+                        await tempFile.WriteLineAsync();
                     }
-
-                    await tempFile.WriteLineAsync();
                 }
             }
 
@@ -172,6 +173,31 @@ namespace LearnDocUtils
             return imageReplacements.Aggregate(markdownText, (current, kvp) 
                 => current.Replace(kvp.Key, kvp.Value));
             
+        }
+
+        public static async Task<TripleCrownModule> GetModuleFromUidAsync(string uid)
+        {
+            try
+            {
+                var catalog = await MSLearnCatalogAPI.CatalogApi.GetCatalog();
+                var url = catalog.Modules.SingleOrDefault(m => m.Uid == uid)?.BaseUrl();
+                if (string.IsNullOrEmpty(url)) return null;
+
+                var (repository, branch, folder) = await LearnResolver.LocationFromUrlAsync(url);
+                var service = TripleCrownGitHubService.CreateFromToken(repository, branch);
+
+                var module = await service.GetModuleAsync(folder);
+                if (module != null)
+                {
+                    await service.LoadUnitsAsync(module);
+                    return module;
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
         }
 
         private static async Task<string> DownloadImageAsync(string markdownFilename, string imagePath, ITripleCrownGitHubService gitHub, string moduleFolder, string tempFolder)
@@ -282,38 +308,6 @@ namespace LearnDocUtils
             }
 
             return imagePath;
-        }
-
-        public static async Task<(string repo, string branch, string folder)> RetrieveLearnLocationFromUrlAsync(string moduleUrl)
-        {
-            using var client = new HttpClient();
-            string html = await client.GetStringAsync(moduleUrl);
-
-            string pageKind = Regex.Match(html, @"<meta name=""page_kind"" content=""(.*?)""\s/>").Groups[1].Value;
-            if (pageKind != "module")
-                throw new ArgumentException("URL does not identify a Learn module - use the module landing page URL", nameof(moduleUrl));
-
-            string lastCommit = Regex.Match(html, @"<meta name=""original_content_git_url"" content=""(.*?)""\s/>").Groups[1].Value;
-            var uri = new Uri(lastCommit);
-            if (uri.Host.ToLower() != "github.com")
-                throw new ArgumentException("Identified module not hosted on GitHub", nameof(moduleUrl));
-
-            var path = uri.LocalPath.ToLower().Split('/').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-
-            if (path[0] != "microsoftdocs")
-                throw new ArgumentException("Identified module not in MicrosoftDocs organization", nameof(moduleUrl));
-
-            string repo = path[1];
-            if (!repo.StartsWith("learn-"))
-                throw new ArgumentException("Identified module not in recognized MS Learn GitHub repo", nameof(moduleUrl));
-
-            if (path.Last() == "index.yml")
-                path.RemoveAt(path.Count - 1);
-
-            string branch = path[3];
-            string folder = string.Join('/', path.Skip(4));
-
-            return (repo, branch, folder);
         }
     }
 }

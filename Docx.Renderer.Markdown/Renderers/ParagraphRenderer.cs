@@ -20,6 +20,7 @@ namespace Docx.Renderer.Markdown.Renderers
             { "Heading3", (r,d,bo,e,tags) => CreateHeader(3,r,d,bo,e,tags) },
             { "Heading4", (r,d,bo,e,tags) => CreateHeader(4,r,d,bo,e,tags) },
             { "Heading5", (r,d,bo,e,tags) => CreateHeader(5,r,d,bo,e,tags) },
+            { "Caption", (_, _, _, _, _) => { /* Do nothing */ } },
             { "ListParagraph", CreateListBlock },
             { @"(?s:.*)Code", CreateCodeBlock },
             { @"(?s:.*)Quote", CreateBlockQuote },
@@ -179,7 +180,7 @@ namespace Docx.Renderer.Markdown.Renderers
             Debug.Assert(blockOwner == null);
 
             string language = null;
-            var next = element.NextParagagraph;
+            var next = element.NextParagraph;
             if (next.Properties.StyleName == "CodeFooter")
             {
                 language = next.Text;
