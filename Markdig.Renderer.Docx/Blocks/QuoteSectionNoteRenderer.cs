@@ -1,7 +1,5 @@
 ﻿using System;
 using DXPlus;
-using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 
 namespace Markdig.Renderer.Docx.Blocks
@@ -15,9 +13,12 @@ namespace Markdig.Renderer.Docx.Blocks
             if (block.QuoteType == QuoteSectionNoteType.DFMNote 
                 && block.NoteTypeString != null)
             {
-                currentParagraph
-                    .Style(HeadingType.IntenseQuote)
-                    .AppendLine(block.NoteTypeString);
+                // If there was a note block right before this one, add a separator
+                // otherwise Word merges them together.
+                if (currentParagraph.PreviousParagraph.Properties.StyleName == HeadingType.IntenseQuote.ToString())
+                    currentParagraph.InsertBefore(new Paragraph());
+
+                currentParagraph.Style(HeadingType.IntenseQuote).AppendLine(block.NoteTypeString);
             }
             else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
             {
@@ -38,7 +39,11 @@ namespace Markdig.Renderer.Docx.Blocks
             {
                 var paragraphBlock = block[index];
                 if (index > 0)
-                    currentParagraph.AppendLine();
+                {
+                    currentParagraph.AppendLine()
+                            .AppendLine();
+                }
+
                 Write(paragraphBlock, owner, document, currentParagraph);
             }
         }
