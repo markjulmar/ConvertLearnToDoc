@@ -72,13 +72,15 @@ namespace LearnDocUtils
                         await tempFile.WriteLineAsync($"### {question.Content}");
                         foreach (var choice in question.Choices)
                         {
-                            await tempFile.WriteAsync(choice.IsCorrect ? "- [X] " : "- [ ]");
+                            await tempFile.WriteAsync(choice.IsCorrect ? "- [X] " : "- [ ] ");
                             await tempFile.WriteLineAsync(choice.Content);
-                            await tempFile.WriteLineAsync();
+                            if (!string.IsNullOrEmpty(choice.Explanation))
+                            {
+                                await tempFile.WriteLineAsync($"    - {choice.Explanation}");
+                            }
                         }
+                        await tempFile.WriteLineAsync();
                     }
-
-                    await tempFile.WriteLineAsync();
                 }
             }
 

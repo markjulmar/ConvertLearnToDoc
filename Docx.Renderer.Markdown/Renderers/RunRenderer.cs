@@ -61,7 +61,7 @@ namespace Docx.Renderer.Markdown.Renderers
                             else if (tf.Bold) AppendText<BoldText>(p, t.Value);
                             else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
                             else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
-                            else p.Add(t.Value);
+                            else p.Add(ConvertSpecialCharacters(t.Value));
                         }
                         break;
                     }
@@ -100,6 +100,13 @@ namespace Docx.Renderer.Markdown.Renderers
                     }
                 }
             }
+        }
+
+        private static string ConvertSpecialCharacters(string text)
+        {
+            // TODO: if this gets larger, move to a dictionary.
+            return text.Replace("❎", "[x]")
+                .Replace("⬜", "[ ]");
         }
 
         private static void AppendText<T>(Julmar.GenMarkdown.Paragraph paragraph, string text) where T : Text

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i C:\\users\\mark\\git\\learnRepos\\learn-pr\\learn-pr\\advocates\\improve-reliability-deployment -o /users/mark/downloads/out.docx"
+      "commandLineArgs": "-i /users/mark/downloads/accelerate-scale-spring-boot-application-azure-cache-redis.docx -o /users/mark/downloads/out"
     }
   }
 }

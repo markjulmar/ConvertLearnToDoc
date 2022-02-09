@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -460,6 +461,8 @@ namespace LearnDocUtils
                 return string.Empty;
 
             // Get the lines specific to the quiz and remove them from content.
+            // TODO: we assume here that the quiz is always the LAST thing in the unit. This is how
+            // Learn works today, but that could change. We should probably look for a H2 separator.
             var quiz = new List<string>(lines.GetRange(firstLine, lines.Count - firstLine));
 
             // Make sure to remove the title since we're pulling it into the quiz.
@@ -480,16 +483,20 @@ namespace LearnDocUtils
                 }
                 else
                 {
-                    var isCorrect = line.Contains("❎");
+                    // Get rid of all spaces and dashes in front of the text.
+                    var text = line.Trim().TrimStart('-').TrimStart();
+                    Debug.Assert(text.Length>0);
 
-                    var content = line.Replace("❎", "")
-                        .Replace("⬜", "")
-                        .TrimStart(' ', '-')
-                        .TrimEnd();
+                    if (text[0] == '[') // choice?
+                    {
+                        var isCorrect = text.Replace(" ", "").ToLower().StartsWith("[x]");
+                        start = text.IndexOf(']') + 1;
+                        Debug.Assert(start>=3);
 
-                    sb.AppendLine($"    - content: \"{content}\"");
-                    sb.AppendLine("      explanation: \"\"");
-                    sb.AppendLine($"      isCorrect: {isCorrect.ToString().ToLower()}");
+                        sb.AppendLine($"    - content: \"{text[start..].Trim()}\"");
+                        sb.AppendLine($"      isCorrect: {isCorrect.ToString().ToLower()}");
+                    }
+                    else sb.AppendLine($"      explanation: \"{text}\"");
                 }
             }
 
