@@ -158,6 +158,10 @@ namespace LearnDocUtils
                         tci.Attributes.TryGetValue("source", out var source);
                         imageUrl = source;
                         break;
+                    case TripleColonBlock tcb when tcb.Extension.Name == "image":
+                        tcb.Attributes.TryGetValue("source", out var bsource);
+                        imageUrl = bsource;
+                        break;
                 }
 
                 // Download the image.

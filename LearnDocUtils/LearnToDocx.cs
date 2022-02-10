@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using MSLearnRepos;
 using System.IO;
 using System.Linq;
@@ -14,17 +15,17 @@ namespace LearnDocUtils
 {
     public static class LearnToDocx
     {
-        public static async Task ConvertFromUrlAsync(string url, string outputFile, 
+        public static async Task<List<string>> ConvertFromUrlAsync(string url, string outputFile, 
             string zonePivot = null, string accessToken = null, DocumentOptions options = null)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
             var (repo, branch, folder) = await LearnResolver.LocationFromUrlAsync(url);
-            await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, options);
+            return await ConvertFromRepoAsync(repo, branch, folder, outputFile, zonePivot, accessToken, options);
         }
 
-        public static async Task ConvertFromRepoAsync(string repo, string branch, string folder,
+        public static async Task<List<string>> ConvertFromRepoAsync(string repo, string branch, string folder,
                 string outputFile, string zonePivot = null, string accessToken = null, DocumentOptions options = null)
         {
             if (string.IsNullOrEmpty(repo))
@@ -35,10 +36,10 @@ namespace LearnDocUtils
                 throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
 
             accessToken = string.IsNullOrEmpty(accessToken) ? GithubHelper.ReadDefaultSecurityToken() : accessToken;
-            await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken), folder, outputFile, zonePivot, options);
+            return await Convert(TripleCrownGitHubService.CreateFromToken(repo, branch, accessToken), folder, outputFile, zonePivot, options);
         }
 
-        public static async Task ConvertFromFolderAsync(string learnFolder, string outputFile, string zonePivot = null, DocumentOptions options = null)
+        public static async Task<List<string>> ConvertFromFolderAsync(string learnFolder, string outputFile, string zonePivot = null, DocumentOptions options = null)
         {
             if (string.IsNullOrWhiteSpace(learnFolder))
                 throw new ArgumentException($"'{nameof(learnFolder)}' cannot be null or whitespace.", nameof(learnFolder));
@@ -46,10 +47,10 @@ namespace LearnDocUtils
             if (!Directory.Exists(learnFolder))
                 throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
 
-            await Convert(TripleCrownGitHubService.CreateLocal(learnFolder), learnFolder, outputFile, zonePivot, options);
+            return await Convert(TripleCrownGitHubService.CreateLocal(learnFolder), learnFolder, outputFile, zonePivot, options);
         }
 
-        private static async Task Convert(ITripleCrownGitHubService tcService,
+        private static async Task<List<string>> Convert(ITripleCrownGitHubService tcService,
             string moduleFolder, string docxFile,
             string zonePivot, DocumentOptions options)
         {
@@ -68,7 +69,7 @@ namespace LearnDocUtils
             try
             {
                 // Convert the file.
-                await ConvertMarkdownToDocx(module, markdownFile, docxFile, zonePivot, options?.Debug==true);
+                return await ConvertMarkdownToDocx(module, markdownFile, docxFile, zonePivot, options?.Debug==true);
             }
             finally
             {
@@ -79,9 +80,21 @@ namespace LearnDocUtils
             }
         }
 
-        private static async Task ConvertMarkdownToDocx(TripleCrownModule moduleData, string markdownFile, string docxFile, string zonePivot, bool dumpMarkdownDocument)
+
+        private static async Task<List<string>> ConvertMarkdownToDocx(TripleCrownModule moduleData, string markdownFile, string docxFile, string zonePivot, bool dumpMarkdownDocument)
         {
-            var context = new MarkdownContext();
+            var errors = new List<string>();
+
+            MarkdownContext.LogActionDelegate Log(string level) 
+                => (code, message, origin, line) => errors.Add($"{level}: {code} - {message}");
+
+            var context = new MarkdownContext(
+                logInfo: (a, b, c, d) => { },
+                logSuggestion: Log("suggestion"),
+                logWarning: Log("warning"),
+                logError: Log("error"));
+            // TODO: add readFile support?
+
             var pipelineBuilder = new MarkdownPipelineBuilder();
             var pipeline = pipelineBuilder
                 .UseAbbreviations()
@@ -110,8 +123,13 @@ namespace LearnDocUtils
                 .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
                 .Build();
 
-            // Parse the Markdown tree
             string markdownText = await File.ReadAllTextAsync(markdownFile);
+
+            // Pre-process the :::image tag .. we're using the public version (v2) which has problems
+            // with end tags when they aren't on a separate line.
+            markdownText = FixImageExtension(markdownText);
+
+            // Parse the Markdown tree
             var markdownDocument = Markdown.Parse(markdownText, pipeline);
 
             // Dump the markdown contents.
@@ -136,6 +154,42 @@ namespace LearnDocUtils
 
             document.Save();
             document.Close();
+
+            return errors;
+        }
+
+        private static string FixImageExtension(string text)
+        {
+            const string marker = ":::image-end:::";
+
+            int index = text.IndexOf(marker, StringComparison.InvariantCultureIgnoreCase);
+            while (index > 0)
+            {
+                if (text[index - 1] != '\r' && text[index - 1] != '\n')
+                    text = text.Insert(index, Environment.NewLine);
+
+                // Backup and find the end marker -- we need to make sure the description text is bounded by CRLF for
+                // the existing v2 extension to pick it up.
+
+                int start = index - 3;
+                for (; start > 0; start--)
+                {
+                    if (text.Substring(start, 3) == ":::")
+                        break;
+                }
+
+                if (start > 0)
+                {
+                    start += 3;
+                    while (text[start] == ' ') start++;
+                    if (text[start] != '\r' && text[start] != '\n')
+                        text = text.Insert(start, Environment.NewLine);
+                }
+
+                index = text.IndexOf(marker, index+marker.Length, StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            return text;
         }
 
         private static void AddUnitMetadata(IDocxRenderer renderer, TripleCrownModule moduleData, IDocument document)

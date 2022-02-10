@@ -1,4 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 
 namespace Markdig.Renderer.Docx.TripleColonExtensions
@@ -10,7 +14,8 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
         public bool Closed { get; set; }
         public bool EndingTripleColons { get; set; }
         public IDictionary<string, string> Attributes { get; set; }
-        public int Count { get; }
+        public ContainerBlock Container { get; set; }
+        public ContainerInline Inlines { get; set; }
 
         public TripleColonElement(TripleColonBlock block)
         {
@@ -19,7 +24,10 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
             Closed = block.Closed;
             EndingTripleColons = block.EndingTripleColons;
             Attributes = block.Attributes;
-            Count = block.Count;
+            if (block.Count > 0)
+            {
+                Container = block;
+            }
         }
 
         public TripleColonElement(TripleColonInline inline)
@@ -29,7 +37,10 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
             Closed = inline.Closed;
             EndingTripleColons = inline.EndingTripleColons;
             Attributes = inline.Attributes;
-            Count = inline.Count;
+            if (inline.Count > 0)
+            {
+                Inlines = inline;
+            }
         }
     }
 }

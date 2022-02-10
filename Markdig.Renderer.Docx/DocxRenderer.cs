@@ -128,7 +128,7 @@ namespace Markdig.Renderer.Docx
             owner.AttachComment(document.CreateComment(user, commentText));
         }
 
-        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, string type, string localization, bool hasBorder, bool isLightbox)
+        public Drawing InsertImage(Paragraph currentParagraph, string imageSource, string altText, string title, bool hasBorder, bool isLightbox)
         {
             string path = ResolvePath(moduleFolder, imageSource);
             if (File.Exists(path))
@@ -149,15 +149,10 @@ namespace Markdig.Renderer.Docx
                 drawing.Picture.Description = imageSource;
                 currentParagraph.Append(drawing);
 
-                if (!string.IsNullOrEmpty(altText))
-                    drawing.AddCaption(": " + altText);
-
+                if (!string.IsNullOrEmpty(title))
+                    drawing.AddCaption(": " + title);
                 if (isLightbox)
                     AddComment(currentParagraph, "lightbox:true");
-                if (!string.IsNullOrEmpty(localization))
-                    AddComment(currentParagraph, $"loc-scope:{localization}");
-                if (!string.IsNullOrEmpty(type))
-                    AddComment(currentParagraph, $"type:{type}");
 
                 return drawing;
             }
