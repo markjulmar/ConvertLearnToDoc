@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{217F168B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDoc.AzureFunctions", "ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj", "{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.AzureFunctions", "ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj", "{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompareFiles", "CompareFiles\CompareFiles.csproj", "{F1C64FD2-5F2C-4508-9586-132E1A0374A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +63,10 @@ Global
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0A9B2B6-3495-4CB8-BA42-3AC628E375D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1C64FD2-5F2C-4508-9586-132E1A0374A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1C64FD2-5F2C-4508-9586-132E1A0374A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1C64FD2-5F2C-4508-9586-132E1A0374A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1C64FD2-5F2C-4508-9586-132E1A0374A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{57AB7888-5053-481F-B2E6-0C81BAB7FBF8} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
 		{9F293264-0EB2-4E23-8959-08728359DEDE} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
 		{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF} = {217F168B-D681-4A01-AA3D-752EE599C31B}
+		{F1C64FD2-5F2C-4508-9586-132E1A0374A7} = {217F168B-D681-4A01-AA3D-752EE599C31B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6BABCC68-20CA-4717-9E38-F209B49935BD}
