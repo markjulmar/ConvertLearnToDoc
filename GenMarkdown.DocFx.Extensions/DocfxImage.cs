@@ -41,7 +41,7 @@ namespace GenMarkdown.DocFx.Extensions
         /// <param name="description"></param>
         public DocfxImage(string altText, string imagePath, string description = "") : base(altText, imagePath, description)
         {
-            ImageType = "content";
+            ImageType = !string.IsNullOrEmpty(description) ? "complex" : "content";
             LocScope = string.Empty;
             Lightbox = string.Empty;
             Link = string.Empty;
@@ -74,13 +74,14 @@ namespace GenMarkdown.DocFx.Extensions
                 writer.Write($" loc-scope=\"{LocScope.ToLower()}\"");
             }
 
+            writer.WriteLine(":::");
+
             if (!string.IsNullOrEmpty(Description))
             {
-                writer.WriteLine(":::");
                 writer.WriteLine(Description);
+                writer.WriteLine(":::image-end:::");
             }
 
-            writer.WriteLine(":::");
             writer.WriteLine();
         }
     }

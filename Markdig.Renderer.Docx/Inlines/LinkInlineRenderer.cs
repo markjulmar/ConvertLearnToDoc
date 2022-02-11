@@ -33,15 +33,20 @@ namespace Markdig.Renderer.Docx.Inlines
 
             if (link.IsImage)
             {
-                bool addBorder = false;
-                if (quoteBlockOwner != null)
+                bool addBorder = quoteBlockOwner?.SectionAttributeString != null && quoteBlockOwner.SectionAttributeString.Contains("mx-imgBorder");
+
+                string description = null;
+
+                // If we have text children, then make that our alt-text
+                if (link.Any())
                 {
-                    if (quoteBlockOwner.SectionAttributeString != null
-                        && quoteBlockOwner.SectionAttributeString.Contains("mx-imgBorder"))
-                        addBorder = true;
+                    description = title;
+                    title = string.Join("\r\n", link.Select(il => il.ToString()));
+                    if (title == description)
+                        description = null;
                 }
 
-                owner.InsertImage(currentParagraph, url, title, null, null, addBorder, isLightboxImage);
+                owner.InsertImage(currentParagraph, url, title, description, addBorder, isLightboxImage);
             }
             else
             {

@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using System.Net.Mail;
+using System.Linq;
 using DXPlus;
 using Markdig.Syntax;
 using IContainer = DXPlus.IContainer;
@@ -78,8 +78,25 @@ namespace Markdig.Renderer.Docx.TripleColonExtensions
             extension.Attributes.TryGetValue("source", out string source);
             extension.Attributes.TryGetValue("border", out string hasBorder);
             extension.Attributes.TryGetValue("lightbox", out string isLightbox);
-            
-            owner.InsertImage(currentParagraph, source, title, type, localization, hasBorder?.ToLower()=="true", isLightbox?.ToLower()=="true");
+            extension.Attributes.TryGetValue("link", out string link);
+
+            string description = null;
+            if (extension.Container != null && type == "complex")
+            {
+                // Should be strictly text as this is for screen readers.
+                description = string.Join("\r\n", extension.Container.Select(b => (b as ParagraphBlock)?.Inline)
+                                        .SelectMany(ic => ic.Select(il => il.ToString())));
+            }
+
+            var drawing = owner.InsertImage(currentParagraph, source, title, description, hasBorder?.ToLower()=="true", isLightbox?.ToLower()=="true");
+            if (drawing != null)
+            {
+                owner.AddComment(currentParagraph, $"useExtension");
+                if (!string.IsNullOrEmpty(link))
+                    owner.AddComment(currentParagraph, $"link:{link}");
+                if (!string.IsNullOrEmpty(localization))
+                    owner.AddComment(currentParagraph, $"loc-scope:{localization}");
+            }
         }
     }
 }

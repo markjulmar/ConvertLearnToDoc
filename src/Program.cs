@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
 using LearnDocUtils;
@@ -24,8 +25,10 @@ namespace ConvertLearnToDoc
                 // Input is a Learn module URL
                 if (options.InputFileOrFolder!.StartsWith("http"))
                 {
-                    await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
+                    var log = await LearnToDocx.ConvertFromUrlAsync(options.InputFileOrFolder,
                         options.OutputFileOrFolder, options.ZonePivot, options.AccessToken, new DocumentOptions { Debug = options.Debug, EmbedNotebookContent = options.ConvertNotebooks});
+
+                    log.ForEach(Console.WriteLine);
                 }
 
                 // Input is a repo + folder + branch

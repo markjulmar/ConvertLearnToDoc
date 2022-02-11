@@ -231,13 +231,31 @@ namespace Docx.Renderer.Markdown.Renderers
 
             var paragraph = d.Parent.Parent as Paragraph;
 
-            string imageType = FindCommentValue(paragraph, "type:");
+            // If the image has a caption, we'll use that -- otherwise see if we have a description.
+            string description = null;
+            if (paragraph?.NextParagraph?.Properties.StyleName == HeadingType.Caption.ToString())
+            {
+                description = paragraph.NextParagraph.Text;
+                //TODO: loc? Remove figure prefix
+                index = description.IndexOf(':');
+                if (index > 0)
+                {
+                    index++;
+                    while (description[index] == ' ') index++;
+                    description = description[index..];
+                }
+            }
+
+            string altText = d.Description;
+            bool useExtension = FindCommentValue(paragraph, "useExtension") != null;
             string locScope = FindCommentValue(paragraph, "loc-scope");
+            string link = FindCommentValue(paragraph, "link");
             bool isLightbox = FindCommentValue(paragraph, "lightbox:") != null;
 
-            if (border || d.IsDecorative || isLightbox || !string.IsNullOrEmpty(locScope) || !string.IsNullOrEmpty(imageType))
+            if (border || d.IsDecorative || isLightbox 
+                || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
             {
-                var image = new DocfxImage(d.Description, imagePath) { Border = border };
+                var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
                 if (!string.IsNullOrEmpty(locScope) || d.IsDecorative)
                     image.LocScope = "other";
                 if (isLightbox)
@@ -246,7 +264,7 @@ namespace Docx.Renderer.Markdown.Renderers
                 return image;
             }
 
-            return new Julmar.GenMarkdown.Image(d.Description, imagePath);
+            return new Julmar.GenMarkdown.Image(altText, imagePath, description);
         }
 
         private static string FindCommentValue(Paragraph paragraph, string prefix)
