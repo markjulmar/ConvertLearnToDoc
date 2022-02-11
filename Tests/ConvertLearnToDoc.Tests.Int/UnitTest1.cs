@@ -102,7 +102,7 @@ public class UnitTest1
         ZipFile.ExtractToDirectory(zipFileTempFilePath, unzippedPath, overwriteFiles:true);
 
         //Download original source files
-        var learn = new LearnUtilities();
+        var learn = new ModuleDownloader();
         var originalPath = Path.Combine(outputPath, "OriginalMD");
 
         var gitHubToken = Environment.GetEnvironmentVariable("GitHubToken");
@@ -123,9 +123,22 @@ public class UnitTest1
             if (File.Exists(Path.Combine(unzippedPath, originalFileName)))
             {
                 var originalText = File.ReadAllText(Path.Combine(tempGHFolder, originalFileName));
-                string originalTextResult = Regex.Replace(originalText, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
+
+                var originalTextLines = originalText.Split(Environment.NewLine)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToArray();
+
+                var originalTextString = string.Join(Environment.NewLine, originalTextLines);
+
+
+                string originalTextResult = Regex.Replace(originalTextString, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
                 var newText = File.ReadAllText(Path.Combine(unzippedPath, originalFileName));
-                string newTextResult = Regex.Replace(newText, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
+                var newTextLines = newText.Split(Environment.NewLine)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToArray();
+
+                var newTextString = string.Join(Environment.NewLine, newTextLines);
+                string newTextResult = Regex.Replace(newTextString, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
                 var diff = InlineDiffBuilder.Diff(originalTextResult, newTextResult,  ignoreWhiteSpace:true);
                 var diff2 = diff
                     .Lines
