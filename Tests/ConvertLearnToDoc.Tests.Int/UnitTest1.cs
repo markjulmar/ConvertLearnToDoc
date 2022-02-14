@@ -19,6 +19,9 @@ using System.IO.Compression;
 using DiffPlex.DiffBuilder;
 using System.Linq;
 using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+using System.Diagnostics;
 
 namespace ConvertLearnToDoc.Tests.Int;
 
@@ -99,7 +102,7 @@ public class UnitTest1
         {
             Directory.Delete(unzippedPath, true);
         }
-        ZipFile.ExtractToDirectory(zipFileTempFilePath, unzippedPath, overwriteFiles:true);
+        ZipFile.ExtractToDirectory(zipFileTempFilePath, unzippedPath, overwriteFiles: true);
 
         //Download original source files
         var learn = new ModuleDownloader();
@@ -122,32 +125,28 @@ public class UnitTest1
             var originalFileName = Path.GetFileName(originalFilePath);
             if (File.Exists(Path.Combine(unzippedPath, originalFileName)))
             {
-                var originalText = File.ReadAllText(Path.Combine(tempGHFolder, originalFileName));
+                Console.WriteLine(originalFileName);
+                if (originalFileName.Contains(".yml", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var deserializer = new DeserializerBuilder()
+                        .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                        .Build();
 
-                var originalTextLines = originalText.Split(Environment.NewLine)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .ToArray();
 
-                var originalTextString = string.Join(Environment.NewLine, originalTextLines);
+                    var originalText = File.ReadAllText(Path.Combine(tempGHFolder, originalFileName));
+                    var originalTextReader = new StringReader(originalText);
+                    var newText = File.ReadAllText(Path.Combine(unzippedPath, originalFileName));
+                    var newTextReader = new StringReader(newText);
 
-
-                string originalTextResult = Regex.Replace(originalTextString, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
-                var newText = File.ReadAllText(Path.Combine(unzippedPath, originalFileName));
-                var newTextLines = newText.Split(Environment.NewLine)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .ToArray();
-
-                var newTextString = string.Join(Environment.NewLine, newTextLines);
-                string newTextResult = Regex.Replace(newTextString, @"(^\p{Zs}*\r\n){2,}", "\r\n", RegexOptions.Multiline);
-                var diff = InlineDiffBuilder.Diff(originalTextResult, newTextResult,  ignoreWhiteSpace:true);
-                var diff2 = diff
-                    .Lines
-                    .Where(x => !x.Text.Contains("ms.date"))
-                    .Where(x => x.Text != "")
-                    .Where(x => x.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged)
-                    .ToList();
-                //diff2.Count().ShouldBeEquivalentTo(0);
-                //diff.HasDifferences.ShouldBeFalse();
+                    if (originalText.Contains("YamlMime:ModuleUnit", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        CompareModuleUnits(deserializer, originalTextReader, newTextReader, originalFileName);
+                    }
+                    else if (originalText.Contains("YamlMime:Module", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        CompareModuleIndexes(deserializer, originalTextReader, newTextReader, originalFileName);
+                    }
+                }
 
             }
         }
@@ -161,6 +160,76 @@ public class UnitTest1
         //{
         //    File.Delete(zipFileTempFilePath);
         //}
+    }
+
+    private void CompareModuleUnits(IDeserializer deserializer, StringReader originalTextReader, StringReader newTextReader, string fileName)
+    {
+        var originalYamlDoc = deserializer.Deserialize<YamlMimeModuleUnit.Root>(originalTextReader);
+        originalYamlDoc.ShouldNotBeNull();
+        originalYamlDoc.Metadata.ShouldNotBeNull();
+
+        var newYamlDoc = deserializer.Deserialize<YamlMimeModuleUnit.Root>(newTextReader);
+        newYamlDoc.ShouldNotBeNull();
+        newYamlDoc.Metadata.ShouldNotBeNull();
+
+        
+        (originalYamlDoc.AzureSandbox == newYamlDoc.AzureSandbox || originalYamlDoc.Sandbox == newYamlDoc.Sandbox || originalYamlDoc.Sandbox == newYamlDoc.AzureSandbox || originalYamlDoc.AzureSandbox == newYamlDoc.Sandbox).ShouldBeTrue();
+
+        //originalYamlDoc.AzureSandbox.ShouldBeEquivalentTo(newYamlDoc.AzureSandbox, $"AzureSandbox did not match. Expected {originalYamlDoc.AzureSandbox}, but was {newYamlDoc.AzureSandbox}. File {fileName}");
+        //originalYamlDoc.Sandbox.ShouldBeEquivalentTo(newYamlDoc.Sandbox);
+
+        originalYamlDoc.Content.ShouldBeEquivalentTo(newYamlDoc.Content);
+        originalYamlDoc.DurationInMinutes.ShouldBeEquivalentTo(newYamlDoc.DurationInMinutes);
+        originalYamlDoc.Title.ShouldBeEquivalentTo(newYamlDoc.Title);
+        originalYamlDoc.Uid.ShouldBeEquivalentTo(newYamlDoc.Uid);
+
+        originalYamlDoc.Metadata.Author.ShouldBeEquivalentTo(newYamlDoc.Metadata.Author);
+        originalYamlDoc.Metadata.Description.ShouldBeEquivalentTo(newYamlDoc.Metadata.Description);
+        originalYamlDoc.Metadata.MsAuthor.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsAuthor);
+        //originalYamlDoc.Metadata.MsDate.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsDate);
+        originalYamlDoc.Metadata.MsProd.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsProd);
+        originalYamlDoc.Metadata.MsTopic.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsTopic);
+        //originalYamlDoc.Metadata.Robots.ShouldBeEquivalentTo(newYamlDoc.Metadata.Robots);
+        originalYamlDoc.Metadata.Title.ShouldBeEquivalentTo(newYamlDoc.Metadata.Title);
+    }
+
+    private void CompareModuleIndexes(IDeserializer deserializer, StringReader originalTextReader, StringReader newTextReader, string fileName)
+    {
+        var originalYamlDoc = deserializer.Deserialize<YamlMimeModule.Root>(originalTextReader);
+        originalYamlDoc.ShouldNotBeNull();
+        originalYamlDoc.Metadata.ShouldNotBeNull();
+
+        var newYamlDoc = deserializer.Deserialize<YamlMimeModule.Root>(newTextReader);
+        newYamlDoc.ShouldNotBeNull();
+        newYamlDoc.Metadata.ShouldNotBeNull();
+
+
+        originalYamlDoc.Uid.ShouldBeEquivalentTo(newYamlDoc.Uid);
+        originalYamlDoc.Title.ShouldBeEquivalentTo(newYamlDoc.Title);
+        originalYamlDoc.Summary.ShouldBeEquivalentTo(newYamlDoc.Summary);
+        originalYamlDoc.Abstract.ShouldBeEquivalentTo(newYamlDoc.Abstract);
+        originalYamlDoc.Prerequisites.ShouldBeEquivalentTo(newYamlDoc.Prerequisites);
+        originalYamlDoc.IconUrl.ShouldBeEquivalentTo(newYamlDoc.IconUrl);
+        originalYamlDoc.Badge.ShouldBeEquivalentTo(newYamlDoc.Badge);
+
+        if (originalYamlDoc.Badge is not null && newYamlDoc.Badge is not null)
+        {
+            originalYamlDoc.Badge.Uid.ShouldBeEquivalentTo(newYamlDoc.Badge.Uid);
+        }
+
+        originalYamlDoc.Levels.ShouldBeEquivalentTo(newYamlDoc.Levels);
+        originalYamlDoc.Roles.ShouldBeEquivalentTo(newYamlDoc.Roles);
+        originalYamlDoc.Products.ShouldBeEquivalentTo(newYamlDoc.Products);
+        originalYamlDoc.Units.ShouldBeEquivalentTo(newYamlDoc.Units);
+
+        originalYamlDoc.Metadata.Author.ShouldBeEquivalentTo(newYamlDoc.Metadata.Author);
+        originalYamlDoc.Metadata.Description.ShouldBeEquivalentTo(newYamlDoc.Metadata.Description);
+        originalYamlDoc.Metadata.MsAuthor.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsAuthor);
+        //originalYamlDoc.Metadata.MsDate.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsDate);
+        originalYamlDoc.Metadata.MsProd.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsProd);
+        originalYamlDoc.Metadata.MsTopic.ShouldBeEquivalentTo(newYamlDoc.Metadata.MsTopic);
+        //originalYamlDoc.Metadata.Robots.ShouldBeEquivalentTo(newYamlDoc.Metadata.Robots);
+        originalYamlDoc.Metadata.Title.ShouldBeEquivalentTo(newYamlDoc.Metadata.Title);
     }
 
     private async Task<byte[]> CreateZipFile(string wordDocFilePath, string fileName)
@@ -206,3 +275,5 @@ public class UnitTest1
         return fileContentResult.FileContents;
     }
 }
+
+
