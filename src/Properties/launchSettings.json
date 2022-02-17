@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\azure\\accelerate-azure-migration-journey -o /users/mark/downloads/output.docx"
+      "commandLineArgs": "-d -i https://docs.microsoft.com/en-us/learn/modules/troubleshoot-inbound-connectivity-azure-load-balancer/ -o /users/mark/downloads/output.docx"
     }
   }
 }
