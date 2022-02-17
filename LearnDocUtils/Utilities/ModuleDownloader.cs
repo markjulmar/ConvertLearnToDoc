@@ -33,14 +33,22 @@ namespace LearnDocUtils
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
 
-            var markdownFile = Path.Combine(outputFolder, Path.ChangeExtension(Path.GetFileNameWithoutExtension(learnFolder)??"temp-markdown",".md"));
+            // Write out index.yml
+            await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), module.Document);
 
+            var markdownFile = Path.Combine(outputFolder, Path.ChangeExtension(Path.GetFileNameWithoutExtension(learnFolder)??"units.g.",".md"));
             await using var tempFile = new StreamWriter(markdownFile);
 
             foreach (var unit in module.Units)
             {
-                await tempFile.WriteLineAsync($"# {unit.Title}");
+                // Get the unit text
                 var mdText = await tcService.ReadContentForUnitAsync(unit);
+
+                // Write out the unit file
+                await WriteUnitFileAsync(unit, mdText, outputFolder);
+
+                // Now write to our combined file
+                await tempFile.WriteLineAsync($"# {unit.Title}");
                 if (!string.IsNullOrEmpty(mdText))
                 {
                     mdText = await DownloadAllImagesForUnit(unit.GetContentFilename(), mdText, tcService, learnFolder, outputFolder);
@@ -85,6 +93,27 @@ namespace LearnDocUtils
             }
 
             return (module, markdownFile);
+        }
+
+        private static async Task WriteUnitFileAsync(TripleCrownUnit unit, string markdownText, string outputPath)
+        {
+            // Write the YAML
+            await File.WriteAllTextAsync(Path.Combine(outputPath, Path.GetFileName(unit.Path)), unit.Document);
+
+            // Write the markdown
+            string fn = unit.GetContentFilename();
+            string folder = Path.GetDirectoryName(fn);
+            folder = string.IsNullOrEmpty(folder) ? outputPath : Path.Combine(outputPath, folder);
+            
+            if (!string.IsNullOrEmpty(folder))
+            {
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+                
+                fn = Path.Combine(folder, Path.GetFileName(fn));
+            }
+
+            await File.WriteAllTextAsync(fn, markdownText);
         }
 
         private static string DetermineNotebookUrl(ITripleCrownGitHubService service, string moduleUrl, string unitNotebook)

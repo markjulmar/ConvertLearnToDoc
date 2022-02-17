@@ -265,8 +265,14 @@ namespace LearnDocUtils
             return 2 * dbOne / (nx.Count + ny.Count);
         }
 
-        private static string FormatMultiLineYaml(string text) 
-            => text==null ? null : text.Contains('\n') ? "|" + Environment.NewLine + text : text;
+        private static string FormatMultiLineYaml(string text)
+        {
+            if (text == null) return null;
+            text = text.TrimEnd('\r', '\n');
+            return text.Contains('\n') 
+                ? $"|{Environment.NewLine}  {text.Replace("\n", "\n  ")}" 
+                : text;
+        }
 
         private static string PostProcessMarkdown(string text)
         {
@@ -483,8 +489,8 @@ namespace LearnDocUtils
                 }
                 else
                 {
-                    // Get rid of all spaces and dashes in front of the text.
-                    var text = line.Trim().TrimStart('-').TrimStart();
+                    // Get rid of all spaces, dashes, and asterisks (Markdown list elements) in front of the text.
+                    var text = line.Trim().TrimStart('-').TrimStart('*').TrimStart();
                     Debug.Assert(text.Length>0);
 
                     if (text[0] == '[') // choice?
