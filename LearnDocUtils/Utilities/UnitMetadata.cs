@@ -29,7 +29,7 @@ namespace LearnDocUtils
             if (Metadata.UsesSandbox)
                 sb.AppendLine("sandbox: true");
             if (!string.IsNullOrEmpty(Metadata.InteractivityType))
-                sb.AppendLine($"interactivity: {Metadata.InteractivityType}");
+                sb.AppendLine($"interactive: {Metadata.InteractivityType}");
             if (Metadata.LabId > 0)
                 sb.AppendLine($"labId: {Metadata.LabId}");
             if (!string.IsNullOrEmpty(Metadata.Notebook))

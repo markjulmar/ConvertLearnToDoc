@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i /users/mark/downloads/output.docx -o /users/mark/downloads/output"
+      "commandLineArgs": "-d -i C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\azure\\accelerate-azure-migration-journey -o /users/mark/downloads/output.docx"
     }
   }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -20,10 +20,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Markdig" Version="0.27.0" />
+		<PackageReference Include="Microsoft.DocAsCode.MarkdigEngine.Extensions" Version="2.59.0" />
+	</ItemGroup>
+
+	<ItemGroup>
     <ProjectReference Include="..\..\ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj" />
   </ItemGroup>
 
