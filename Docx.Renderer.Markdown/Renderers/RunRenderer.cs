@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using DXPlus;
 using GenMarkdown.DocFx.Extensions;
 using Julmar.GenMarkdown;
@@ -35,6 +36,10 @@ namespace Docx.Renderer.Markdown.Renderers
                 tf.StyleName = element.StyleName;
             if (TextFormatting.IsMonospaceFont(element.Properties.Font))
                 tf.Monospace = true;
+            if (element.Properties.Subscript)
+                tf.Subscript = true;
+            if (element.Properties.Superscript)
+                tf.Superscript = true;
 
             foreach (var e in element.Elements)
             {
@@ -49,10 +54,10 @@ namespace Docx.Renderer.Markdown.Renderers
                         {
                             // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
                             // I'm handling the links. This will catch that edge case and ignore the second appearance.
-                            if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.ToString() && ll.Text == hl.Text)
+                            if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
                                 continue;
 
-                            p.Add(Text.Link(hl.Text, hl.Uri.ToString()));
+                            p.Add(Text.Link(hl.Text, hl.Uri.OriginalString));
                         }
                         else if (t.Value.Length > 0)
                         {
@@ -61,6 +66,8 @@ namespace Docx.Renderer.Markdown.Renderers
                             else if (tf.Bold) AppendText<BoldText>(p, t.Value);
                             else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
                             else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
+                            else if (tf.Subscript) AppendText(p, t.Value, "<sub>", "</sub>");
+                            else if (tf.Superscript) AppendText(p, t.Value, "<sup>", "</sup>");
                             else p.Add(ConvertSpecialCharacters(t.Value));
                         }
                         break;
@@ -87,6 +94,12 @@ namespace Docx.Renderer.Markdown.Renderers
                                 if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
                                     lastBlock.Remove(blockOwner);
                                 lastBlock.Add(block);
+                            }
+                            else if (document.Last() is Julmar.GenMarkdown.Table table)
+                            {
+                                var row = table.Last();
+                                var cell = row.Last();
+                                cell.Content = block;
                             }
                             // Remove the empty paragraph from the document and add the image instead.
                             else
@@ -139,7 +152,7 @@ namespace Docx.Renderer.Markdown.Renderers
             }
             else
             {
-                paragraph.Add($"{prefix}{text}{suffix}");
+                paragraph.Add(new RawInline($"{prefix}{text}{suffix}"));
             }
         }
 

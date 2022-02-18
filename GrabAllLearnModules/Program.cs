@@ -28,17 +28,19 @@ foreach (var index in Directory.GetFiles(args[0], "index.yml", SearchOption.AllD
         string moduleFolder = Path.Combine(modulePath, Path.GetFileName(folder));
         if (await ProcessOneFile(fullDocPath, moduleFolder))
         {
-            await RunCompare(folder, moduleFolder);
-            Console.WriteLine("Press ENTER to continue to next file.");
-            Console.ReadLine();
+            if (await RunCompare(folder, moduleFolder))
+            {
+                //Console.WriteLine("Press ENTER to continue to next file.");
+                //Console.ReadLine();
+            }
         }
     }
 }
 
-static async Task RunCompare(string original, string generated)
+static async Task<bool> RunCompare(string original, string generated)
 {
     string doneFn = Path.Combine(generated, "checked.txt");
-    if (File.Exists(doneFn)) return;
+    if (File.Exists(doneFn)) return false;
 
     const string bc = @"C:\Users\mark\OneDrive\Tools\Beyond Compare 3\bcompare.exe";
     var proc = Process.Start(bc, $"\"{original}\" \"{generated}\"");
@@ -46,7 +48,10 @@ static async Task RunCompare(string original, string generated)
     {
         await proc.WaitForExitAsync();
         File.WriteAllText(doneFn,"");
+        return true;
     }
+
+    return false;
 }
 
 static async Task<bool> ProcessOneFile(string doc, string folder)
@@ -75,7 +80,7 @@ static async Task<bool> ProcessOneFolder(string folder, string doc)
     {
         try
         {
-            if (await ConvertLearnToDoc.Program.Main(new[] {"-n", $"-i{folder}", $"-o{doc}"}) != 0)
+            if (await ConvertLearnToDoc.Program.Main(new[] {$"-i{folder}", $"-o{doc}"}) != 0)
                 return false;
         }
         catch (Exception ex)

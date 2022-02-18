@@ -9,6 +9,8 @@ namespace Docx.Renderer.Markdown
         public bool Bold { get; set; }
         public bool Italic { get; set; }
         public bool KbdTag { get; set; }
+        public bool Superscript { get; set; }
+        public bool Subscript { get; set; }
 
         public static bool IsMonospaceFont(FontFamily fontFamily)
         {

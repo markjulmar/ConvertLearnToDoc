@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Docx.Renderer.Markdown;
+using DXPlus;
 
 namespace LearnDocUtils
 {
@@ -21,11 +21,35 @@ namespace LearnDocUtils
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
 
-            var markdownFile = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(docxFile)+"-temp.g.md");
+            options ??= new MarkdownOptions();
+
+            string basefn = Path.GetFileNameWithoutExtension(docxFile);
+
+            var markdownFile = Path.Combine(outputFolder, basefn + "-temp.g.md");
             var mediaFolder = Path.Combine(outputFolder, "media");
 
             try
             {
+                // Grab some pre-conversion options.
+                using (var doc = Document.Load(docxFile))
+                {
+                    if (options.Debug)
+                    {
+                        await File.WriteAllTextAsync(
+                            Path.Combine(outputFolder, basefn + "-temp.g.txt"),
+                            DocxDebug.Dump(doc));
+
+                        await File.WriteAllTextAsync(
+                            Path.Combine(outputFolder, basefn + "-temp.g.xml"),
+                            DocxDebug.FormatXml(doc));
+                    }
+
+                    if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForBullets), out var yesNo))
+                        options.UseAsterisksForBullets = yesNo.ToString() == "True";
+                    if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForEmphasis), out yesNo))
+                        options.UseAsterisksForEmphasis = yesNo.ToString() == "True";
+                }
+
                 // Convert the docx file to a single .md file
                 new MarkdownRenderer(options).Convert(docxFile, markdownFile, mediaFolder);
 
@@ -44,7 +68,7 @@ namespace LearnDocUtils
             }
             finally
             {
-                if (options == null || options.Debug == false)
+                if (!options.Debug)
                 {
                     if (File.Exists(markdownFile))
                         File.Delete(markdownFile);

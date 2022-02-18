@@ -133,7 +133,8 @@ namespace ConvertLearnToDocWeb.Controllers
                     UseAlternateHeaderSyntax = viewModel.UseAlternateHeaderSyntax,
                     UseAsterisksForBullets = viewModel.UseAsterisksForBullets,
                     UseAsterisksForEmphasis = viewModel.UseAsterisksForEmphasis,
-                    UseIndentsForCodeBlocks = viewModel.UseIndentsForCodeBlocks
+                    UseIndentsForCodeBlocks = viewModel.UseIndentsForCodeBlocks,
+                    PrettyPipeTables = viewModel.PrettyPipeTables
                 });
 
                 if (result is { IsSuccessStatusCode: true })
@@ -169,7 +170,8 @@ namespace ConvertLearnToDocWeb.Controllers
             multiForm.Add(new StringContent(model.OrderedListUsesSequence.ToString()), nameof(DocToLearnModel.OrderedListUsesSequence));
             multiForm.Add(new StringContent(model.UseAlternateHeaderSyntax.ToString()), nameof(DocToLearnModel.UseAlternateHeaderSyntax));
             multiForm.Add(new StringContent(model.UseIndentsForCodeBlocks.ToString()), nameof(DocToLearnModel.UseIndentsForCodeBlocks));
-            
+            multiForm.Add(new StringContent(model.PrettyPipeTables.ToString()), nameof(DocToLearnModel.PrettyPipeTables));
+
             var content = new StreamContent(model.WordDoc.OpenReadStream());
             content.Headers.ContentType = new MediaTypeHeaderValue(WordMimeType);
             multiForm.Add(content, nameof(DocToLearnModel.WordDoc), model.WordDoc.FileName);

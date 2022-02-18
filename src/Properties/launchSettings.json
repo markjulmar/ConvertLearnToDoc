@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/downloads/send-crop-weather-alerts.docx -o /users/mark/downloads/output"
+      "commandLineArgs": "-d -i /users/mark/git/learnRepos/learn-pr/learn-pr/advocates/build-product-roadmaps -o /users/mark/downloads/output.docx"
     }
   }
 }

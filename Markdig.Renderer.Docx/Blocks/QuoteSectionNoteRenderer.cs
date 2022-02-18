@@ -10,15 +10,21 @@ namespace Markdig.Renderer.Docx.Blocks
         {
             currentParagraph ??= document.AddParagraph();
 
-            if (block.QuoteType == QuoteSectionNoteType.DFMNote 
-                && block.NoteTypeString != null)
+            if (block.QuoteType is QuoteSectionNoteType.DFMNote or QuoteSectionNoteType.MarkdownQuote)
             {
+                var style = block.QuoteType == QuoteSectionNoteType.DFMNote
+                    ? HeadingType.IntenseQuote
+                    : HeadingType.Quote;
+
                 // If there was a note block right before this one, add a separator
                 // otherwise Word merges them together.
-                if (currentParagraph.PreviousParagraph.Properties.StyleName == HeadingType.IntenseQuote.ToString())
+                if (currentParagraph.PreviousParagraph?.Properties.StyleName == style.ToString())
                     currentParagraph.InsertBefore(new Paragraph());
 
-                currentParagraph.Style(HeadingType.IntenseQuote).AppendLine(block.NoteTypeString);
+                if (!string.IsNullOrEmpty(block.NoteTypeString))
+                    currentParagraph.Style(style).AppendLine(block.NoteTypeString);
+                else
+                    currentParagraph.Style(style);
             }
             else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
             {

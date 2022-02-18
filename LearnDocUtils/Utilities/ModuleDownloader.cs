@@ -81,10 +81,10 @@ namespace LearnDocUtils
                         foreach (var choice in question.Choices)
                         {
                             await tempFile.WriteAsync(choice.IsCorrect ? "- [X]" : "- [ ]");
-                            await tempFile.WriteLineAsync(choice.Content);
+                            await tempFile.WriteLineAsync(EscapeContent(choice.Content));
                             if (!string.IsNullOrEmpty(choice.Explanation))
                             {
-                                await tempFile.WriteLineAsync($"    - {choice.Explanation}");
+                                await tempFile.WriteLineAsync($"    - {EscapeContent(choice.Explanation)}");
                             }
                         }
                         await tempFile.WriteLineAsync();
@@ -94,6 +94,8 @@ namespace LearnDocUtils
 
             return (module, markdownFile);
         }
+
+        private static string EscapeContent(string text) => text.Replace("{", @"\{");
 
         private static async Task WriteUnitFileAsync(TripleCrownUnit unit, string markdownText, string outputPath)
         {

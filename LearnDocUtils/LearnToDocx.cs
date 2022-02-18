@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using MSLearnRepos;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DXPlus;
+using Julmar.GenMarkdown;
 using Markdig;
 using Markdig.Extensions.EmphasisExtras;
 using Markdig.Renderer.Docx;
+using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+using Paragraph = DXPlus.Paragraph;
 
 namespace LearnDocUtils
 {
@@ -145,6 +147,20 @@ namespace LearnDocUtils
             AddMetadata(moduleData, document);
             WriteTitle(moduleData, document);
 
+
+            // Try to get some Markdown config from the document.
+            bool useAsterisksForEmphasis = markdownDocument.EnumerateBlocks()
+                                               .Count(b => b is EmphasisInline { DelimiterChar: '*' })
+                                           > markdownDocument.EnumerateBlocks()
+                                               .Count(b => b is EmphasisInline { DelimiterChar: '_' });
+
+            bool useAsterisksForLists = markdownDocument.EnumerateBlocks()
+                                            .Count(b => b is Markdig.Syntax.ListBlock { BulletType: '*' })
+                                        > markdownDocument.EnumerateBlocks()
+                                            .Count(b => b is Markdig.Syntax.ListBlock { BulletType: '-' });
+            SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForBullets), useAsterisksForLists.ToString());
+            SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForEmphasis), useAsterisksForEmphasis.ToString());
+
             // Render the markdown tree into the Word document.
             var docWriter = new DocxObjectRenderer(document, Path.GetDirectoryName(markdownFile), zonePivot);
             docWriter.Render(markdownDocument);
@@ -263,7 +279,7 @@ namespace LearnDocUtils
             SetProperty(document, DocumentPropertyName.Comments, moduleData.Uid);
             SetCustomProperty(document, nameof(TripleCrownModule.Metadata), JsonHelper.ToJson(moduleData));
 
-            var dt = (moduleData.LastUpdated == default ? DateTime.Now : moduleData.LastUpdated).ToString("yyyy-MM-ddT00:00:00Z");
+            var dt = (moduleData.LastUpdated == default ? DateTime.UtcNow : moduleData.LastUpdated.ToUniversalTime()).ToString("yyyy-MM-ddTHH:mm:ssZ");
             SetProperty(document, DocumentPropertyName.CreatedDate, dt);
             SetProperty(document, DocumentPropertyName.SaveDate, dt);
         }

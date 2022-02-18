@@ -116,7 +116,9 @@ namespace LearnDocUtils
                             {
                                 string lastSection = unitMetadata.Uid.Split('.').LastOrDefault();
                                 char? uidIndex = lastSection?.FirstOrDefault();
-                                if (uidIndex is >= '0' and <= '9' && !Path.GetInvalidFileNameChars().Any(ch => lastSection.Contains(ch)))
+                                if (uidIndex is >= '0' and <= '9' 
+                                    && lastSection.Any(ch => !char.IsNumber(ch))
+                                    && !Path.GetInvalidFileNameChars().Any(ch => lastSection.Contains(ch)))
                                 {
                                     fn = lastSection;
                                 }
@@ -161,13 +163,13 @@ namespace LearnDocUtils
                     { "seotitle", unitMetadata.Metadata.Metadata.Title ?? unitMetadata.Title },
                     { "seodescription", unitMetadata.Metadata.Metadata.Description ?? "TBD" },
                     { "duration", EstimateDuration(unitMetadata.Metadata.DurationInMinutes, unitMetadata.Lines, quizText).ToString() },
-                    { "saveDate", metadata.ModuleData.Metadata.MsDate }, // 09/24/2018
+                    { "saveDate", unitMetadata.Metadata.Metadata.MsDate }, // 09/24/2018
                     { "mstopic", unitMetadata.Metadata.Metadata.MsTopic ?? "interactive-tutorial" },
                     { "msproduct", unitMetadata.Metadata.Metadata.MsProduct ?? "learning-azure" },
                     { "msauthor", unitMetadata.Metadata.Metadata.MsAuthor ?? "TBD" },
                     { "author", unitMetadata.Metadata.Metadata.Author ?? "TBD" },
                     { "interactivity", unitMetadata.BuildInteractivityOptions() },
-                    { "unit-content", unitMetadata.HasContent ? $"content: |\r\n  [!include[](includes/{unitFileName})]" : "" },
+                    { "unit-content", CreateContentLine(unitMetadata, unitFileName) },
                     { "zonePivots", zonePivotGroups },
                     { "quizText", quizText },
                     { "task-validation", tasks }
@@ -211,6 +213,19 @@ namespace LearnDocUtils
 
             await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"),
                 PopulateTemplate("index.yml", moduleValues));
+        }
+
+        private static string CreateContentLine(UnitMetadata unitMetadata, string unitFileName)
+        {
+            if (!string.IsNullOrEmpty(unitFileName)
+                && unitMetadata.HasContent)
+            {
+                return $"content: |\r\n  [!include[](includes/{unitFileName})]";
+            }
+
+            return !string.IsNullOrEmpty(unitMetadata.Metadata.Content) 
+                ? $"content: {unitMetadata.Metadata.Content}" 
+                : string.Empty;
         }
 
         private string BuildTaskValidation(List<TripleCrownTaskValidation> tasks)
@@ -437,15 +452,24 @@ namespace LearnDocUtils
 
         private static string ExtractQuiz(string title, List<string> lines)
         {
+            // TODO: not localized
+            string[] kcTitle = {"knowledge", "check"};
+
             int start = 0;
-            for (; start < lines.Count; start++)
+
+            // See if we have some title different from the unit title.
+            if (!kcTitle.All(t => title.Contains(t, StringComparison.InvariantCultureIgnoreCase)))
             {
-                // Must be an H2 with the words "Knowledge" and "Check". Can be "Check your Knowledge", etc.
-                if (lines[start].StartsWith("## ")
-                    && lines[start].Contains("knowledge", StringComparison.InvariantCultureIgnoreCase)
-                    && lines[start].Contains("check", StringComparison.InvariantCultureIgnoreCase))
+                for (; start < lines.Count; start++)
                 {
-                    break;
+                    string line = lines[start];
+
+                    // Must be an H2 with the words "Knowledge" and "Check". Can be "Check your Knowledge", etc.
+                    if (line.StartsWith("## ")
+                        && kcTitle.All(t => line.Contains(t, StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        break;
+                    }
                 }
             }
 

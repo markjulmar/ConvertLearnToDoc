@@ -57,7 +57,11 @@ namespace Docx.Renderer.Markdown.Renderers
                 tf.Monospace = true;
             if (element.Properties.DefaultFormatting.CapsStyle == CapsStyle.SmallCaps)
                 tf.KbdTag = true;
-            
+            if (element.Properties.DefaultFormatting.Subscript)
+                tf.Subscript = true;
+            if (element.Properties.DefaultFormatting.Superscript)
+                tf.Superscript = true;
+
             tags.AddOrReplace(nameof(TextFormatting), tf);
 
             if (tf.Monospace)
@@ -75,8 +79,6 @@ namespace Docx.Renderer.Markdown.Renderers
         private static void CreateHeader(int level, IMarkdownRenderer renderer, MarkdownDocument document, 
             MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
         {
-            Debug.Assert(blockOwner == null);
-
             var p = new Heading(level);
             document.Add(p);
             renderer.WriteContainer(document, p, element.Runs, tags);
@@ -85,8 +87,6 @@ namespace Docx.Renderer.Markdown.Renderers
         private static void CreateBlockQuote(IMarkdownRenderer renderer, MarkdownDocument document, 
             MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
         {
-            Debug.Assert(blockOwner == null);
-
             bool newBlockQuote = false;
             if (document.LastOrDefault() is BlockQuote blockQuote)
             {
@@ -170,7 +170,12 @@ namespace Docx.Renderer.Markdown.Renderers
                 blockOwner = new Paragraph();
                 document.Add(blockOwner);
             }
-            
+
+            if (element.Text.Contains("{ extended: false }"))
+            {
+
+            }
+
             renderer.WriteContainer(document, blockOwner, element.Runs, tags);
         }
 

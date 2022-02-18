@@ -47,24 +47,26 @@ namespace Markdig.Renderer.Docx.Inlines
                     if (html.Parent?.ParentBlock is not HeadingBlock)
                         currentParagraph.AppendLine();
                     break;
+                case "sup":
+                    if (!isClose)
+                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
+                            new Formatting {Superscript = true});
+                    break;
+                case "sub":
+                    if (!isClose)
+                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
+                            new Formatting { Subscript = true });
+                    break;
                 case "rgn":
                     if (!isClose)
                         currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
                             new Formatting { Highlight = Highlight.Cyan });
                     break;
                 default:
-                    if (!ValidHtmlTag(html))
-                    {
-                        currentParagraph.Append(html.ToString());
-                    }
-                    else Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
+                    currentParagraph.Append(html.Tag);
+                    Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
                     break;
             }
-        }
-
-        private bool ValidHtmlTag(HtmlInline html)
-        {
-            return html.ToString() == $"<{html.Tag}>";
         }
 
         private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)

@@ -2,7 +2,7 @@
   "profiles": {
     "GrabAllLearnModules": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\mark\\Git\\LearnRepos\\learn-pr"
+      "commandLineArgs": "C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\advocates\\build-product-roadmaps"
     }
   }
 }

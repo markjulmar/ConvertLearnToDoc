@@ -18,17 +18,24 @@ namespace Docx.Renderer.Markdown.Renderers
             tags ??= new RenderBag();
 
             int columnCount = Math.Min(element.ColumnCount, element.Rows.Max(r => r.Cells.Count));
-            bool complexStructure = element.Rows.Any(r => r.Cells.Count != columnCount);
+            bool complexStructure = element.Rows.Any(r => r.Cells.Count != columnCount || r.Cells.Any(c => c.Pictures.Any()));
 
             var mdTable = complexStructure
                 ? new DocfxTable(columnCount)
                 : new Julmar.GenMarkdown.Table(columnCount);
 
-            var tcf = element.ConditionalFormatting;
-            
-            // TODO: pass bold flags down on rows/columns
-            var rows = element.Rows.ToList();
+            // Add the table to the document.
+            if (document.Last() is MarkdownList theList)
+            {
+                theList[^1].Add(mdTable);
+            }
+            else
+            {
+                document.Add(mdTable);
+            }
 
+            var tcf = element.ConditionalFormatting;
+            var rows = element.Rows.ToList();
             for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
             {
                 var row = rows[rowIndex];
@@ -56,12 +63,6 @@ namespace Docx.Renderer.Markdown.Renderers
                     renderer.WriteContainer(document, p, col.Paragraphs, tags);
                 }
             }
-
-            if (document.Last() is MarkdownList theList)
-            {
-                theList[^1].Add(mdTable);
-            }
-            else document.Add(mdTable);
         }
     }
 }
