@@ -200,7 +200,8 @@ namespace Docx.Renderer.Markdown.Renderers
 
         private static void CreateListBlock(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
         {
-            var format = element.GetNumberingFormat();
+            var format = element.HasListDetails() 
+                ? element.GetNumberingFormat() : NumberingFormat.None;
 
             switch (format)
             {

@@ -98,22 +98,29 @@ namespace LearnDocUtils
         private static async Task WriteUnitFileAsync(TripleCrownUnit unit, string markdownText, string outputPath)
         {
             // Write the YAML
-            await File.WriteAllTextAsync(Path.Combine(outputPath, Path.GetFileName(unit.Path)), unit.Document);
-
-            // Write the markdown
-            string fn = unit.GetContentFilename();
-            string folder = Path.GetDirectoryName(fn);
-            folder = string.IsNullOrEmpty(folder) ? outputPath : Path.Combine(outputPath, folder);
-            
-            if (!string.IsNullOrEmpty(folder))
+            string fn = Path.GetFileName(unit.Path);
+            if (!string.IsNullOrEmpty(fn))
             {
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
-                
-                fn = Path.Combine(folder, Path.GetFileName(fn));
+                await File.WriteAllTextAsync(Path.Combine(outputPath, fn), unit.Document);
             }
 
-            await File.WriteAllTextAsync(fn, markdownText);
+            // Write the markdown
+            fn = unit.GetContentFilename();
+            if (!string.IsNullOrEmpty(fn)) // notebook or quiz only?
+            {
+                string folder = Path.GetDirectoryName(fn);
+                folder = string.IsNullOrEmpty(folder) ? outputPath : Path.Combine(outputPath, folder);
+
+                if (!string.IsNullOrEmpty(folder))
+                {
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
+
+                    fn = Path.Combine(folder, Path.GetFileName(fn));
+                }
+
+                await File.WriteAllTextAsync(fn, markdownText);
+            }
         }
 
         private static string DetermineNotebookUrl(ITripleCrownGitHubService service, string moduleUrl, string unitNotebook)

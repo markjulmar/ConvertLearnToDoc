@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i https://docs.microsoft.com/en-us/learn/modules/troubleshoot-inbound-connectivity-azure-load-balancer/ -o /users/mark/downloads/output.docx"
+      "commandLineArgs": "-i /users/mark/downloads/send-crop-weather-alerts.docx -o /users/mark/downloads/output"
     }
   }
 }
