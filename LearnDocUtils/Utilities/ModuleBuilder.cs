@@ -111,13 +111,22 @@ namespace LearnDocUtils
                                 }
                                 unitMetadata.Uid = uid;
                             }
-                            fn = $"{index}-{baseFn}";
-                        }
-                        else
-                        {
-                            fn = Path.ChangeExtension(Path.GetFileName(fn), ".md");
+
+                            if (!string.IsNullOrEmpty(unitMetadata.Uid))
+                            {
+                                string lastSection = unitMetadata.Uid.Split('.').LastOrDefault();
+                                char? uidIndex = lastSection?.FirstOrDefault();
+                                if (uidIndex is >= '0' and <= '9' && !Path.GetInvalidFileNameChars().Any(ch => lastSection.Contains(ch)))
+                                {
+                                    fn = lastSection;
+                                }
+                            }
+                            
+                            if (string.IsNullOrEmpty(fn))
+                                fn = $"{index}-{baseFn}";
                         }
 
+                        fn = Path.ChangeExtension(Path.GetFileName(fn), ".md");
                         files.Add(fn, currentUnit);
                         index++;
                     }
