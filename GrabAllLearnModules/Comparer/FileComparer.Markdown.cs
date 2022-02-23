@@ -9,7 +9,7 @@ namespace CompareAll.Comparer;
 
 public static partial class FileComparer
 {
-    public static IEnumerable<MarkdownDiff> Markdown(string fn1, string fn2)
+    public static IEnumerable<Difference> Markdown(string fn1, string fn2)
     {
         var originalText = File.ReadAllText(fn1);
         var newText = File.ReadAllText(fn2);
@@ -72,9 +72,14 @@ public static partial class FileComparer
                 if (skip) continue;
             }
 
+            if (fn1.Contains("3-build-your"))
+            {
+
+            }
+
             // Skip blank lines inserted or deleted. We assume this doesn't affect content.
-            if ((originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && originalDp.SubPieces.Count == 0)
-                || (newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newDp.SubPieces.Count == 0))
+            if ((originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && originalDp.Text.Length == 0)
+                || (newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newDp.Text.Length == 0))
                 continue;
 
             yield return CreateDiff(originalDp, newDp);

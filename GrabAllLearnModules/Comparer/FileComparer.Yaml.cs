@@ -8,7 +8,7 @@ namespace CompareAll.Comparer;
 
 public static partial class FileComparer
 {
-    public static IEnumerable<YamlDiff> Yaml(string fn1, string fn2)
+    public static IEnumerable<Difference> Yaml(string fn1, string fn2)
     {
         var yaml1 = ParseYaml(File.ReadAllText(fn1));
         var yaml2 = ParseYaml(File.ReadAllText(fn2));
@@ -31,10 +31,9 @@ public static partial class FileComparer
 
             if (!exists)
             {
-                yield return new YamlDiff
+                yield return new YamlDiff(key)
                 {
                     Change = ChangeType.Deleted,
-                    Key = key,
                     OriginalValue = ConvertToString(original)
                 };
                 
@@ -63,10 +62,9 @@ public static partial class FileComparer
 
             if (text1 != text2)
             {
-                yield return new YamlDiff
+                yield return new YamlDiff(key)
                 {
                     Change = ChangeType.Changed,
-                    Key = key,
                     OriginalValue = text1,
                     NewValue = text2,
                 };
@@ -79,10 +77,9 @@ public static partial class FileComparer
 
         foreach (var key in keys2.Where(k => !keys1.Contains(k)))
         {
-            yield return new YamlDiff
+            yield return new YamlDiff($"{parentKey}{key}")
             {
                 Change = ChangeType.Added,
-                Key = $"{parentKey}{key}",
                 NewValue = ConvertToString(yaml2[key])
             };
         }
@@ -100,10 +97,9 @@ public static partial class FileComparer
 
             if (original != null && newValue == null)
             {
-                yield return new YamlDiff
+                yield return new YamlDiff(key)
                 {
                     Change = ChangeType.Deleted,
-                    Key = key,
                     OriginalValue = ConvertToString(original)
                 };
                 continue;
@@ -130,10 +126,9 @@ public static partial class FileComparer
 
             if (text1 != text2)
             {
-                yield return new YamlDiff
+                yield return new YamlDiff(key)
                 {
                     Change = ChangeType.Changed,
-                    Key = key,
                     OriginalValue = text1,
                     NewValue = text2,
                 };
@@ -145,10 +140,9 @@ public static partial class FileComparer
             string key = parentKey + $".{index}";
             object value = lstNew[index];
 
-            yield return new YamlDiff
+            yield return new YamlDiff(key)
             {
                 Change = ChangeType.Changed,
-                Key = key,
                 NewValue = ConvertToString(value)
             };
         }
