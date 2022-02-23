@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DXPlus;
 using MSLearnRepos;
+using Document = DXPlus.Document;
 
 namespace LearnDocUtils
 {
@@ -159,9 +160,9 @@ namespace LearnDocUtils
                 {
                     { "module-uid", moduleUid },
                     { "unit-uid", unitMetadata.Metadata.Uid },
-                    { "title", unitMetadata.Title },
-                    { "seotitle", unitMetadata.Metadata.Metadata.Title ?? unitMetadata.Title },
-                    { "seodescription", unitMetadata.Metadata.Metadata.Description ?? "TBD" },
+                    { "title", EscapeReservedYamlChars(unitMetadata.Title) },
+                    { "seotitle", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Title ?? unitMetadata.Title) },
+                    { "seodescription", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Description ?? "TBD") },
                     { "duration", EstimateDuration(unitMetadata.Metadata.DurationInMinutes, unitMetadata.Lines, quizText).ToString() },
                     { "saveDate", unitMetadata.Metadata.Metadata.MsDate }, // 09/24/2018
                     { "mstopic", unitMetadata.Metadata.Metadata.MsTopic ?? "interactive-tutorial" },
@@ -192,10 +193,10 @@ namespace LearnDocUtils
             var moduleValues = new Dictionary<string, string>
             {
                 { "module-uid", moduleUid },
-                { "title", metadata.ModuleData.Title ?? "TBD" },
+                { "title", EscapeReservedYamlChars(metadata.ModuleData.Title ?? "TBD") },
                 { "summary", FormatMultiLineYaml(metadata.ModuleData.Summary) ?? "TBD" },
-                { "seotitle", metadata.ModuleData.Metadata.Title ?? "TBD" },
-                { "seodescription", metadata.ModuleData.Metadata.Description ?? "TBD" },
+                { "seotitle", EscapeReservedYamlChars(metadata.ModuleData.Metadata.Title ?? "TBD") },
+                { "seodescription", EscapeReservedYamlChars(metadata.ModuleData.Metadata.Description ?? "TBD") },
                 { "abstract", FormatMultiLineYaml(metadata.ModuleData.Abstract) ?? "TBD" },
                 { "prerequisites", FormatMultiLineYaml(metadata.ModuleData.Prerequisites) ?? "TBD" },
                 { "iconUrl", metadata.ModuleData.IconUrl ?? "/learn/achievements/generic-badge.svg" },
@@ -293,9 +294,11 @@ namespace LearnDocUtils
         {
             if (text == null) return null;
             text = text.TrimEnd('\r', '\n');
-            return text.Contains('\n') 
-                ? $"|{Environment.NewLine}  {text.Replace("\n", "\n  ")}" 
-                : text;
+
+            if (text.Contains('\n') || text.TrimStart().StartsWith('-') || text.TrimStart().StartsWith("["))
+                return $"|{Environment.NewLine}  {text.Replace("\n", "\n  ")}";
+
+            return EscapeReservedYamlChars(text);
         }
 
         private static string PostProcessMarkdown(string text)
@@ -517,7 +520,7 @@ namespace LearnDocUtils
             {
                 if (line.StartsWith("### "))
                 {
-                    sb.AppendLine($"  - content: \"{line[4..]}\"");
+                    sb.AppendLine($"  - content: {EscapeReservedYamlChars(line[4..])}");
                     sb.AppendLine("    choices:");
                 }
                 else
@@ -532,14 +535,39 @@ namespace LearnDocUtils
                         start = text.IndexOf(']') + 1;
                         Debug.Assert(start>=3);
 
-                        sb.AppendLine($"    - content: \"{text[start..].Trim()}\"");
+                        sb.AppendLine($"    - content: {EscapeReservedYamlChars(text[start..])}");
                         sb.AppendLine($"      isCorrect: {isCorrect.ToString().ToLower()}");
                     }
-                    else sb.AppendLine($"      explanation: \"{text}\"");
+                    else sb.AppendLine($"      explanation: {EscapeReservedYamlChars(text)}");
                 }
             }
 
             return sb.ToString();
+        }
+
+        private static string EscapeReservedYamlChars(string content)
+        {
+            content ??= "";
+            content = content.Trim();
+
+            bool hasColon = content.Contains(':');
+            bool hasDoubleQuote = content.Contains('\"');
+            bool hasSingleQuote = content.Contains('\'');
+
+            // Add quotes when a colon is embedded in the value.
+            if (hasColon)
+            {
+                if (!hasDoubleQuote)
+                    content = '\"' + content + '\"';
+                else if (!hasSingleQuote)
+                    content = '\'' + content + '\'';
+                else
+                {
+                    content = content.Replace(":", "&#58;");
+                }
+            }
+            
+            return content;
         }
 
         private static int EstimateDuration(int existingValue, IEnumerable<string> lines, string quizText) =>

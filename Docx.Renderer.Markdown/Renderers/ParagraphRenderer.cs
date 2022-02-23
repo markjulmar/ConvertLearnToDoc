@@ -258,7 +258,6 @@ namespace Docx.Renderer.Markdown.Renderers
                     }
                     else
                     {
-                        Debug.Assert(level == 1);
                         var list = new TList();
                         if (list is OrderedList ol)
                             ol.StartingNumber = index.Value;
