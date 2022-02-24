@@ -59,6 +59,8 @@ public static class Program
             string fullDocPath = Path.Combine(docPath, Path.ChangeExtension(Path.GetFileName(folder), "docx"));
             string moduleFolder = Path.Combine(modulePath, Path.GetFileName(folder));
 
+            Console.WriteLine($"Processing {Path.GetFileName(folder)}");
+
             try
             {
                 await ProcessOneModuleAsync(folder, fullDocPath);

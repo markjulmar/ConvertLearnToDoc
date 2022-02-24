@@ -15,65 +15,69 @@ public static partial class FileComparer
         var sbsDiffBuilder = new SideBySideDiffBuilder(differ);
         var result = sbsDiffBuilder.BuildDiffModel(originalText, newText, true);
 
+        List<int> processed = new List<int>();
+
         for (int index = 0; index < result.OldText.Lines.Count; index++)
         {
             var originalDp = result.OldText.Lines[index];
             var newDp = result.NewText.Lines[index];
+
+            // Unchanged line?
             if (originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Unchanged
                 && newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Unchanged)
                 continue;
 
-            var odp = originalDp.SubPieces
-                .Where(odp =>
-                    odp.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged &&
-                    odp.Type != DiffPlex.DiffBuilder.Model.ChangeType.Imaginary)
-                .ToList();
-            var ndp = newDp.SubPieces
-                .Where(ndp =>
-                    ndp.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged &&
-                    ndp.Type != DiffPlex.DiffBuilder.Model.ChangeType.Imaginary)
-                .ToList();
-
-            const string listMarkers = "-*", emphasisChars = "*_";
-            if (odp.Count > 0 && odp.Count == ndp.Count)
-            {
-                bool skip = true;
-                for (int i = 0; i < odp.Count; i++)
-                {
-                    if (odp[i].Position != ndp[i].Position)
-                    {
-                        skip = false;
-                        break;
-                    }
-
-                    string original = odp[i].Text;
-                    string newt = ndp[i].Text;
-
-                    if (original.Length != newt.Length)
-                    {
-                        skip = false;
-                        break;
-                    }
-
-                    // Ignore Markdown differences involving the emphasis or bullet.
-                    if (Enumerable.Range(0, original.Length).All(
-                            n => original[n] == newt[n]
-                                 || (listMarkers.Contains(original[n]) && listMarkers.Contains(newt[n]))
-                                 || (emphasisChars.Contains(original[n]) && emphasisChars.Contains(newt[n]))))
-                        continue;
-
-                    skip = false;
-                    break;
-                }
-
-                if (skip) continue;
-            }
-
             // Skip blank lines inserted or deleted. We assume this doesn't affect content.
-            if ((originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && originalDp.Text.Length == 0)
-                || (newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newDp.Text.Length == 0))
+            if (originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && originalDp.Text.Length == 0
+                || newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newDp.Text.Length == 0)
                 continue;
 
+            // If the text was deleted, see if we can find an insertion in the new text to match it to.
+            if (originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted
+                && newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Imaginary)
+            {
+                // Line was already processed as a deletion.
+                if (processed.Contains(-1 * index))
+                    continue;
+
+                var addCheck = result.NewText.Lines.FirstOrDefault(l =>
+                    l.Position == originalDp.Position && l.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted);
+                if (addCheck != null)
+                {
+                    newDp = addCheck;
+                    processed.Add(result.NewText.Lines.IndexOf(addCheck));
+                }
+            }
+            // Same for the other side - if we have an addition, then see if we can match it to a delete
+            // on the other file.
+            else if (originalDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Imaginary
+                     && newDp.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted)
+            {
+                // Line was already processed as an addition.
+                if (processed.Contains(index))
+                    continue;
+
+                var delCheck = result.OldText.Lines.FirstOrDefault(l =>
+                    l.Position == newDp.Position && l.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted);
+                if (delCheck != null)
+                {
+                    originalDp = delCheck;
+                    processed.Add(result.OldText.Lines.IndexOf(delCheck) * -1);
+                }
+            }
+
+            // Ignore Markdown differences involving the emphasis or bullet.
+            // These changes don't impact the rendering and can be interchanged.
+            const string listMarkers = "-*", emphasisChars = "*_";
+            string original = originalDp.Text, newt = newDp.Text;
+            if (original != null && original.Length == newt?.Length
+                && Enumerable.Range(0, original.Length).All(
+                    n => original[n] == newt[n]
+                         || listMarkers.Contains(original[n]) && listMarkers.Contains(newt[n])
+                         || emphasisChars.Contains(original[n]) && emphasisChars.Contains(newt[n])))
+                continue;
+
+            // Found a diff.
             yield return CreateDiff(originalDp, newDp);
         }
     }

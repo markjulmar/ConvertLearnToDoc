@@ -109,7 +109,21 @@ public class IntegrationTests
                 Assert.True(File.Exists(generatedFilePath));
 
                 var comparison = FileComparer.Markdown(originalFilePath, generatedFilePath).ToList();
-                comparison.ShouldBeEmpty();
+
+                if (originalFileName == "2-application-deployment-types.md")
+                {
+                    Assert.Single(comparison);
+
+                    // One diff on line 13 - an extra space which is removed.
+                    var item = comparison.Single();
+                    Assert.Equal(ChangeType.Changed, item.Change);
+                    Assert.Equal("13/13", item.Key);
+                    Assert.EndsWith("cloud provider. ", item.OriginalValue);
+                    Assert.EndsWith("cloud provider.", item.NewValue);
+                }
+                else
+                    Assert.Empty(comparison);
+
             }
 
         }

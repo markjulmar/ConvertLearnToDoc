@@ -99,21 +99,11 @@ namespace LearnDocUtils
 
             var pipelineBuilder = new MarkdownPipelineBuilder();
             var pipeline = pipelineBuilder
-                .UseAbbreviations()
-                .UseAutoIdentifiers()
-                //.UseCitations()
-                //.UseCustomContainers()
-                //.UseDefinitionLists()
-                //.UseFigures()
-                //.UseFooters()
-                //.UseFootnotes()
                 .UseGridTables()
-                .UseMathematics()
                 .UseMediaLinks()
                 .UsePipeTables()
                 .UseListExtras()
                 .UseTaskLists()
-                //.UseDiagrams()
                 .UseAutoLinks()
                 .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
                 .UseIncludeFile(context)
@@ -122,7 +112,6 @@ namespace LearnDocUtils
                 .UseNestedColumn(context)
                 .UseTripleColon(context)
                 .UseNoloc()
-                .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
                 .Build();
 
             string markdownText = await File.ReadAllTextAsync(markdownFile);
