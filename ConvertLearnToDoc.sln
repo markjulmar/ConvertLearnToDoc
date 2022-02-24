@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Docx.Renderer.Markdown", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenMarkdown.DocFx.Extensions", "GenMarkdown.DocFx.Extensions\GenMarkdown.DocFx.Extensions.csproj", "{9F293264-0EB2-4E23-8959-08728359DEDE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompareAll", "GrabAllLearnModules\CompareAll.csproj", "{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompareAll", "Tests\CompareAll\CompareAll.csproj", "{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{217F168B-D681-4A01-AA3D-752EE599C31B}"
 EndProject
