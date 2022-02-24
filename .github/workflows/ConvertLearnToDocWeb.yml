@@ -12,6 +12,8 @@ env:
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.ConvertLearnToDocWeb_4514 }}
   WEBAPP_WORKING_DIRECTORY: ConvertLearnToDocWeb
 
+  TESTS_WORKING_DIRECTORY: Tests/ConvertLearnToDoc.Tests.Int
+
   AZURE_FUNCTIONAPP_NAME: ConvertLearnToDocAzureFunctions
   AZURE_FUNCTIONAPP_PACKAGE_PATH: ConvertLearnToDoc.AzureFunctions/publish
   FUNCTIONAPP_WORKING_DIRECTORY: ConvertLearnToDoc.AzureFunctions
@@ -35,7 +37,7 @@ jobs:
         dotnet build "${{ env.FUNCTIONAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
     - name: Test
       run: |
-        dotnet test --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet test "${{ env.TESTS_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
     - name: Publish
       run: |
         dotnet publish "${{ env.WEBAPP_WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
