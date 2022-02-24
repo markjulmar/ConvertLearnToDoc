@@ -1,4 +1,4 @@
-﻿namespace CompareAll.Comparer;
+﻿namespace FileComparisonLib;
 
 public enum ChangeType
 {

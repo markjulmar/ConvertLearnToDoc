@@ -8,6 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="sample-module.zip" />
+    <None Remove="sample.docx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="sample.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sample-module.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DiffPlex" Version="1.7.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Shouldly" Version="4.0.3" />
@@ -21,14 +35,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Markdig" Version="0.27.0" />
-		<PackageReference Include="Microsoft.DocAsCode.MarkdigEngine.Extensions" Version="2.59.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-    <ProjectReference Include="..\..\ConvertLearnToDoc.AzureFunctions\ConvertLearnToDoc.AzureFunctions.csproj" />
+	
+  <ItemGroup>
+	<ProjectReference Include="..\..\LearnDocUtils\LearnDocUtils.csproj" />
+	<ProjectReference Include="..\FileComparisonLib\FileComparisonLib.csproj" />
   </ItemGroup>
 
 </Project>

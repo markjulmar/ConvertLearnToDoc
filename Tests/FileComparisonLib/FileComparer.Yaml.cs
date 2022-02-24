@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using YamlDotNet.Serialization;
 
-namespace CompareAll.Comparer;
+namespace FileComparisonLib;
 
 public static partial class FileComparer
 {

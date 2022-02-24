@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommandLine;
-using CompareAll.Comparer;
 using CompareAll.DiffWriter;
+using FileComparisonLib;
+using LearnDocUtils;
+using FileComparer = FileComparisonLib.FileComparer;
 
 namespace CompareAll;
 
@@ -59,13 +61,9 @@ public static class Program
 
             try
             {
-                if (await ProcessOneFolder(folder, fullDocPath))
-                {
-                    if (await ProcessOneFile(fullDocPath, moduleFolder, options.Debug))
-                    {
-                        await RunCompare(folder, moduleFolder, options.OutputType);
-                    }
-                }
+                await ProcessOneModuleAsync(folder, fullDocPath);
+                await ProcessOneWordDocAsync(fullDocPath, moduleFolder, options.Debug);
+                await RunCompareAsync(folder, moduleFolder, options.OutputType);
             }
             catch
             {
@@ -76,7 +74,7 @@ public static class Program
         }
     }
 
-    private static async Task RunCompare(string originalFolder, string generatedFolder, PrintType outputType)
+    private static async Task RunCompareAsync(string originalFolder, string generatedFolder, PrintType outputType)
     {
         string diffFile = Path.Combine(generatedFolder, "diff.tmp");
         using IDiffWriter diffWriter = outputType switch
@@ -91,14 +89,14 @@ public static class Program
         await diffWriter.WriteDiffHeaderAsync(originalFolder, generatedFolder);
 
         // YAML files
-        await ProcessDiffs(originalFolder, generatedFolder, "*.yaml", diffWriter, FileComparer.Yaml);
+        await ProcessDiffsAsync(originalFolder, generatedFolder, "*.yaml", diffWriter, FileComparer.Yaml);
 
         // Markdown files
-        await ProcessDiffs(Path.Combine(originalFolder, "includes"), Path.Combine(generatedFolder, "includes"),
+        await ProcessDiffsAsync(Path.Combine(originalFolder, "includes"), Path.Combine(generatedFolder, "includes"),
             "*.md", diffWriter, FileComparer.Markdown);
     }
 
-    private static async Task ProcessDiffs(string originalFolder, string generatedFolder, string fileSpec,
+    private static async Task ProcessDiffsAsync(string originalFolder, string generatedFolder, string fileSpec,
         IDiffWriter writer, Func<string, string, IEnumerable<Difference>> diffProcessor)
     {
         foreach (var yamlFile in Directory.GetFiles(originalFolder, fileSpec))
@@ -128,37 +126,24 @@ public static class Program
         }
     }
 
-    private static async Task<bool> ProcessOneFile(string inputDoc, string outputFolder, bool debug)
+    private static async Task ProcessOneWordDocAsync(string inputDoc, string outputFolder, bool debug)
     {
         if (!File.Exists(inputDoc)) throw new ArgumentException($"{inputDoc} does not exist.");
         if (outputFolder == null) throw new ArgumentNullException(nameof(outputFolder));
 
-        if (!Directory.Exists(outputFolder))
-        {
-            Directory.CreateDirectory(outputFolder);
-
-            var args = new List<string> {$"-i{inputDoc}", $"-o{outputFolder}"};
-            if (debug) args.Add("-d");
-
-            if (await ConvertLearnToDoc.Program.Main(args.ToArray()) != 0)
-                return false;
-        }
-        return true;
+        await DocxToLearn.ConvertAsync(inputDoc, outputFolder, new MarkdownOptions { Debug = debug });
     }
 
-    private static async Task<bool> ProcessOneFolder(string inputFolder, string outputDoc)
+    private static async Task ProcessOneModuleAsync(string inputFolder, string outputDoc)
     {
         if (inputFolder == null) throw new ArgumentNullException(nameof(inputFolder));
         if (outputDoc == null) throw new ArgumentNullException(nameof(outputDoc));
         if (!Directory.Exists(inputFolder)) throw new ArgumentException($"{inputFolder} does not exist.");
 
-        if (!File.Exists(outputDoc))
-        {
-            if (await ConvertLearnToDoc.Program.Main(new[] { $"-i{inputFolder}", $"-o{outputDoc}" }) != 0)
-                return false;
-        }
+        if (File.Exists(outputDoc))
+            File.Delete(outputDoc);
 
-        return true;
+        await LearnToDocx.ConvertFromFolderAsync(inputFolder, outputDoc);
     }
 
     private static string GetHomePath()

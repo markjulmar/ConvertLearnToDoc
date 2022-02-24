@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace CompareAll.Comparer;
+namespace FileComparisonLib;
 
 public abstract class Difference
 {

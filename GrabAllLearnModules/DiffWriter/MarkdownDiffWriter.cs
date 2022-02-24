@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using CompareAll.Comparer;
+using FileComparisonLib;
 
 namespace CompareAll.DiffWriter;
 

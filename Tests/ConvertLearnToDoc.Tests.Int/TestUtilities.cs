@@ -1,76 +1,49 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
+using System.IO.Compression;
 using System.Threading.Tasks;
-using ConvertLearnToDoc.AzureFunctions;
-using ConvertLearnToDoc.AzureFunctions.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
-using Microsoft.Extensions.Primitives;
+using LearnDocUtils;
 
 namespace ConvertLearnToDoc.Tests.Int
 {
     internal static class TestUtilities
     {
-        public static async Task<byte[]> CreateWordDoc(LearnToDocModel model, ILogger logger)
+        public static string CreateTestModuleFolder()
         {
-            var request = TestFactory.CreateHttpRequest("", "");
-
-            request.Method = "POST";
-            var json = JsonSerializer.Serialize(model);
-            byte[] bytes = Encoding.UTF8.GetBytes(json);
-            MemoryStream stream = new(bytes);
-            request.Body = stream;
-            request.ContentLength = bytes.Length;
-            request.ContentType = "application/x-www-form-urlencoded";
-
-            var fileContentResult = (FileContentResult)await LearnToDoc.Run(request, logger);
-            return fileContentResult.FileContents;
+            string folder = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(folder);
+            ZipFile.ExtractToDirectory("sample-module.zip", folder, overwriteFiles: true);
+            return folder;
         }
 
-        public static async Task<byte[]> ConvertDocxToModuleZipFile(string wordDocFilePath, string fileName, ILogger logger)
+        public static string CreateTestWordDoc()
         {
-            var request = TestFactory.CreateHttpRequest("", "");
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
-
-            var fileCollection = new FormFileCollection();
-            var bytes = await File.ReadAllBytesAsync(wordDocFilePath);
-            MemoryStream stream = new(bytes);
-
-            var wordFile = new FormFile(stream, 0, bytes.Length, "wordDoc", fileName)
-            {
-                Headers = new HeaderDictionary
-                {
-                    new("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                }
-            };
-            fileCollection.Add(wordFile);
-
-            const bool UseAsterisksForBullets = false;
-            const bool UseAsterisksForEmphasis = true;
-            const bool OrderedListUsesSequence = false;
-            const bool UseAlternateHeaderSyntax = false;
-            const bool UseIndentsForCodeBlocks = false;
-
-            var formCollection = new FormCollection(new Dictionary<string, StringValues>
-            {
-                { nameof(UseAsterisksForBullets), UseAsterisksForBullets.ToString() },
-                { nameof(UseAsterisksForEmphasis), UseAsterisksForEmphasis.ToString() },
-                { nameof(OrderedListUsesSequence), OrderedListUsesSequence.ToString() },
-                { nameof(UseAlternateHeaderSyntax), UseAlternateHeaderSyntax.ToString() },
-                { nameof(UseIndentsForCodeBlocks), UseIndentsForCodeBlocks.ToString() },
-            }, fileCollection);
-
-            request.Form = formCollection;
-
-            var fileContentResult = (FileContentResult)await DocToLearn.Run(request, logger);
-
-            return fileContentResult.FileContents;
+            string wordDoc = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), "docx"));
+            File.Copy("sample.docx", wordDoc);
+            return wordDoc;
         }
 
+        public static Task ConvertLearnModuleToWordDocumentAsync(string inputFolder, string outputDoc)
+        {
+            if (inputFolder == null) throw new ArgumentNullException(nameof(inputFolder));
+            if (outputDoc == null) throw new ArgumentNullException(nameof(outputDoc));
+            if (!Directory.Exists(inputFolder)) throw new ArgumentException($"{inputFolder} does not exist.");
+            
+            if (File.Exists(outputDoc)) 
+                File.Delete(outputDoc);
+
+            return LearnToDocx.ConvertFromFolderAsync(inputFolder, outputDoc);
+        }
+
+        public static Task ConvertWordDocumentToLearnFolderAsync(string inputDoc, string outputFolder)
+        {
+            if (!File.Exists(inputDoc)) throw new ArgumentException($"{inputDoc} does not exist.");
+            if (outputFolder == null) throw new ArgumentNullException(nameof(outputFolder));
+
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+
+            return DocxToLearn.ConvertAsync(inputDoc, outputFolder, new MarkdownOptions());
+        }
     }
 }

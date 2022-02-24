@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.Tests.Int
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{764304F6-2D73-4E5F-B341-9A2B132F98A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileComparisonLib", "Tests\FileComparisonLib\FileComparisonLib.csproj", "{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{349C96D2-7E7F-4788-B7F6-C67C035BFF1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{349C96D2-7E7F-4788-B7F6-C67C035BFF1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{349C96D2-7E7F-4788-B7F6-C67C035BFF1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -81,6 +87,7 @@ Global
 		{9F293264-0EB2-4E23-8959-08728359DEDE} = {9B073F88-A4B3-4F0C-B27A-EE265C12DFD2}
 		{CED2B88D-1CAC-4D28-B1A4-CB2FBD7AACBF} = {764304F6-2D73-4E5F-B341-9A2B132F98A7}
 		{349C96D2-7E7F-4788-B7F6-C67C035BFF1A} = {764304F6-2D73-4E5F-B341-9A2B132F98A7}
+		{ED7DF0DC-E09D-415D-8D53-0CD3E99A5AE0} = {764304F6-2D73-4E5F-B341-9A2B132F98A7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6BABCC68-20CA-4717-9E38-F209B49935BD}

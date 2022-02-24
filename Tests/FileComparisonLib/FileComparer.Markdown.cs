@@ -1,11 +1,8 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using DiffPlex;
+﻿using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 
-namespace CompareAll.Comparer;
+namespace FileComparisonLib;
 
 public static partial class FileComparer
 {
@@ -70,11 +67,6 @@ public static partial class FileComparer
                 }
 
                 if (skip) continue;
-            }
-
-            if (fn1.Contains("3-build-your"))
-            {
-
             }
 
             // Skip blank lines inserted or deleted. We assume this doesn't affect content.

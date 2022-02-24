@@ -1,6 +1,6 @@
-﻿namespace CompareAll.Comparer;
+﻿namespace FileComparisonLib;
 
-public class MarkdownDiff : Difference
+internal class MarkdownDiff : Difference
 {
     public int? OriginalPosition { get; init; }
     public int? NewPosition { get; init; }
