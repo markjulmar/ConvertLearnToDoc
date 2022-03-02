@@ -30,6 +30,7 @@ public static class LearnToDoc
             return new BadRequestErrorMessageResult("Invalid request.");
         }
 
+        model.Folder = model.Folder.Replace('\\', '/');
         if (!model.Folder.StartsWith('/'))
             model.Folder = '/' + model.Folder;
 
