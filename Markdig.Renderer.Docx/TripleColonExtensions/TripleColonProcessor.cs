@@ -1,102 +1,97 @@
 ﻿using System.Drawing;
-using System.Linq;
-using DXPlus;
-using Markdig.Syntax;
 using IContainer = DXPlus.IContainer;
 
-namespace Markdig.Renderer.Docx.TripleColonExtensions
+namespace Markdig.Renderer.Docx.TripleColonExtensions;
+
+internal static class TripleColonProcessor
 {
-    internal static class TripleColonProcessor
+    public static void Write(IDocxObjectRenderer renderer, MarkdownObject obj,
+        IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
     {
-        public static void Write(IDocxObjectRenderer renderer, MarkdownObject obj,
-            IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
+        switch (extension.Extension.Name)
         {
-            switch (extension.Extension.Name)
+            case "image":
+                HandleImage(owner, document, currentParagraph, extension);
+                break;
+            case "zone":
+                HandleZonePivot(renderer, (ContainerBlock)obj, owner, document, currentParagraph, extension);
+                break;
+            case "code":
+                HandleCode(renderer, (ContainerBlock) obj, owner, document, currentParagraph, extension);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private static void HandleCode(IDocxObjectRenderer renderer, ContainerBlock containerBlock, IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
+    {
+        var language = extension.Attributes["language"];
+        var source = extension.Attributes["source"];
+        extension.Attributes.TryGetValue("range", out var range);
+        extension.Attributes.TryGetValue("highlight", out var highlight);
+
+        var p = currentParagraph ?? document.AddParagraph();
+        p.Append($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}")
+            .WithFormatting(new Formatting { Highlight = Highlight.Blue, Color = Color.White });
+        if (currentParagraph == null) p.AppendLine();
+    }
+
+    private static void HandleZonePivot(IDocxObjectRenderer renderer, ContainerBlock block, 
+        IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
+    {
+        var pivot = extension.Attributes["pivot"];
+        if (owner.ZonePivot == null
+            || pivot != null && pivot.ToLower().Contains(owner.ZonePivot))
+        {
+            if (owner.ZonePivot == null)
             {
-                case "image":
-                    HandleImage(owner, document, currentParagraph, extension);
-                    break;
-                case "zone":
-                    HandleZonePivot(renderer, (ContainerBlock)obj, owner, document, currentParagraph, extension);
-                    break;
-                case "code":
-                    HandleCode(renderer, (ContainerBlock) obj, owner, document, currentParagraph, extension);
-                    break;
-                default:
-                    break;
+                var p = currentParagraph ?? document.AddParagraph();
+                p.Append($"{{zonePivot: \"{pivot}\"}}")
+                    .WithFormatting(new Formatting {Highlight = Highlight.Red, Color = Color.White });
+                if (currentParagraph == null) p.AppendLine();
             }
-        }
-
-        private static void HandleCode(IDocxObjectRenderer renderer, ContainerBlock containerBlock, IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
-        {
-            var language = extension.Attributes["language"];
-            var source = extension.Attributes["source"];
-            extension.Attributes.TryGetValue("range", out var range);
-            extension.Attributes.TryGetValue("highlight", out var highlight);
-
-            var p = currentParagraph ?? document.AddParagraph();
-            p.Append($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}")
-                .WithFormatting(new Formatting { Highlight = Highlight.Blue, Color = Color.White });
-            if (currentParagraph == null) p.AppendLine();
-        }
-
-        private static void HandleZonePivot(IDocxObjectRenderer renderer, ContainerBlock block, 
-            IDocxRenderer owner, IDocument document, Paragraph currentParagraph, TripleColonElement extension)
-        {
-            var pivot = extension.Attributes["pivot"];
-            if (owner.ZonePivot == null
-                || pivot != null && pivot.ToLower().Contains(owner.ZonePivot))
-            {
-                if (owner.ZonePivot == null)
-                {
-                    var p = currentParagraph ?? document.AddParagraph();
-                    p.Append($"{{zonePivot: \"{pivot}\"}}")
-                        .WithFormatting(new Formatting {Highlight = Highlight.Red, Color = Color.White });
-                    if (currentParagraph == null) p.AppendLine();
-                }
                 
-                renderer.WriteChildren(block, owner, document, currentParagraph);
+            renderer.WriteChildren(block, owner, document, currentParagraph);
                 
-                if (owner.ZonePivot == null)
-                {
-                    var p = currentParagraph ?? document.AddParagraph();
-                    p.Append($"{{end-zonePivot: \"{pivot}\"}}")
-                        .WithFormatting(new Formatting { Highlight = Highlight.Red, Color = Color.White });
-                    if (currentParagraph == null) p.AppendLine();
-                }
+            if (owner.ZonePivot == null)
+            {
+                var p = currentParagraph ?? document.AddParagraph();
+                p.Append($"{{end-zonePivot: \"{pivot}\"}}")
+                    .WithFormatting(new Formatting { Highlight = Highlight.Red, Color = Color.White });
+                if (currentParagraph == null) p.AppendLine();
             }
         }
+    }
 
-        private static void HandleImage(IDocxRenderer owner, IContainer document, 
-            Paragraph currentParagraph, TripleColonElement extension)
+    private static void HandleImage(IDocxRenderer owner, IContainer document, Paragraph currentParagraph, TripleColonElement extension)
+    {
+        currentParagraph ??= document.AddParagraph();
+
+        extension.Attributes.TryGetValue("type", out var type);
+        extension.Attributes.TryGetValue("alt-text", out var title);
+        extension.Attributes.TryGetValue("loc-scope", out var localization);
+        extension.Attributes.TryGetValue("source", out var source);
+        extension.Attributes.TryGetValue("border", out var hasBorder);
+        extension.Attributes.TryGetValue("lightbox", out var lightboxImageUrl);
+        extension.Attributes.TryGetValue("link", out var link);
+
+        string description = null;
+        if (extension.Container?.Count > 0 && type == "complex")
         {
-            currentParagraph ??= document.AddParagraph();
+            // Should be strictly text as this is for screen readers.
+            description = string.Join("\r\n", extension.Container.Select(b => (b as ParagraphBlock)?.Inline)
+                .SelectMany(ic => ic.Select(il => il.ToString())));
+        }
 
-            extension.Attributes.TryGetValue("type", out string type);
-            extension.Attributes.TryGetValue("alt-text", out string title);
-            extension.Attributes.TryGetValue("loc-scope", out string localization);
-            extension.Attributes.TryGetValue("source", out string source);
-            extension.Attributes.TryGetValue("border", out string hasBorder);
-            extension.Attributes.TryGetValue("lightbox", out string isLightbox);
-            extension.Attributes.TryGetValue("link", out string link);
-
-            string description = null;
-            if (extension.Container != null && type == "complex")
-            {
-                // Should be strictly text as this is for screen readers.
-                description = string.Join("\r\n", extension.Container.Select(b => (b as ParagraphBlock)?.Inline)
-                                        .SelectMany(ic => ic.Select(il => il.ToString())));
-            }
-
-            var drawing = owner.InsertImage(currentParagraph, source, title, description, hasBorder?.ToLower()=="true", isLightbox?.ToLower()=="true");
-            if (drawing != null)
-            {
-                owner.AddComment(currentParagraph, $"useExtension");
-                if (!string.IsNullOrEmpty(link))
-                    owner.AddComment(currentParagraph, $"link:{link}");
-                if (!string.IsNullOrEmpty(localization))
-                    owner.AddComment(currentParagraph, $"loc-scope:{localization}");
-            }
+        var drawing = owner.InsertImage(currentParagraph, extension.Container ?? (MarkdownObject)extension.Inlines, source, title, description, hasBorder?.ToLower()=="true", lightboxImageUrl);
+        if (drawing != null)
+        {
+            owner.AddComment(currentParagraph, "useExtension");
+            if (!string.IsNullOrEmpty(link))
+                owner.AddComment(currentParagraph, $"link:{link}");
+            if (!string.IsNullOrEmpty(localization))
+                owner.AddComment(currentParagraph, $"loc-scope:{localization}");
         }
     }
 }

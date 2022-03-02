@@ -1,9 +1,8 @@
 ﻿using Julmar.GenMarkdown;
 
-namespace LearnDocUtils
+namespace LearnDocUtils;
+
+public class MarkdownOptions : MarkdownFormatting
 {
-    public class MarkdownOptions : MarkdownFormatting
-    {
-        public bool Debug { get; set; }
-    }
+    public bool Debug { get; set; }
 }

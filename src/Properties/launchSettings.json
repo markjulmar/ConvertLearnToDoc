@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i C:\\Users\\mark\\Git\\LearnRepos\\learn-pr\\learn-pr\\advocates\\create-java-webapp-to-app-service-linux -o /users/mark/downloads/output.docx"
+      "commandLineArgs": "-i /users/mark/downloads/output.docx -o /users/mark/downloads/output"
     }
   }
 }

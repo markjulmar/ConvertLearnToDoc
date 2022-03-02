@@ -1,6 +1,4 @@
-﻿using DXPlus;
-using Markdig.Renderer.Docx.TripleColonExtensions;
-using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+﻿using Markdig.Renderer.Docx.TripleColonExtensions;
 
 namespace Markdig.Renderer.Docx.Blocks
 {

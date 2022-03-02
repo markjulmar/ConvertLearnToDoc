@@ -47,8 +47,8 @@ public static class LearnToDoc
         try
         {
             log.LogDebug($"LearnToDocX(repo:{model.Repository}, branch:{model.Branch}, folder:{model.Folder}: outputFile={outputFile})");
-            await LearnToDocx.ConvertFromRepoAsync(model.Repository, model.Branch, model.Folder, outputFile, model.ZonePivot,
-                gitHubToken, new DocumentOptions { EmbedNotebookContent = model.EmbedNotebookData });
+            await LearnToDocx.ConvertFromRepoAsync(MSLearnRepos.Constants.DocsOrganization, model.Repository, model.Branch, model.Folder, outputFile,
+                gitHubToken, new DocumentOptions { EmbedNotebookContent = model.EmbedNotebookData, ZonePivot = model.ZonePivot });
         }
         catch (Exception ex)
         {

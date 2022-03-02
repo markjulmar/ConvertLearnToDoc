@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using DXPlus;
 using Markdig.Extensions.Tables;
 using Table = Markdig.Extensions.Tables.Table;
 using TRow = Markdig.Extensions.Tables.TableRow;

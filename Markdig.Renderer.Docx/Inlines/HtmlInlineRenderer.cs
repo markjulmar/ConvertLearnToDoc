@@ -1,78 +1,73 @@
-using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Text.RegularExpressions;
-using DXPlus;
-using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
 
-namespace Markdig.Renderer.Docx.Inlines
+namespace Markdig.Renderer.Docx.Inlines;
+
+public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
 {
-    public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
+    public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, HtmlInline html)
     {
-        public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, HtmlInline html)
+        Debug.Assert(currentParagraph != null);
+
+        string tag = Helpers.GetTag(html.Tag);
+        bool isClose = html.Tag.StartsWith("</");
+        switch (tag)
         {
-            Debug.Assert(currentParagraph != null);
+            case "kbd":
+                if (isClose)
+                {
+                    var r = currentParagraph.Runs.Last();
+                    r.AddFormatting(new Formatting {
+                        Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
+                        Color = Color.Black,
+                        ShadeFill = Globals.CodeBoxShade
+                    });
+                }
 
-            string tag = Helpers.GetTag(html.Tag);
-            bool isClose = html.Tag.StartsWith("</");
-            switch (tag)
-            {
-                case "kbd":
-                    if (isClose)
-                    {
-                        var r = currentParagraph.Runs.Last();
-                        r.AddFormatting(new Formatting {
-                            Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
-                            Color = Color.Black,
-                            ShadeFill = Globals.CodeBoxShade
-                        });
-                    }
-
-                    break;
-                case "b":
-                    if (!isClose)
-                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true });
-                    break;
-                case "i":
-                    if (!isClose)
-                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true });
-                    break;
-                case "a":
-                    if (!isClose)
-                        ProcessRawAnchor(html, owner, document, currentParagraph);
-                    break;
-                case "br":
-                    if (html.Parent?.ParentBlock is not HeadingBlock)
-                        currentParagraph.AppendLine();
-                    break;
-                case "sup":
-                    if (!isClose)
-                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
-                            new Formatting {Superscript = true});
-                    break;
-                case "sub":
-                    if (!isClose)
-                        currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
-                            new Formatting { Subscript = true });
-                    break;
-                case "rgn":
-                    if (!isClose)
-                        currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
-                            new Formatting { Highlight = Highlight.Cyan });
-                    break;
-                default:
-                    currentParagraph.Append(html.Tag);
-                    Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
-                    break;
-            }
+                break;
+            case "b":
+                if (!isClose)
+                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true });
+                break;
+            case "i":
+                if (!isClose)
+                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true });
+                break;
+            case "a":
+                if (!isClose)
+                    ProcessRawAnchor(html, owner, document, currentParagraph);
+                break;
+            case "br":
+                if (html.Parent?.ParentBlock is not HeadingBlock)
+                    currentParagraph.AppendLine();
+                break;
+            case "sup":
+                if (!isClose)
+                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
+                        new Formatting {Superscript = true});
+                break;
+            case "sub":
+                if (!isClose)
+                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
+                        new Formatting { Subscript = true });
+                break;
+            case "rgn":
+                if (!isClose)
+                    currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
+                        new Formatting { Highlight = Highlight.Cyan });
+                break;
+            default:
+                currentParagraph.Append(html.Tag);
+                Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
+                break;
         }
+    }
 
-        private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)
-        {
-            string text = Helpers.ReadLiteralTextAfterTag(owner, html);
-            Regex re = new Regex(@"(?inx)
+    private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)
+    {
+        string text = Helpers.ReadLiteralTextAfterTag(owner, html);
+        Regex re = new Regex(@"(?inx)
                 <a \s [^>]*
                     href \s* = \s*
                         (?<q> ['""] )
@@ -80,17 +75,16 @@ namespace Markdig.Renderer.Docx.Inlines
                         \k<q>
                 [^>]* >");
 
-            // Ignore if we can't find a URL.
-            var m = re.Match(html.Tag);
-            if (m.Groups.ContainsKey("url") == false)
-            {
-                if (text.Length > 0)
-                    currentParagraph.Append(text);
-            }
-            else
-            {
-                currentParagraph.Append(new Hyperlink(text, new Uri(m.Groups["url"].Value)));
-            }
+        // Ignore if we can't find a URL.
+        var m = re.Match(html.Tag);
+        if (m.Groups.ContainsKey("url") == false)
+        {
+            if (text.Length > 0)
+                currentParagraph.Append(text);
+        }
+        else
+        {
+            currentParagraph.Append(new Hyperlink(text, new Uri(m.Groups["url"].Value)));
         }
     }
 }

@@ -1,311 +1,329 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using DXPlus;
-using GenMarkdown.DocFx.Extensions;
-using Julmar.GenMarkdown;
-using DXText = DXPlus.Text;
-using Image = DXPlus.Image;
-using Paragraph = DXPlus.Paragraph;
-using Text = Julmar.GenMarkdown.Text;
+﻿using GenMarkdown.DocFx.Extensions;
 
-namespace Docx.Renderer.Markdown.Renderers
+namespace Docx.Renderer.Markdown.Renderers;
+
+public class RunRenderer : MarkdownObjectRenderer<Run>
 {
-    public class RunRenderer : MarkdownObjectRenderer<Run>
+    protected override void Render(IMarkdownRenderer renderer, 
+        MarkdownDocument document, MarkdownBlock blockOwner, 
+        Run element, RenderBag tags)
     {
-        protected override void Render(IMarkdownRenderer renderer, 
-            MarkdownDocument document, MarkdownBlock blockOwner, 
-            Run element, RenderBag tags)
+        if (blockOwner == null)
         {
-            if (blockOwner == null)
-            {
-                blockOwner = new Julmar.GenMarkdown.Paragraph();
-                document.Add(blockOwner);
-            }
+            blockOwner = new Paragraph();
+            document.Add(blockOwner);
+        }
 
-           var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
-            if (element.Properties.Bold)
-                tf.Bold = true;
-            if (element.Properties.Italic)
-                tf.Italic = true;
-            if (element.Properties.CapsStyle == CapsStyle.SmallCaps)
-                tf.KbdTag = true;
-            if (!string.IsNullOrEmpty(tf.StyleName))
-                tf.StyleName = element.StyleName;
-            if (TextFormatting.IsMonospaceFont(element.Properties.Font))
-                tf.Monospace = true;
-            if (element.Properties.Subscript)
-                tf.Subscript = true;
-            if (element.Properties.Superscript)
-                tf.Superscript = true;
+        var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
+        if (element.Properties.Bold)
+            tf.Bold = true;
+        if (element.Properties.Italic)
+            tf.Italic = true;
+        if (element.Properties.CapsStyle == CapsStyle.SmallCaps)
+            tf.KbdTag = true;
+        if (!string.IsNullOrEmpty(tf.StyleName))
+            tf.StyleName = element.StyleName;
+        if (TextFormatting.IsMonospaceFont(element.Properties.Font))
+            tf.Monospace = true;
+        if (element.Properties.Subscript)
+            tf.Subscript = true;
+        if (element.Properties.Superscript)
+            tf.Superscript = true;
 
-            foreach (var e in element.Elements)
+        foreach (var e in element.Elements)
+        {
+            switch (e)
             {
-                switch (e)
+                // Simple text
+                case DXText t:
                 {
-                    // Simple text
-                    case DXText t:
-                    {
-                        var p = (Julmar.GenMarkdown.Paragraph) blockOwner;
+                    var p = (Paragraph) blockOwner;
 
-                        if (element.Parent is Hyperlink hl)
-                        {
-                            // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
-                            // I'm handling the links. This will catch that edge case and ignore the second appearance.
-                            if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
-                                continue;
+                    if (element.Parent is Hyperlink hl)
+                    {
+                        // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
+                        // I'm handling the links. This will catch that edge case and ignore the second appearance.
+                        if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
+                            continue;
 
-                            p.Add(Text.Link(hl.Text, hl.Uri.OriginalString));
-                        }
-                        else if (t.Value.Length > 0)
-                        {
-                            if (tf.KbdTag) AppendText(p, t.Value, "<kbd>", "</kbd>");
-                            else if (tf.Bold && tf.Italic) AppendText<BoldItalicText>(p, t.Value);
-                            else if (tf.Bold) AppendText<BoldText>(p, t.Value);
-                            else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
-                            else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
-                            else if (tf.Subscript) AppendText(p, t.Value, "<sub>", "</sub>");
-                            else if (tf.Superscript) AppendText(p, t.Value, "<sup>", "</sup>");
-                            else p.Add(ConvertSpecialCharacters(t.Value));
-                        }
-                        break;
+                        p.Add(Text.Link(hl.Text, hl.Uri.OriginalString));
                     }
-                    // Some kind of line break
-                    case Break b:
+                    else if (t.Value.Length > 0)
                     {
-                        //var p = (Julmar.GenMarkdown.Paragraph)blockOwner;
-                        //if (b.Type == BreakType.Line)
-                        //    p.Add(Text.LineBreak);
-                        break;
+                        if (tf.KbdTag) AppendText(p, t.Value, "<kbd>", "</kbd>");
+                        else if (tf.Bold && tf.Italic) AppendText<BoldItalicText>(p, t.Value);
+                        else if (tf.Bold) AppendText<BoldText>(p, t.Value);
+                        else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
+                        else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
+                        else if (tf.Subscript) AppendText(p, t.Value, "<sub>", "</sub>");
+                        else if (tf.Superscript) AppendText(p, t.Value, "<sup>", "</sup>");
+                        else p.Add(ConvertSpecialCharacters(t.Value));
                     }
-                    // Picture/image/video
-                    case Drawing d:
+                    break;
+                }
+                // Some kind of line break
+                case Break b:
+                {
+                    if (b.Type == BreakType.Line)
                     {
-                        var block = ProcessDrawing(renderer, d, element);
-                        if (block != null)
-                        {
-                            // See if we're in a list. If so, remove the empty paragraph from the 
-                            // list, and then add the image to the list so it's indented.
-                            if (document.Last() is MarkdownList theList)
-                            {
-                                var lastBlock = theList[^1];
-                                if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
-                                    lastBlock.Remove(blockOwner);
-                                lastBlock.Add(block);
-                            }
-                            else if (document.Last() is Julmar.GenMarkdown.Table table)
-                            {
-                                var row = table.Last();
-                                var cell = row.Last();
-                                cell.Content = block;
-                            }
-                            // Remove the empty paragraph from the document and add the image instead.
-                            else
-                            {
-                                Debug.Assert(blockOwner.ToString().TrimEnd('\r', '\n').Length == 0);
-                                document.Remove(blockOwner);
-                                document.Add(block);
-                            }
-                        }
-                        break;
+                        //var p = (Paragraph)blockOwner;
+                        //p.Add(Text.LineBreak);
                     }
+                    break;
+                }
+                // Picture/image/video
+                case Drawing d:
+                {
+                    var block = ProcessDrawing(renderer, d, element);
+                    if (block != null)
+                    {
+                        // See if we're in a list. If so, remove the empty paragraph from the 
+                        // list, and then add the image to the list so it's indented.
+                        if (document.Last() is MarkdownList theList)
+                        {
+                            var lastBlock = theList[^1];
+                            if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
+                                lastBlock.Remove(blockOwner);
+                            lastBlock.Add(block);
+                        }
+                        else if (document.Last() is Julmar.GenMarkdown.Table table)
+                        {
+                            var row = table.Last();
+                            var cell = row.Last();
+                            cell.Content = block;
+                        }
+                        // Remove the empty paragraph from the document and add the image instead.
+                        else
+                        {
+                            Debug.Assert(blockOwner.ToString().TrimEnd('\r', '\n').Length == 0);
+                            document.Remove(blockOwner);
+                            document.Add(block);
+                        }
+                    }
+                    break;
                 }
             }
         }
+    }
 
-        private static string ConvertSpecialCharacters(string text)
+    private static string ConvertSpecialCharacters(string text)
+    {
+        // TODO: if this gets larger, move to a dictionary.
+        return text.Replace("❎", "[x]")
+            .Replace("⬜", "[ ]");
+    }
+
+    private static void AppendText<T>(Paragraph paragraph, string text) where T : Text
+    {
+        if (paragraph.LastOrDefault() is T li)
         {
-            // TODO: if this gets larger, move to a dictionary.
-            return text.Replace("❎", "[x]")
-                .Replace("⬜", "[ ]");
+            li.Text += text;
+        }
+        else
+        {
+            var t = typeof(T).Name switch
+            {
+                nameof(BoldText) => new BoldText(text),
+                nameof(ItalicText) => new ItalicText(text),
+                nameof(BoldItalicText) => new BoldItalicText(text),
+                nameof(InlineCode) => new InlineCode(text),
+                _ => new Text(text)
+            };
+            paragraph.Add(t);
+        }
+    }
+
+    private static void AppendText(Paragraph paragraph, string text, string prefix, string suffix)
+    {
+        // Check to see if the _previous_ text has the same emphasis. If so, we'll add this.
+        if (paragraph.LastOrDefault()?.Text.EndsWith(suffix) == true)
+        {
+            var lastItem = paragraph.Last();
+            lastItem.Text += text;
+        }
+        else
+        {
+            paragraph.Add(new RawInline($"{prefix}{text}{suffix}"));
+        }
+    }
+
+    private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d, Run runOwner)
+    {
+        var p = d.Picture;
+        if (p == null)
+            return null;
+
+        // Look for the video extension - if present, this is an embedded video.
+        if (p.ImageExtensions.Contains(VideoExtension.ExtensionId))
+        {
+            string videoUrl = ((VideoExtension) p.ImageExtensions.Get(VideoExtension.ExtensionId)).Source;
+            if (string.IsNullOrEmpty(videoUrl) || !videoUrl.ToLower().StartsWith("http"))
+            {
+                // See if there's a hyperlink.
+                videoUrl = p.Hyperlink?.OriginalString;
+            }
+            return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO {videoUrl}]") : null;
         }
 
-        private static void AppendText<T>(Julmar.GenMarkdown.Paragraph paragraph, string text) where T : Text
+        bool extractMedia = true;
+
+        // Get the filename for the image from the drawing properties, if null, use the picture name.
+        string filename = d.Name ?? p.Name;
+        string folder = null;
+
+        if (!string.IsNullOrEmpty(filename))
         {
-            if (paragraph.LastOrDefault() is T li)
+            // Word doesn't normally put folder names into the image name. Learn>Docx does though so we
+            // can look for folder info here and see if this was an image referenced outside the module
+            // folder - if so, we don't need to extract it.
+            folder = Path.GetDirectoryName(filename);
+            if (!string.IsNullOrEmpty(folder))
             {
-                li.Text += text;
-            }
-            else
-            {
-                var t = typeof(T).Name switch
-                {
-                    nameof(BoldText) => new BoldText(text),
-                    nameof(ItalicText) => new ItalicText(text),
-                    nameof(BoldItalicText) => new BoldItalicText(text),
-                    nameof(InlineCode) => new InlineCode(text),
-                    _ => new Text(text)
-                };
-                paragraph.Add(t);
-            }
-        }
-
-        private static void AppendText(Julmar.GenMarkdown.Paragraph paragraph, string text, string prefix, string suffix)
-        {
-            // Check to see if the _previous_ text has the same emphasis. If so, we'll add this.
-            if (paragraph.LastOrDefault()?.Text.EndsWith(suffix) == true)
-            {
-                var lastItem = paragraph.Last();
-                lastItem.Text += text;
-            }
-            else
-            {
-                paragraph.Add(new RawInline($"{prefix}{text}{suffix}"));
-            }
-        }
-
-        private static MarkdownBlock ProcessDrawing(IMarkdownRenderer renderer, Drawing d, Run runOwner)
-        {
-            var p = d.Picture;
-            if (p == null)
-                return null;
-
-            if (p.ImageExtensions.Contains(VideoExtension.ExtensionId))
-            {
-                string videoUrl = ((VideoExtension) p.ImageExtensions.Get(VideoExtension.ExtensionId)).Source;
-                if (string.IsNullOrEmpty(videoUrl) || !videoUrl.ToLower().StartsWith("http"))
-                {
-                    // See if there's a hyperlink.
-                    videoUrl = p.Hyperlink?.OriginalString;
-                }
-
-                return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO {videoUrl}]") : null;
+                if (folder.StartsWith('/')
+                    || folder != "." && !folder.StartsWith($"..{Path.DirectorySeparatorChar}media"))
+                    extractMedia = false;
             }
 
-            // Get the filename for the image. Pandoc stores it in the description, check there first.
-            var filename = p.Description;
-            if (!string.IsNullOrEmpty(filename))
+            if (extractMedia)
             {
                 filename = Path.GetFileName(filename);
                 if (!IsPossibleFilename(filename))
                     filename = null;
             }
+        }
 
-            // Next, see if there's a comment. We can strip off any prefix like "ImageFilename:"
-            if (filename == null)
+        // Next, see if there's a comment. We can strip off any prefix like "ImageFilename:"
+        if (filename == null)
+        {
+            var comments = (runOwner.Parent as DXParagraph)?.Comments?.ToList();
+            if (comments?.Count > 0)
             {
-                var comments = (runOwner.Parent as Paragraph)?.Comments?.ToList();
-                if (comments?.Count > 0)
+                foreach (var text in comments.SelectMany(c => c.Comment.Paragraphs.Select(pp => pp.Text))
+                             .Where(t => !string.IsNullOrEmpty(t))
+                             .Select(t => t.Trim()))
                 {
-                    foreach (var text in comments.SelectMany(c => c.Comment.Paragraphs.Select(pp => pp.Text))
-                                                                 .Where(t => !string.IsNullOrEmpty(t))
-                                                                 .Select(t => t.Trim()))
+                    if (text.Length > 3 && !text.Contains('\n'))
                     {
-                        if (text.Length > 3 && !text.Contains('\n'))
+                        for (int i = 0; i < text.Length; i++)
                         {
-                            for (int i = 0; i < text.Length; i++)
+                            string fn = text.Substring(i, text.Length - i).Trim();
+                            if (IsPossibleFilename(fn))
                             {
-                                string fn = text.Substring(i, text.Length - i).Trim();
-                                if (IsPossibleFilename(fn))
-                                {
-                                    filename = fn;
-                                    break;
-                                }
+                                filename = fn;
+                                break;
                             }
                         }
                     }
                 }
             }
+        }
 
-            Image theImage;
+        DXImage theImage;
 
-            // If we have an SVG version, we'll use that.
-            var svgExtension = (SvgExtension) p.ImageExtensions.Get(SvgExtension.ExtensionId);
-            if (svgExtension != null)
-            {
-                theImage = svgExtension.Image;
-                if (string.IsNullOrEmpty(filename))
-                    filename = theImage.FileName;
-            }
-            else
-            {
-                theImage = p.Image;
-                if (string.IsNullOrEmpty(filename))
-                    filename = p.FileName;
-            }
+        // If we have an SVG version, we'll use that.
+        var svgExtension = (SvgExtension)p.ImageExtensions.Get(SvgExtension.ExtensionId);
+        if (svgExtension != null)
+        {
+            theImage = svgExtension.Image;
+            if (string.IsNullOrEmpty(filename))
+                filename = theImage.FileName;
+        }
+        else
+        {
+            theImage = p.Image;
+            if (string.IsNullOrEmpty(filename))
+                filename = p.FileName;
+        }
 
-            // Strip any parameters
-            string suffix = string.Empty;
-            int index = filename.IndexOf('#');
-            if (index > 0)
-            {
-                suffix = filename[index..];
-                filename = filename[..index];
-            }
+        // Strip any parameters
+        string suffix = string.Empty;
+        int index = filename.IndexOf('#');
+        if (index > 0)
+        {
+            suffix = filename[index..];
+            filename = filename[..index];
+        }
 
+        // Extract the media if it wasn't originally in some other folder.
+        if (extractMedia)
+        {
+            // Write file
             using var input = theImage.OpenStream();
-            using var output = File.OpenWrite(Path.Combine(renderer.MediaFolder, filename));
+            using var output = File.OpenWrite(Path.Combine(folder == "." ? renderer.MarkdownFolder : renderer.MediaFolder, filename));
             input.CopyTo(output);
 
-            bool border = p.BorderColor != null;
-            string imagePath = Path.Combine(renderer.RelativeMediaFolder, filename).Replace('\\', '/') + suffix;
-
-            var paragraph = d.Parent.Parent as Paragraph;
-
-            // If the image has a caption, we'll use that -- otherwise see if we have a description.
-            string description = null;
-            if (paragraph?.NextParagraph?.Properties.StyleName == HeadingType.Caption.ToString())
-            {
-                description = paragraph.NextParagraph.Text;
-                //TODO: loc? Remove figure prefix
-                index = description.IndexOf(':');
-                if (index > 0)
-                {
-                    index++;
-                    while (description[index] == ' ') index++;
-                    description = description[index..];
-                }
-            }
-
-            string altText = d.Description;
-            bool useExtension = FindCommentValue(paragraph, "useExtension") != null;
-            string locScope = FindCommentValue(paragraph, "loc-scope");
-            string link = FindCommentValue(paragraph, "link");
-            bool isLightbox = FindCommentValue(paragraph, "lightbox:") != null;
-
-            if (border || d.IsDecorative || isLightbox 
-                || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
-            {
-                var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
-                if (!string.IsNullOrEmpty(locScope) || d.IsDecorative)
-                    image.LocScope = "other";
-                if (isLightbox)
-                    image.Lightbox = imagePath + "#lightbox";
-                
-                return image;
-            }
-
-            return new Julmar.GenMarkdown.Image(altText, imagePath, description);
+            // Determine the URL for the Markdown content.
+            folder = folder == "." ? "" : Path.GetRelativePath(renderer.MarkdownFolder, renderer.MediaFolder);
         }
 
-        private static string FindCommentValue(Paragraph paragraph, string prefix)
+        bool border = p.BorderColor != null;
+        string imagePath = extractMedia
+            ? Path.Combine(folder, filename).Replace('\\', '/') + suffix
+            : filename;
+
+        var paragraph = d.Parent.Parent as DXParagraph;
+
+        // If the image has a caption, we'll use that -- otherwise see if we have a description.
+        string description = null;
+        if (paragraph?.NextParagraph?.Properties.StyleName == HeadingType.Caption.ToString())
         {
-            if (paragraph != null)
+            description = paragraph.NextParagraph.Text;
+            //TODO: loc? Remove figure prefix
+            index = description.IndexOf(':');
+            if (index > 0)
             {
-                var comments = paragraph.Comments.SelectMany(c => c.Comment.Paragraphs.Select(p => p.Text ?? ""));
-                var found = comments.FirstOrDefault(c =>
-                    c.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
-                if (!string.IsNullOrEmpty(found))
-                {
-                    found = found.TrimEnd('\r', '\n');
-                    return found.Length == prefix.Length ? found : found.Substring(prefix.Length);
-                }
+                index++;
+                while (description[index] == ' ') index++;
+                description = description[index..];
             }
-
-            return null;
         }
 
-        /// <summary>
-        /// Test for a possible filename.
-        /// </summary>
-        /// <param name="text">Text</param>
-        /// <returns>True/False</returns>
-        private static bool IsPossibleFilename(string text) =>
-            !string.IsNullOrEmpty(text)
-            && Path.HasExtension(text)
-            && !Path.GetInvalidPathChars().Any(text.Contains)
-            && !Path.GetInvalidFileNameChars().Any(text.Contains);
+        string altText = d.Description;
+        bool useExtension = FindCommentValue(paragraph, "useExtension") != null;
+        string locScope = FindCommentValue(paragraph, "loc-scope");
+        string link = FindCommentValue(paragraph, "link");
+        string lightboxUrl = FindCommentValue(paragraph, "lightbox:");
+
+        if (border || d.IsDecorative || lightboxUrl != null
+            || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
+        {
+            var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
+            if (!string.IsNullOrEmpty(locScope) || d.IsDecorative)
+                image.LocScope = "other";
+            if (lightboxUrl != null)
+                image.Lightbox = lightboxUrl;
+                
+            return image;
+        }
+
+        return new Julmar.GenMarkdown.Image(altText, imagePath, description);
     }
+
+    private static string FindCommentValue(DXParagraph paragraph, string prefix)
+    {
+        if (paragraph != null)
+        {
+            var comments = paragraph.Comments.SelectMany(c => c.Comment.Paragraphs.Select(p => p.Text ?? ""));
+            var found = comments.FirstOrDefault(c =>
+                c.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+            if (!string.IsNullOrEmpty(found))
+            {
+                found = found.TrimEnd('\r', '\n');
+                return found.Length == prefix.Length ? found : found[prefix.Length..];
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Test for a possible filename.
+    /// </summary>
+    /// <param name="text">Text</param>
+    /// <returns>True/False</returns>
+    private static bool IsPossibleFilename(string text) =>
+        !string.IsNullOrEmpty(text)
+        && Path.HasExtension(text)
+        && !Path.GetInvalidPathChars().Any(text.Contains)
+        && !Path.GetInvalidFileNameChars().Any(text.Contains);
 }

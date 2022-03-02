@@ -1,173 +1,167 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using Markdig.Helpers;
-using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
-using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+using Block = Markdig.Syntax.Block;
 
-namespace Markdig.Renderer.Docx
+namespace Markdig.Renderer.Docx;
+
+public static class MarkdigExtensions
 {
-    public static class MarkdigExtensions
+    public static IEnumerable<MarkdownObject> EnumerateBlocks(this ContainerBlock container)
     {
-        public static IEnumerable<MarkdownObject> EnumerateBlocks(this ContainerBlock container)
+        foreach (var item in container)
         {
-            foreach (var item in container)
-            {
-                yield return item;
+            yield return item;
 
-                if (item is ContainerBlock cb)
+            if (item is ContainerBlock cb)
+            {
+                foreach (var child in EnumerateBlocks(cb))
+                    yield return child;
+            }
+            else if (item is LeafBlock lb)
+            {
+                var containerInline = lb.Inline;
+                if (containerInline != null)
                 {
-                    foreach (var child in EnumerateBlocks(cb))
+                    foreach (var child in EnumerateInline(containerInline))
                         yield return child;
                 }
-                else if (item is LeafBlock lb)
+            }
+        }
+    }
+
+    public static IEnumerable<MarkdownObject> EnumerateInline(this Inline inline)
+    {
+        if (inline is ContainerInline cil)
+        {
+            foreach (var child in cil)
+            {
+                yield return child;
+                foreach (var sil in EnumerateInline(child))
+                    yield return sil;
+            }
+        }
+    }
+
+
+    public static string Dump(ContainerBlock block, int tabs = 0)
+    {
+        StringBuilder sb = new StringBuilder();
+        DumpContainerBlock(block, tabs, sb);
+        return sb.ToString();
+    }
+
+    private static void DumpContainerBlock(ContainerBlock cb, int tabs, StringBuilder sb)
+    {
+        foreach (var item in cb)
+        {
+            DumpBlock(item, tabs, sb);
+        }
+    }
+
+    private static void DumpBlock(Block item, int tabs, StringBuilder sb)
+    {
+        string prefix = new('\t', tabs);
+
+        string details = item switch
+        {
+            QuoteSectionNoteBlock {VideoLink: { }} qsb => "video: " + qsb.VideoLink,
+            QuoteSectionNoteBlock qsb => qsb.NoteTypeString ?? qsb.SectionAttributeString,
+            FencedCodeBlock fcb => $"{fcb.Info} - {fcb.Lines.Count} lines",
+            TripleColonBlock tcb => $"{tcb.Extension.Name}: {string.Join(", ", tcb.Attributes.Select(a => $"{a.Key}={a.Value}"))}",
+            _ => string.Empty
+        };
+
+        sb.AppendLine($"{prefix}{item} {details}");
+
+        switch (item)
+        {
+            case LeafBlock pb:
+            {
+                var containerInline = pb.Inline;
+                if (containerInline != null)
                 {
-                    var containerInline = lb.Inline;
-                    if (containerInline != null)
+                    foreach (var child in containerInline)
                     {
-                        foreach (var child in EnumerateInline(containerInline))
-                            yield return child;
+                        DumpInline(child, tabs + 1, sb);
                     }
                 }
-            }
-        }
 
-        public static IEnumerable<MarkdownObject> EnumerateInline(this Inline inline)
-        {
-            if (inline is ContainerInline cil)
-            {
-                foreach (var child in cil)
+                if (pb.Lines.Count > 0)
                 {
-                    yield return child;
-                    foreach (var sil in EnumerateInline(child))
-                        yield return sil;
+                    foreach (var str in pb.Lines.Cast<StringLine>().Take(pb.Lines.Count))
+                        sb.AppendLine($"{prefix} > {str}");
                 }
+
+                break;
             }
+            case ContainerBlock cb:
+                DumpContainerBlock(cb, tabs + 1, sb);
+                break;
+        }
+    }
+
+    private static void DumpInline(Inline item, int tabs, StringBuilder sb)
+    {
+        string prefix = new('\t', tabs);
+
+        string typeName = item.GetType().Name;
+        string details = GetDebuggerDisplay(item);
+        string toString = item.ToString();
+        if (details == item.ToString())
+            details = "";
+        else if (toString == item.GetType().ToString() && item is not ContainerInline)
+        {
+            toString = details;
+            details = "";
         }
 
-
-        public static string Dump(ContainerBlock block, int tabs = 0)
+        if (item is ContainerInline cil)
         {
-            StringBuilder sb = new StringBuilder();
-            DumpContainerBlock(block, tabs, sb);
-            return sb.ToString();
+            sb.AppendLine($"{prefix}{typeName} {details}");
+            DumpContainerInline(cil, tabs + 1, sb);
         }
-
-        private static void DumpContainerBlock(ContainerBlock cb, int tabs, StringBuilder sb)
+        else
         {
-            foreach (var item in cb)
-            {
-                DumpBlock(item, tabs, sb);
-            }
+            sb.AppendLine($"{prefix}{typeName} Value=\"{toString}\" {details}");
         }
+    }
 
-        private static void DumpBlock(Block item, int tabs, StringBuilder sb)
+    private static void DumpContainerInline(ContainerInline inline, int tabs, StringBuilder sb)
+    {
+        foreach (var item in inline)
         {
-            string prefix = new('\t', tabs);
-
-            string details = item switch
-            {
-                QuoteSectionNoteBlock {VideoLink: { }} qsb => "video: " + qsb.VideoLink,
-                QuoteSectionNoteBlock qsb => qsb.NoteTypeString ?? qsb.SectionAttributeString,
-                FencedCodeBlock fcb => $"{fcb.Info} - {fcb.Lines.Count} lines",
-                TripleColonBlock tcb => $"{tcb.Extension.Name}: {string.Join(", ", tcb.Attributes.Select(a => $"{a.Key}={a.Value}"))}",
-                _ => string.Empty
-            };
-
-            sb.AppendLine($"{prefix}{item} {details}");
-
-            switch (item)
-            {
-                case LeafBlock pb:
-                {
-                    var containerInline = pb.Inline;
-                    if (containerInline != null)
-                    {
-                        foreach (var child in containerInline)
-                        {
-                            DumpInline(child, tabs + 1, sb);
-                        }
-                    }
-
-                    if (pb.Lines.Count > 0)
-                    {
-                        foreach (var str in pb.Lines.Cast<StringLine>().Take(pb.Lines.Count))
-                            sb.AppendLine($"{prefix} > {str}");
-                    }
-
-                    break;
-                }
-                case ContainerBlock cb:
-                    DumpContainerBlock(cb, tabs + 1, sb);
-                    break;
-            }
+            DumpInline(item, tabs, sb);
         }
+    }
 
-        private static void DumpInline(Inline item, int tabs, StringBuilder sb)
+    private static string GetDebuggerDisplay(object item)
+    {
+        var attr = item.GetType().GetCustomAttribute<DebuggerDisplayAttribute>();
+        string formatText = attr?.Value;
+        if (formatText == null) return null;
+
+        var type = item.GetType();
+
+        foreach (Match match in Regex.Matches(formatText, @"{(.*?)}").Where(m => !m.Groups[1].Value.Contains('{')))
         {
-            string prefix = new('\t', tabs);
+            string pn = match.Groups[1].Value;
 
-            string typeName = item.GetType().Name;
-            string details = GetDebuggerDisplay(item);
-            string toString = item.ToString();
-            if (details == item.ToString())
-                details = "";
-            else if (toString == item.GetType().ToString() && item is not ContainerInline)
+            string value;
+            var pi = type.GetProperty(pn);
+            if (pi != null)
             {
-                toString = details;
-                details = "";
-            }
-
-            if (item is ContainerInline cil)
-            {
-                sb.AppendLine($"{prefix}{typeName} {details}");
-                DumpContainerInline(cil, tabs + 1, sb);
+                value = pi.GetValue(item)?.ToString() ?? "(null)";
             }
             else
             {
-                sb.AppendLine($"{prefix}{typeName} Value=\"{toString}\" {details}");
-            }
-        }
-
-        private static void DumpContainerInline(ContainerInline inline, int tabs, StringBuilder sb)
-        {
-            foreach (var item in inline)
-            {
-                DumpInline(item, tabs, sb);
-            }
-        }
-
-        private static string GetDebuggerDisplay(object item)
-        {
-            var attr = item.GetType().GetCustomAttribute<DebuggerDisplayAttribute>();
-            string formatText = attr?.Value;
-            if (formatText == null) return null;
-
-            var type = item.GetType();
-
-            foreach (Match match in Regex.Matches(formatText, @"{(.*?)}").Where(m => !m.Groups[1].Value.Contains('{')))
-            {
-                string pn = match.Groups[1].Value;
-
-                string value;
-                var pi = type.GetProperty(pn);
-                if (pi != null)
-                {
-                    value = pi.GetValue(item)?.ToString() ?? "(null)";
-                }
-                else
-                {
-                    value = type.GetField(pn)?.GetValue(item)?.ToString() ?? "(null)";
-                }
-
-                formatText = formatText.Replace(match.Value, value);
+                value = type.GetField(pn)?.GetValue(item)?.ToString() ?? "(null)";
             }
 
-            return formatText;
+            formatText = formatText.Replace(match.Value, value);
         }
+
+        return formatText;
     }
 }

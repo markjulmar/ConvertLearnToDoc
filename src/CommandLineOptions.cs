@@ -13,6 +13,9 @@ namespace ConvertLearnToDoc
         [Option('z', "zipOutput", HelpText = "Zip output folder, defaults to false.")]
         public bool ZipOutput { get; set; }
 
+        [Option('g', "Organization", HelpText = "GitHub organization")]
+        public string Organization { get; set; }
+
         [Option('r', "Repo", HelpText = "GitHub repo")]
         public string GitHubRepo { get; set; }
 

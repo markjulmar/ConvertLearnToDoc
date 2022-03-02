@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using MSLearnRepos;
+﻿using MSLearnRepos;
 
-namespace LearnDocUtils
+namespace LearnDocUtils;
+
+public class ModuleMetadata
 {
-    public class ModuleMetadata
+    private readonly Module moduleData;
+    public Module ModuleData => moduleData;
+    public ModuleMetadata(Module moduleData)
     {
-        private readonly TripleCrownModule moduleData;
-        public TripleCrownModule ModuleData => moduleData;
-        public ModuleMetadata(TripleCrownModule moduleData)
-        {
-            this.moduleData = moduleData ?? new TripleCrownModule();
-            this.moduleData.Metadata ??= new TripleCrownMetadata();
-        }
-
-        public static string GetList(List<string> items, string defaultValue) =>
-            items == null || items.Count == 0
-                ? defaultValue
-                : string.Join(Environment.NewLine, items.Select(s => "- " + s));
+        this.moduleData = moduleData ?? new Module();
+        this.moduleData.Metadata ??= new Metadata();
     }
+
+    public static string GetList(List<string> items, string defaultValue) =>
+        items == null || items.Count == 0
+            ? defaultValue
+            : string.Join(Environment.NewLine, items.Select(s => "- " + s));
 }

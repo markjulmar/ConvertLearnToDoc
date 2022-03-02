@@ -1,50 +1,44 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using DXPlus;
-using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+﻿namespace Markdig.Renderer.Docx.Blocks;
 
-namespace Markdig.Renderer.Docx.Blocks
+public class RowBlockRenderer : DocxObjectRenderer<RowBlock>
 {
-    public class RowBlockRenderer : DocxObjectRenderer<RowBlock>
+    public void Write(IDocxRenderer owner, IDocument document, List<RowBlock> rows)
     {
-        public void Write(IDocxRenderer owner, IDocument document, List<RowBlock> rows)
+        int totalColumns = rows.Max(r => r.Count);
+
+        var documentTable = document.AddTable(rows.Count, totalColumns);
+        documentTable.Design = TableDesign.None;
+
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
-            int totalColumns = rows.Max(r => r.Count);
-
-            var documentTable = document.AddTable(rows.Count, totalColumns);
-            documentTable.Design = TableDesign.None;
-
-            for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+            var row = rows[rowIndex];
+            for (int colIndex = 0; colIndex < row.Count; colIndex++)
             {
-                var row = rows[rowIndex];
-                for (int colIndex = 0; colIndex < row.Count; colIndex++)
-                {
-                    var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
-                    var cellParagraph = documentCell.Paragraphs.First();
+                var documentCell = documentTable.Rows.ElementAt(rowIndex).Cells[colIndex];
+                var cellParagraph = documentCell.Paragraphs.First();
 
-                    if (row[colIndex] is NestedColumnBlock cell)
+                if (row[colIndex] is NestedColumnBlock cell)
+                {
+                    foreach (var child in cell)
                     {
-                        foreach (var child in cell)
-                        {
-                            Write(child, owner, document, cellParagraph);
-                            cellParagraph = documentCell.AddParagraph();
-                        }
-                    }
-                    else
-                    {
-                        var child = row[colIndex];
                         Write(child, owner, document, cellParagraph);
+                        cellParagraph = documentCell.AddParagraph();
                     }
                 }
+                else
+                {
+                    var child = row[colIndex];
+                    Write(child, owner, document, cellParagraph);
+                }
             }
-
-            documentTable.AutoFit = true;
         }
 
-        public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, RowBlock obj)
-        {
-            // Not used.
-            throw new System.NotImplementedException();
-        }
+        documentTable.AutoFit = true;
+    }
+
+    public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, RowBlock obj)
+    {
+        // Not used.
+        throw new NotImplementedException();
     }
 }

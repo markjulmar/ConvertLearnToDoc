@@ -1,57 +1,52 @@
-﻿using System;
-using DXPlus;
-using Microsoft.DocAsCode.MarkdigEngine.Extensions;
+﻿namespace Markdig.Renderer.Docx.Blocks;
 
-namespace Markdig.Renderer.Docx.Blocks
+public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock>
 {
-    public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock>
+    public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, QuoteSectionNoteBlock block)
     {
-        public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, QuoteSectionNoteBlock block)
+        currentParagraph ??= document.AddParagraph();
+
+        if (block.QuoteType is QuoteSectionNoteType.DFMNote or QuoteSectionNoteType.MarkdownQuote)
         {
-            currentParagraph ??= document.AddParagraph();
+            var style = block.QuoteType == QuoteSectionNoteType.DFMNote
+                ? HeadingType.IntenseQuote
+                : HeadingType.Quote;
 
-            if (block.QuoteType is QuoteSectionNoteType.DFMNote or QuoteSectionNoteType.MarkdownQuote)
-            {
-                var style = block.QuoteType == QuoteSectionNoteType.DFMNote
-                    ? HeadingType.IntenseQuote
-                    : HeadingType.Quote;
+            // If there was a note block right before this one, add a separator
+            // otherwise Word merges them together.
+            if (currentParagraph.PreviousParagraph?.Properties.StyleName == style.ToString())
+                currentParagraph.InsertBefore(new Paragraph());
 
-                // If there was a note block right before this one, add a separator
-                // otherwise Word merges them together.
-                if (currentParagraph.PreviousParagraph?.Properties.StyleName == style.ToString())
-                    currentParagraph.InsertBefore(new Paragraph());
+            if (!string.IsNullOrEmpty(block.NoteTypeString))
+                currentParagraph.Style(style).AppendLine(block.NoteTypeString);
+            else
+                currentParagraph.Style(style);
+        }
+        else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
+        {
+            string videoLink = block.VideoLink;
 
-                if (!string.IsNullOrEmpty(block.NoteTypeString))
-                    currentParagraph.Style(style).AppendLine(block.NoteTypeString);
-                else
-                    currentParagraph.Style(style);
-            }
-            else if (block.QuoteType == QuoteSectionNoteType.DFMVideo)
-            {
-                string videoLink = block.VideoLink;
-
-                using var placeholder = owner.GetEmbeddedResource("video-placeholder.png");
-                currentParagraph.Properties.Alignment = Alignment.Center;
-                currentParagraph.Append(document.CreateVideo(
-                    placeholder, ImageContentType.Png,
-                    new Uri(videoLink, UriKind.Absolute),
-                    400, 225));
+            using var placeholder = owner.GetEmbeddedResource("video-placeholder.png");
+            currentParagraph.Properties.Alignment = Alignment.Center;
+            currentParagraph.Append(document.CreateVideo(
+                placeholder, ImageContentType.Png,
+                new Uri(videoLink, UriKind.Absolute),
+                400, 225));
                 
-                return;
-            }
+            return;
+        }
 
-            // Write all the paragraphs with newlines between.
-            for (var index = 0; index < block.Count; index++)
+        // Write all the paragraphs with newlines between.
+        for (var index = 0; index < block.Count; index++)
+        {
+            var paragraphBlock = block[index];
+            if (index > 0)
             {
-                var paragraphBlock = block[index];
-                if (index > 0)
-                {
-                    currentParagraph.AppendLine()
-                            .AppendLine();
-                }
-
-                Write(paragraphBlock, owner, document, currentParagraph);
+                currentParagraph.AppendLine()
+                    .AppendLine();
             }
+
+            Write(paragraphBlock, owner, document, currentParagraph);
         }
     }
 }

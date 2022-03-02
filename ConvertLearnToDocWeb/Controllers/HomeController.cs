@@ -48,7 +48,10 @@ namespace ConvertLearnToDocWeb.Controllers
             if (!string.IsNullOrEmpty(viewModel.ModuleUrl)
                 && viewModel.ModuleUrl.ToLower().StartsWith("https"))
             {
-                (repo, branch, folder) = await LearnResolver.LocationFromUrlAsync(viewModel.ModuleUrl);
+                var md = await DocsMetadata.LoadFromUrlAsync(viewModel.ModuleUrl);
+                repo = md.Repository;
+                branch = md.Branch;
+                folder = Path.GetDirectoryName(md.ContentPath);
             }
             else if (!string.IsNullOrEmpty(viewModel.GithubRepo)
                 && !string.IsNullOrEmpty(viewModel.GithubFolder))
