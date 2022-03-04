@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i https://docs.microsoft.com/en-us/learn/modules/fundamental-azure-concepts/ -o /users/mark/downloads/output.docx"
+      "commandLineArgs": "-i /users/mark/downloads/output.docx -o /users/mark/downloads/output"
     }
   }
 }

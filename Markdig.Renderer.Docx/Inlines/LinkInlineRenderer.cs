@@ -38,7 +38,9 @@ public class LinkInlineRenderer : DocxObjectRenderer<LinkInline>
                     description = null;
             }
 
-            owner.InsertImage(currentParagraph, link, url, title, description, addBorder, lightboxImageUrl);
+            owner.InsertImage(currentParagraph, link, url, title, description, addBorder);
+            if (!string.IsNullOrEmpty(lightboxImageUrl))
+                owner.AddComment(currentParagraph, $"lightbox:\"{lightboxImageUrl}\"");
         }
         else
         {

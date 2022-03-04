@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Reflection;
 using Markdig.Renderer.Docx.Blocks;
 using Markdig.Renderer.Docx.Inlines;
-using Markdig.Renderers.Html;
 using CodeBlockRenderer = Markdig.Renderer.Docx.Blocks.CodeBlockRenderer;
 using HeadingRenderer = Markdig.Renderer.Docx.Blocks.HeadingRenderer;
 using ListRenderer = Markdig.Renderer.Docx.Blocks.ListRenderer;
@@ -74,7 +73,7 @@ public class DocxObjectRenderer : IDocxRenderer
             new TableRenderer(),
             new InclusionRenderer(),
             new LinkReferenceDefinitionGroupRenderer(),
-            new Blocks.HtmlBlockRenderer(),
+            new HtmlBlockRenderer(),
 
             // Inline handlers
             new LiteralInlineRenderer(),
@@ -153,7 +152,7 @@ public class DocxObjectRenderer : IDocxRenderer
         owner.AttachComment(document.CreateComment(user, commentText));
     }
 
-    public Drawing InsertImage(Paragraph currentParagraph, MarkdownObject owner, string imageUrl, string altText, string title, bool hasBorder, string lightboxImageUrl)
+    public Drawing InsertImage(Paragraph currentParagraph, MarkdownObject owner, string imageUrl, string altText, string title, bool hasBorder)
     {
         string path = ResolvePath(moduleFolder, imageUrl);
         DXPlus.Image image = null;
@@ -213,8 +212,6 @@ public class DocxObjectRenderer : IDocxRenderer
 
             if (!string.IsNullOrEmpty(title))
                 drawing.AddCaption(": " + title);
-            if (!string.IsNullOrEmpty(lightboxImageUrl))
-                AddComment(currentParagraph, $"lightbox:{lightboxImageUrl}");
 
             return drawing;
         }

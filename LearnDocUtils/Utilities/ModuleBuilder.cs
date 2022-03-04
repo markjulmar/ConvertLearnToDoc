@@ -270,6 +270,8 @@ public class ModuleBuilder
 
     private static double FuzzyCompare(string input1, string input2)
     {
+        if (input1 == null || input2 == null) return 0;
+
         HashSet<string> BuildBigramSet(string input)
         {
             var bigrams = new HashSet<string>();
@@ -372,7 +374,16 @@ public class ModuleBuilder
         var doc = Document.Load(docxFile);
 
         MSLearnRepos.Module moduleData = null;
-        if (doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var jsonText) && jsonText != null)
+
+        if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.Comments, out string uid)
+                && !string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
+        {
+            if (uid.All(c =>  c is '.' or '-' or '_' || char.IsLetterOrDigit(c)))
+                moduleData = await GetModuleFromUidAsync(uid);
+        }
+
+        if (moduleData == null 
+            && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var jsonText) && jsonText != null)
         {
             string text = jsonText.ToString();
             if (text?.Length > 0)
@@ -385,12 +396,6 @@ public class ModuleBuilder
                         DateFormatString = "MM/dd/yyyy" // 06/21/2021
                     });
             }
-        }
-
-        if (moduleData == null && doc.DocumentProperties.TryGetValue(DocumentPropertyName.Comments, out string uid) 
-                               && !string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
-        {
-            moduleData = await GetModuleFromUidAsync(uid);
         }
 
         var metadata = new ModuleMetadata(moduleData);
@@ -572,7 +577,7 @@ public class ModuleBuilder
 
     private static async Task<MSLearnRepos.Module> GetModuleFromUidAsync(string uid)
     {
-        var catalog = await MSLearnCatalogAPI.CatalogApi.GetCatalog();
+        var catalog = await MSLearnCatalogAPI.CatalogApi.GetCatalogAsync();
         var catalogModule = catalog.Modules.SingleOrDefault(m => m.Uid == uid);
         if (catalogModule == null) return null;
 
@@ -584,7 +589,7 @@ public class ModuleBuilder
             Levels = catalogModule.Levels,
             Roles = catalogModule.Roles,
             Products = catalogModule.Products,
-            IconUrl = catalogModule.IconUrl,
+            IconUrl = catalogModule.IconUrl["https://docs.microsoft.com/en-us".Length..],
             UnitIds = catalogModule.Units,
             Metadata = new Metadata {
                 MsDate = catalogModule.LastModified.ToString("MM/dd/yyyy")

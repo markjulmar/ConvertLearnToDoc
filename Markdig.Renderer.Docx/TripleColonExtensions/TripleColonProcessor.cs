@@ -84,14 +84,18 @@ internal static class TripleColonProcessor
                 .SelectMany(ic => ic.Select(il => il.ToString())));
         }
 
-        var drawing = owner.InsertImage(currentParagraph, extension.Container ?? (MarkdownObject)extension.Inlines, source, title, description, hasBorder?.ToLower()=="true", lightboxImageUrl);
+        var drawing = owner.InsertImage(currentParagraph, extension.Container ?? (MarkdownObject)extension.Inlines, source, title, description, hasBorder?.ToLower()=="true");
         if (drawing != null)
         {
-            owner.AddComment(currentParagraph, "useExtension");
+            string commentText = "useExtension";
             if (!string.IsNullOrEmpty(link))
-                owner.AddComment(currentParagraph, $"link:{link}");
+                commentText += $" link:\"{link}\"";
             if (!string.IsNullOrEmpty(localization))
-                owner.AddComment(currentParagraph, $"loc-scope:{localization}");
+                commentText += $" loc-scope:{localization}";
+            if (!string.IsNullOrEmpty(lightboxImageUrl))
+                commentText += $" lightbox:\"{lightboxImageUrl}\"";
+
+            owner.AddComment(currentParagraph, commentText);
         }
     }
 }

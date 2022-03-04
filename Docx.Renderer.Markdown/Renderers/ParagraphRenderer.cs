@@ -109,8 +109,8 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
             {
                 foreach (var kvp in 
                          from kvp in blockHeaders 
-                         let text = run.Text 
-                         where run.Text.Contains(kvp.Key, StringComparison.CurrentCultureIgnoreCase) 
+                         let text = run?.Text 
+                         where text?.Contains(kvp.Key, StringComparison.CurrentCultureIgnoreCase) == true
                          select kvp)
                 {
                     blockQuote.Add($"[!{kvp.Value}]");

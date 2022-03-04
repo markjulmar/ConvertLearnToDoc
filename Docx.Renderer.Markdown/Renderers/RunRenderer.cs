@@ -282,13 +282,15 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         bool useExtension = FindCommentValue(paragraph, "useExtension") != null;
         string locScope = FindCommentValue(paragraph, "loc-scope");
         string link = FindCommentValue(paragraph, "link");
-        string lightboxUrl = FindCommentValue(paragraph, "lightbox:");
+        string lightboxUrl = FindCommentValue(paragraph, "lightbox");
 
         if (border || d.IsDecorative || lightboxUrl != null
             || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
         {
             var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
-            if (!string.IsNullOrEmpty(locScope) || d.IsDecorative)
+            if (!string.IsNullOrEmpty(locScope))
+                image.LocScope = locScope;
+            else if (d.IsDecorative)
                 image.LocScope = "other";
             if (lightboxUrl != null)
                 image.Lightbox = lightboxUrl;
@@ -299,17 +301,47 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         return new Julmar.GenMarkdown.Image(altText, imagePath, description);
     }
 
+    /// <summary>
+    /// Look for a specific comment on the given paragraph. We assume the keys are space delimited
+    /// and quoted if they have spaces. Surrounding quotes are removed. If the key has no value, then the
+    /// key itself is returned. If the key doesn't exist, null is returned.
+    /// </summary>
+    /// <param name="paragraph"></param>
+    /// <param name="prefix"></param>
+    /// <returns></returns>
     private static string FindCommentValue(DXParagraph paragraph, string prefix)
     {
         if (paragraph != null)
         {
             var comments = paragraph.Comments.SelectMany(c => c.Comment.Paragraphs.Select(p => p.Text ?? ""));
-            var found = comments.FirstOrDefault(c =>
-                c.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+            var found = comments.FirstOrDefault(c => c.Contains(prefix, StringComparison.InvariantCultureIgnoreCase));
             if (!string.IsNullOrEmpty(found))
             {
                 found = found.TrimEnd('\r', '\n');
-                return found.Length == prefix.Length ? found : found[prefix.Length..];
+
+                int start = found.IndexOf(prefix, StringComparison.InvariantCultureIgnoreCase) + prefix.Length;
+                if (start == found.Length || found[start] == ' ')
+                    return prefix;
+
+                Debug.Assert(found[start] == ':');
+                start++;
+                char lookFor = ' ';
+                if (found[start] == '\"')
+                {
+                    lookFor = '\"';
+                    start++;
+                }
+
+                int end = start;
+                while (end < found.Length)
+                {
+                    if (found[end] == lookFor)
+                        break;
+                    end++;
+                }
+
+                Debug.Assert(start >= 0 && found.Length > start);
+                return found.Substring(start, end - start);
             }
         }
 

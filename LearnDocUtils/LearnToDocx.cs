@@ -144,9 +144,9 @@ public static class LearnToDocx
                                            .Count(b => b is EmphasisInline { DelimiterChar: '_' });
 
         bool useAsterisksForLists = markdownDocument.EnumerateBlocks()
-                                        .Count(b => b is Markdig.Syntax.ListBlock { BulletType: '*' })
+                                        .Count(b => b is ListBlock { BulletType: '*' })
                                     > markdownDocument.EnumerateBlocks()
-                                        .Count(b => b is Markdig.Syntax.ListBlock { BulletType: '-' });
+                                        .Count(b => b is ListBlock { BulletType: '-' });
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForBullets), useAsterisksForLists.ToString());
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForEmphasis), useAsterisksForEmphasis.ToString());
 
@@ -181,17 +181,52 @@ public static class LearnToDocx
     /// <returns></returns>
     private static byte[] GetFile(ILearnRepoService learnRepo, Module moduleData, string path, string destinationPath)
     {
-        string checkPath = Path.Combine(destinationPath, Constants.IncludesFolder, path);
-        if (File.Exists(checkPath))
-            return File.ReadAllBytes(checkPath);
+        string remotePath;
 
-        string remotePath = Path.Combine(Path.GetDirectoryName(moduleData.Path), Constants.IncludesFolder, path);
+        path = path.Replace('\\', '/').Trim();
+        if (path.StartsWith('/')) // rooted path - this is relevant to the REPO folder for content.
+        {
+            remotePath = path[1..];
+        }
+        else
+        {
+            string checkPath = Path.Combine(destinationPath, Constants.IncludesFolder, path);
+            if (File.Exists(checkPath))
+                return File.ReadAllBytes(checkPath);
+            
+            remotePath = Path.Combine(Path.GetDirectoryName(moduleData.Path)??"", Constants.IncludesFolder, path);
+        }
+
+        // Try direct.
         var (binary, text) = learnRepo.ReadFileForPathAsync(remotePath).Result;
-        if (binary != null) 
-            return binary;
-        return text != null 
-            ? Encoding.Default.GetBytes(text) 
-            : null;
+        if (binary != null) return binary;
+        if (text != null) return Encoding.Default.GetBytes(text);
+
+        // Last check -- for local file retrieval, it's possible our "root" is the module itself.
+        // This is mostly for testing, but we'll handle it here for completeness.
+        if (learnRepo is not IRemoteLearnRepoService && path.Contains('/'))
+        {
+            string[] repoPath = learnRepo.RootPath.Replace('\\', '/').Split('/');
+            string[] lfPath = remotePath.Split('/');
+            string lookFor = lfPath[0];
+
+            // Walk backwards to match up to the start of the path we're looking for.
+            for (int index = repoPath.Length-1; index>0; index--)
+            {
+                if (string.Compare(repoPath[index], lookFor, StringComparison.InvariantCultureIgnoreCase) == 0)
+                {
+                    remotePath = Path.Combine(
+                        string.Join('/', repoPath.Take(index)),
+                        string.Join('/', lfPath));
+                    (binary, text) = learnRepo.ReadFileForPathAsync(remotePath).Result;
+                    if (binary != null) return binary;
+                    if (text != null) return Encoding.Default.GetBytes(text);
+                }
+            }
+        }
+
+        // Not found.
+        return null;
     }
 
     private static string FixImageExtension(string text)
@@ -296,7 +331,6 @@ public static class LearnToDocx
         SetProperty(document, DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
         SetProperty(document, DocumentPropertyName.LastSavedBy, moduleData.Metadata.MsAuthor);
 
-        SetProperty(document, DocumentPropertyName.Comments, moduleData.Uid);
         SetCustomProperty(document, nameof(Module.Metadata), 
             JsonConvert.SerializeObject(moduleData, Formatting.None,
                                                 new JsonSerializerSettings {
