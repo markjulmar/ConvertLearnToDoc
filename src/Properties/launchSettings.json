@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/downloads/output.docx -o /users/mark/downloads/output"
+      "commandLineArgs": "-i /users/mark/downloads/learnDocs/automatic-update-of-a-webapp-using-azure-functions-and-signalr.docx -o /users/mark/downloads/output"
     }
   }
 }

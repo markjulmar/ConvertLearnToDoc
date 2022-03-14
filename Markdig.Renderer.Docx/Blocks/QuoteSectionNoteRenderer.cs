@@ -1,4 +1,6 @@
-﻿namespace Markdig.Renderer.Docx.Blocks;
+﻿using System.Globalization;
+
+namespace Markdig.Renderer.Docx.Blocks;
 
 public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock>
 {
@@ -18,7 +20,11 @@ public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock
                 currentParagraph.InsertBefore(new Paragraph());
 
             if (!string.IsNullOrEmpty(block.NoteTypeString))
-                currentParagraph.Style(style).Add(block.NoteTypeString).Newline();
+                currentParagraph.Style(style).AddRange(new [] {
+                    new Run(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(block.NoteTypeString.ToLower()) + ":", 
+                        new Formatting { Bold = true, Underline = true }), 
+                    new Run(" ")
+                });
             else
                 currentParagraph.Style(style);
         }

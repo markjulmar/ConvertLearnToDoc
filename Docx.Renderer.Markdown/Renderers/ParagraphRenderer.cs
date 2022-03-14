@@ -1,4 +1,6 @@
-﻿namespace Docx.Renderer.Markdown.Renderers;
+﻿using System.Security.Authentication.ExtendedProtection;
+
+namespace Docx.Renderer.Markdown.Renderers;
 
 public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
 {
@@ -100,54 +102,60 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 document.Add(blockQuote);
         }
 
+        bool startedText = false;
         var runs = element.Runs.ToList();
-        for (int i = 0; i < runs.Count; i++)
+        foreach (var run in runs)
         {
-            bool processed = false;
-            var run = runs[i];
+            string text = run.Text;
+            if (!startedText && (text.Length == 0 || text.All(c => c is ' ' or '\n'))) 
+                continue;
+
             if (newBlockQuote)
             {
-                foreach (var kvp in 
-                         from kvp in blockHeaders 
-                         let text = run?.Text 
-                         where text?.Contains(kvp.Key, StringComparison.CurrentCultureIgnoreCase) == true
-                         select kvp)
-                {
-                    blockQuote.Add($"[!{kvp.Value}]");
-                    blockQuote.Add(new Paragraph());
-                    processed = true;
+                int index = text.IndexOf(':');
+                if (index < 0) index = text.IndexOf(' ');
 
-                    // Skip any newline/blanks after that.
-                    while (i+1 < runs.Count)
-                    {
-                        if (runs[i + 1].HasText
-                            && string.IsNullOrWhiteSpace(runs[i + 1].Text) || runs[i+1].Text == "\n")
-                            i++;
-                        else break;
-                    }
-                    break;
+                string key = index < 0 ? text.Trim('\r','\n') : text[..index];
+                if (key.Contains(' '))
+                {
+                    index = text.IndexOf(' ');
+                    key = text[..index];
                 }
 
-                newBlockQuote = false;
+                index = key.Length;
+
+                if (blockHeaders.TryGetValue(key, out string header))
+                {
+                    newBlockQuote = false;
+
+                    blockQuote.Add($"[!{header}]");
+                    blockQuote.Add(new Paragraph());
+
+                    text = text[index..];
+                    if (text.FirstOrDefault() == ':')
+                        text = text[1..];
+
+                    if (text.Length == 0 || text.All(c => c is ' ' or '\n')) continue;
+                }
             }
 
-            if (!processed)
+            newBlockQuote = false;
+            startedText = true;
+
+            var p = blockQuote.LastOrDefault();
+            if (p == null)
             {
-                var p = blockQuote.LastOrDefault();
-                if (p == null)
-                {
-                    p = new Paragraph();
-                    blockQuote.Add(p);
-                }
-                    
-                // If it's a newline, then just use the empty paragraph.
-                if (run.Text != "\n")
-                    renderer.WriteElement(document, p, run, tags);
-                else
-                {
-                    p = new Paragraph();
-                    blockQuote.Add(p);
-                }
+                p = new Paragraph();
+                blockQuote.Add(p);
+            }
+                
+            // If it's a newline, then just use the empty paragraph.
+            if (text != "\n")
+                renderer.WriteElement(document, p, run, tags);
+            else
+            {
+                p = new Paragraph();
+                blockQuote.Add(p);
             }
         }
     }
