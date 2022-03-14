@@ -6,7 +6,7 @@ public class RowBlockRenderer : DocxObjectRenderer<RowBlock>
     {
         int totalColumns = rows.Max(r => r.Count);
 
-        var documentTable = document.AddTable(rows.Count, totalColumns);
+        var documentTable = document.Add(new Table(rows.Count, totalColumns));
         documentTable.Design = TableDesign.None;
 
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
@@ -33,7 +33,7 @@ public class RowBlockRenderer : DocxObjectRenderer<RowBlock>
             }
         }
 
-        documentTable.AutoFit = true;
+        documentTable.AutoFit();
     }
 
     public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, RowBlock obj)

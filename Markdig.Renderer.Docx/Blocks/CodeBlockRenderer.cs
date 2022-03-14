@@ -16,7 +16,7 @@ public class CodeBlockRenderer : DocxObjectRenderer<CodeBlock>
         {
             string language = fencedCodeBlock.Info;
             if (!string.IsNullOrEmpty(language))
-                currentParagraph.Append(new Paragraph(language).Style("CodeFooter"));
+                currentParagraph.InsertAfter(new Paragraph(language).Style("CodeFooter"));
         }
     }
 
@@ -26,7 +26,7 @@ public class CodeBlockRenderer : DocxObjectRenderer<CodeBlock>
         {
             var codeStyle = document.Styles.AddStyle("SourceCodeChar", StyleType.Character);
             codeStyle.Name = "Source Code Char";
-            codeStyle.Linked = "SourceCodeBlock";
+            codeStyle.LinkedStyle = "SourceCodeBlock";
             codeStyle.BasedOn = "DefaultParagraphFont";
             codeStyle.Formatting.Font = Globals.CodeFont;
             codeStyle.Formatting.FontSize = Globals.CodeFontSize;
@@ -37,11 +37,11 @@ public class CodeBlockRenderer : DocxObjectRenderer<CodeBlock>
             var codeStyle = document.Styles.AddStyle("CodeBlock", StyleType.Paragraph);
             codeStyle.Name = "Code block";
             codeStyle.BasedOn = "Normal";
-            codeStyle.Linked = "SourceCodeChar";
+            codeStyle.LinkedStyle = "SourceCodeChar";
             codeStyle.ParagraphFormatting.WordWrap = false;
             codeStyle.ParagraphFormatting.LineSpacingAfter = 0;
-            codeStyle.ParagraphFormatting.SetBorders(BorderStyle.Single, Color.LightGray, 5, 2);
-            codeStyle.ParagraphFormatting.ShadeFill = Globals.CodeBoxShade;
+            codeStyle.ParagraphFormatting.SetOutsideBorders(new Border { Style = BorderStyle.Single, Color = Color.LightGray, Spacing = 5, Size = 2 });
+            codeStyle.ParagraphFormatting.Shading = new Shading { Fill = Globals.CodeBoxShade };
             codeStyle.Formatting.Font = Globals.CodeFont;
             codeStyle.Formatting.FontSize = Globals.CodeFontSize;
         }

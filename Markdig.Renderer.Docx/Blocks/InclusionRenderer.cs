@@ -6,7 +6,7 @@ public class InclusionRenderer : DocxObjectRenderer<InclusionBlock>
     {
         // TODO: should we pull this file?
         currentParagraph ??= document.AddParagraph();
-        currentParagraph.Append($"{{include \"{block.IncludedFilePath}\" {block.Title}}}", 
-            new Formatting { Highlight = Highlight.Yellow });
+        currentParagraph.Add(new Run($"{{include \"{block.IncludedFilePath}\" {block.Title}}}",
+            new Formatting { Highlight = Highlight.Yellow }));
     }
 }

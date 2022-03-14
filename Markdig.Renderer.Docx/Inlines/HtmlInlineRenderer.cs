@@ -18,21 +18,21 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 if (isClose)
                 {
                     var r = currentParagraph.Runs.Last();
-                    r.AddFormatting(new Formatting {
+                    r.MergeFormatting(new Formatting {
                         Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
                         Color = Color.Black,
-                        ShadeFill = Globals.CodeBoxShade
+                        Shading = new Shading { Fill = Globals.CodeBoxShade }
                     });
                 }
 
                 break;
             case "b":
                 if (!isClose)
-                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true });
+                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true }));
                 break;
             case "i":
                 if (!isClose)
-                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true });
+                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true }));
                 break;
             case "a":
                 if (!isClose)
@@ -40,25 +40,22 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 break;
             case "br":
                 if (html.Parent?.ParentBlock is not HeadingBlock)
-                    currentParagraph.AppendLine();
+                    currentParagraph.Newline();
                 break;
             case "sup":
                 if (!isClose)
-                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
-                        new Formatting {Superscript = true});
+                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting {Superscript = true}));
                 break;
             case "sub":
                 if (!isClose)
-                    currentParagraph.Append(Helpers.ReadLiteralTextAfterTag(owner, html),
-                        new Formatting { Subscript = true });
+                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Subscript = true }));
                 break;
             case "rgn":
                 if (!isClose)
-                    currentParagraph.Append($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}",
-                        new Formatting { Highlight = Highlight.Cyan });
+                    currentParagraph.Add(new Run($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}", new Formatting { Highlight = Highlight.Cyan }));
                 break;
             default:
-                currentParagraph.Append(html.Tag);
+                currentParagraph.Add(html.Tag);
                 Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
                 break;
         }
@@ -80,11 +77,11 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
         if (m.Groups.ContainsKey("url") == false)
         {
             if (text.Length > 0)
-                currentParagraph.Append(text);
+                currentParagraph.Add(text);
         }
         else
         {
-            currentParagraph.Append(new Hyperlink(text, new Uri(m.Groups["url"].Value)));
+            currentParagraph.Add(new Hyperlink(text, new Uri(m.Groups["url"].Value)));
         }
     }
 }

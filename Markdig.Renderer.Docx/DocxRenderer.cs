@@ -176,7 +176,7 @@ public class DocxObjectRenderer : IDocxRenderer
                 stream.CopyTo(ms);
             }
 
-            image = document.AddImage(ms, DetermineContentTypeFromUrl(imageUrl));
+            image = document.CreateImage(ms, DetermineContentTypeFromUrl(imageUrl));
         }
 
         else if (!File.Exists(path))
@@ -184,31 +184,31 @@ public class DocxObjectRenderer : IDocxRenderer
             byte[] contents = GetFile(owner, imageUrl);
             if (contents != null)
             {
-                image = document.AddImage(new MemoryStream(contents, false), DetermineContentTypeFromUrl(imageUrl));
+                image = document.CreateImage(new MemoryStream(contents, false), DetermineContentTypeFromUrl(imageUrl));
             }
         }
         else
         {
-            image = document.AddImage(path);
+            image = document.CreateImage(path);
         }
 
         if (image != null)
         {
             var drawing = image.CreatePicture(imageUrl, altText);
-
+            Debug.Assert(drawing.Picture != null);
             if (drawing.Width > 600)
             {
                 double ratio = drawing.Height / drawing.Width;
-                drawing.Width = drawing.Picture.Width = 600;
-                drawing.Height = drawing.Picture.Height = Math.Round(600 * ratio);
+                drawing.Picture.Width = drawing.Width = 600;
+                drawing.Picture.Height = drawing.Height = Math.Round(600 * ratio);
             }
 
             if (hasBorder)
-                drawing.Picture.BorderColor = Color.DarkGray;
+                drawing.Picture!.BorderColor = Color.DarkGray;
 
             drawing.Picture.Name = Path.GetFileName(imageUrl);
             drawing.Picture.Description = altText;
-            currentParagraph.Append(drawing);
+            currentParagraph.Add(drawing);
 
             if (!string.IsNullOrEmpty(title))
                 drawing.AddCaption(": " + title);

@@ -18,7 +18,7 @@ public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock
                 currentParagraph.InsertBefore(new Paragraph());
 
             if (!string.IsNullOrEmpty(block.NoteTypeString))
-                currentParagraph.Style(style).AppendLine(block.NoteTypeString);
+                currentParagraph.Style(style).Add(block.NoteTypeString).Newline();
             else
                 currentParagraph.Style(style);
         }
@@ -28,7 +28,7 @@ public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock
 
             using var placeholder = owner.GetEmbeddedResource("video-placeholder.png");
             currentParagraph.Properties.Alignment = Alignment.Center;
-            currentParagraph.Append(document.CreateVideo(
+            currentParagraph.Add(document.CreateVideo(
                 placeholder, ImageContentType.Png,
                 new Uri(videoLink, UriKind.Absolute),
                 400, 225));
@@ -42,8 +42,9 @@ public class QuoteSectionNoteRenderer : DocxObjectRenderer<QuoteSectionNoteBlock
             var paragraphBlock = block[index];
             if (index > 0)
             {
-                currentParagraph.AppendLine()
-                    .AppendLine();
+                currentParagraph
+                    .Newline()
+                    .Newline();
             }
 
             Write(paragraphBlock, owner, document, currentParagraph);

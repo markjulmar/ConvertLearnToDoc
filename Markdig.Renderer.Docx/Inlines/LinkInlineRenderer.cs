@@ -49,11 +49,11 @@ public class LinkInlineRenderer : DocxObjectRenderer<LinkInline>
 
             try
             {
-                currentParagraph.Append(new Hyperlink(title, new Uri(url??"", UriKind.RelativeOrAbsolute)));
+                currentParagraph.Add(new Hyperlink(title, new Uri(url??"", UriKind.RelativeOrAbsolute)));
             }
             catch
             {
-                currentParagraph.Append($"{title} ({url})");
+                currentParagraph.Add($"{title} ({url})");
             }
         }
     }

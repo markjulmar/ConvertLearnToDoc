@@ -27,10 +27,9 @@ public abstract class DocxObjectRenderer<TObject> : IDocxObjectRenderer
             int count = leafBlock.Lines.Count;
             foreach (var text in leafBlock.Lines.Cast<StringLine>().Take(count))
             {
+                currentParagraph.AddRange(Run.Create(Helpers.CleanText(text.ToString())));
                 if (++index < count)
-                    currentParagraph.AppendLine(Helpers.CleanText(text.ToString()));
-                else
-                    currentParagraph.Append(Helpers.CleanText(text.ToString()));
+                    currentParagraph.Newline();
             }
         }
     }

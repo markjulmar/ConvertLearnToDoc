@@ -345,9 +345,8 @@ public static class LearnToDocx
 
     private static void WriteTitle(Module moduleData, IDocument document)
     {
-        document.AddParagraph(moduleData.Title)
-            .Style(HeadingType.Title);
-        document.AddParagraph($"Last modified on {(moduleData.LastUpdated ?? DateTime.Now).ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
+        document.Add(moduleData.Title).Style(HeadingType.Title);
+        document.Add($"Last modified on {(moduleData.LastUpdated ?? DateTime.Now).ToShortDateString()} by {moduleData.Metadata.MsAuthor}@microsoft.com")
             .Style(HeadingType.Subtitle);
     }
 }

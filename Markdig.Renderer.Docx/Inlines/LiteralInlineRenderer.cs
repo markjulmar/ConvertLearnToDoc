@@ -23,11 +23,11 @@ public class LiteralInlineRenderer : DocxObjectRenderer<LiteralInline>
 
         if (currentParagraph.Text.Length == 0)
         {
-            currentParagraph.SetText(text);
+            currentParagraph.Text = text;
         }
         else
         {
-            currentParagraph.Append(text);
+            currentParagraph.Add(text);
         }
     }
 }
