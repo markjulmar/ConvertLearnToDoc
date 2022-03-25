@@ -43,9 +43,9 @@ public static class DocxToLearn
                 }
 
                 if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForBullets), out var yesNo))
-                    options.UseAsterisksForBullets = yesNo.ToString() == "True";
+                    options.UseAsterisksForBullets = yesNo?.Value == "True";
                 if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForEmphasis), out yesNo))
-                    options.UseAsterisksForEmphasis = yesNo.ToString() == "True";
+                    options.UseAsterisksForEmphasis = yesNo?.Value == "True";
             }
 
             // Convert the docx file to a single .md file

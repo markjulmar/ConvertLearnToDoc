@@ -27,7 +27,7 @@ public class LiteralInlineRenderer : DocxObjectRenderer<LiteralInline>
         }
         else
         {
-            currentParagraph.Add(text);
+            currentParagraph.AddText(text);
         }
     }
 }

@@ -364,37 +364,38 @@ public class ModuleBuilder
         return false;
     }
 
-    private static string GetProperty(IDocument doc, DocumentPropertyName name) =>
-        doc.DocumentProperties.TryGetValue(name, out var text) && !string.IsNullOrWhiteSpace(text)
-            ? text
-            : null;
-
     private static async Task<ModuleMetadata> LoadDocumentMetadata(string docxFile)
     {
         var doc = Document.Load(docxFile);
 
         MSLearnRepos.Module moduleData = null;
 
-        if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.Comments, out string uid)
-                && !string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
+        string uid = doc.Properties.Category;
+        if (!string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
         {
             if (uid.All(c =>  c is '.' or '-' or '_' || char.IsLetterOrDigit(c)))
                 moduleData = await GetModuleFromUidAsync(uid);
         }
 
         if (moduleData == null 
-            && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var jsonText) && jsonText != null)
+            && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var property) && property != null)
         {
-            string text = jsonText.ToString();
+            string text = property.Value;
             if (text?.Length > 0)
             {
-                moduleData = JsonConvert.DeserializeObject<MSLearnRepos.Module>(text,
-                    new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                        NullValueHandling = NullValueHandling.Ignore,
-                        DateFormatString = "MM/dd/yyyy" // 06/21/2021
-                    });
+                try
+                {
+                    moduleData = JsonConvert.DeserializeObject<MSLearnRepos.Module>(text,
+                        new JsonSerializerSettings
+                        {
+                            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                            NullValueHandling = NullValueHandling.Ignore,
+                            DateFormatString = "MM/dd/yyyy" // 06/21/2021
+                        });
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -418,17 +419,15 @@ public class ModuleBuilder
             }
         }
 
-        metadata.ModuleData.Title ??= GetProperty(doc, DocumentPropertyName.Title);
-        metadata.ModuleData.Summary ??= GetProperty(doc, DocumentPropertyName.Subject);
-        metadata.ModuleData.Metadata.MsAuthor ??= GetProperty(doc, DocumentPropertyName.Creator);
+        metadata.ModuleData.Title ??= doc.Properties.Title;
+        metadata.ModuleData.Summary ??= doc.Properties.Subject;
+        metadata.ModuleData.Metadata.MsAuthor ??= doc.Properties.Creator;
 
         // Use SaveDate first, then CreatedDate if unavailable.
-        if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.SaveDate, out var dtText)
-            && !string.IsNullOrWhiteSpace(dtText))
-            metadata.ModuleData.Metadata.MsDate = DateTime.Parse(dtText).ToString("MM/dd/yyyy");
-        else if (doc.DocumentProperties.TryGetValue(DocumentPropertyName.CreatedDate, out dtText)
-                 && !string.IsNullOrWhiteSpace(dtText))
-            metadata.ModuleData.Metadata.MsDate = DateTime.Parse(dtText).ToString("MM/dd/yyyy");
+        if (doc.Properties.SaveDate != null)
+            metadata.ModuleData.Metadata.MsDate = doc.Properties.SaveDate.Value.ToString("MM/dd/yyyy");
+        else if (doc.Properties.CreatedDate != null)
+            metadata.ModuleData.Metadata.MsDate = doc.Properties.CreatedDate.Value.ToString("MM/dd/yyyy");
 
         return metadata;
     }

@@ -312,24 +312,18 @@ public static class LearnToDocx
         return headers.Where(p => p.Text == title).Skip(pos).FirstOrDefault();
     }
 
-    private static void SetProperty(IDocument document, DocumentPropertyName name, string value)
-    {
-        if (!string.IsNullOrEmpty(value))
-            document.SetPropertyValue(name, value);
-    }
-
     private static void SetCustomProperty(IDocument document, string name, string value)
     {
         if (!string.IsNullOrEmpty(value))
-            document.AddCustomProperty(name, value);
+            document.CustomProperties.Add(name, value);
     }
 
     private static void AddMetadata(Module moduleData, IDocument document)
     {
-        SetProperty(document, DocumentPropertyName.Title, moduleData.Title);
-        SetProperty(document, DocumentPropertyName.Subject, moduleData.Summary);
-        SetProperty(document, DocumentPropertyName.Creator, moduleData.Metadata.MsAuthor);
-        SetProperty(document, DocumentPropertyName.LastSavedBy, moduleData.Metadata.MsAuthor);
+        document.Properties.Title = moduleData.Title;
+        document.Properties.Subject = moduleData.Summary;
+        document.Properties.Creator = moduleData.Metadata.MsAuthor;
+        document.Properties.LastSavedBy = moduleData.Metadata.MsAuthor;
 
         SetCustomProperty(document, nameof(Module.Metadata), 
             JsonConvert.SerializeObject(moduleData, Formatting.None,
@@ -338,9 +332,9 @@ public static class LearnToDocx
                                                     NullValueHandling = NullValueHandling.Ignore
                                                 }));
 
-        var dt = (moduleData.LastUpdated?.ToUniversalTime() ?? DateTime.UtcNow).ToString("yyyy-MM-ddTHH:mm:ssZ");
-        SetProperty(document, DocumentPropertyName.CreatedDate, dt);
-        SetProperty(document, DocumentPropertyName.SaveDate, dt);
+        var dt = moduleData.LastUpdated?.ToUniversalTime() ?? DateTime.UtcNow;
+        document.Properties.CreatedDate = dt;
+        document.Properties.SaveDate = dt;
     }
 
     private static void WriteTitle(Module moduleData, IDocument document)

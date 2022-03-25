@@ -4,6 +4,6 @@ public class DelimiterInlineRenderer : DocxObjectRenderer<DelimiterInline>
 {
     public override void Write(IDocxRenderer owner, IDocument document, Paragraph currentParagraph, DelimiterInline obj)
     {
-        currentParagraph.Add(obj.ToLiteral());
+        currentParagraph.AddText(obj.ToLiteral());
     }
 }

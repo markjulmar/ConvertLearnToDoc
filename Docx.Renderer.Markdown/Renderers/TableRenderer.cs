@@ -11,7 +11,7 @@ public sealed class TableRenderer : MarkdownObjectRenderer<DXTable>
         tags ??= new RenderBag();
 
         int columnCount = Math.Min(element.ColumnCount, element.Rows.Max(r => r.Cells.Count));
-        bool complexStructure = element.Rows.Any(r => r.Cells.Count != columnCount || r.Cells.Any(c => c.Pictures.Any()));
+        bool complexStructure = element.Rows.Any(r => r.Cells.Count != columnCount || r.Cells.Any(c => c.Drawings.Any()));
 
         var mdTable = complexStructure
             ? new DocfxTable(columnCount)

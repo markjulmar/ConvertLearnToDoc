@@ -11,7 +11,7 @@ public class LineBreakInlineRenderer : DocxObjectRenderer<LineBreakInline>
         else
         {
             if (currentParagraph != null && !currentParagraph.Text.EndsWith(' '))
-                currentParagraph.Add(" ");
+                currentParagraph.AddText(" ");
         }
     }
 }

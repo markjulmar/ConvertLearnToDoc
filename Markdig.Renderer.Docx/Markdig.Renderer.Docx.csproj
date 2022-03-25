@@ -6,7 +6,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Julmar.DxPlus" Version="1.2.0" />
+		<PackageReference Include="Julmar.DxPlus" Version="1.2.1" />
 		<PackageReference Include="Markdig" Version="0.26.0" />
 		<PackageReference Include="Microsoft.DocAsCode.MarkdigEngine.Extensions" Version="2.59.0" />
 	</ItemGroup>

@@ -28,11 +28,11 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 break;
             case "b":
                 if (!isClose)
-                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true }));
+                    currentParagraph.AddText(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Bold = true }));
                 break;
             case "i":
                 if (!isClose)
-                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true }));
+                    currentParagraph.AddText(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Italic = true }));
                 break;
             case "a":
                 if (!isClose)
@@ -44,18 +44,18 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 break;
             case "sup":
                 if (!isClose)
-                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting {Superscript = true}));
+                    currentParagraph.AddText(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting {Superscript = true}));
                 break;
             case "sub":
                 if (!isClose)
-                    currentParagraph.Add(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Subscript = true }));
+                    currentParagraph.AddText(new Run(Helpers.ReadLiteralTextAfterTag(owner, html), new Formatting { Subscript = true }));
                 break;
             case "rgn":
                 if (!isClose)
-                    currentParagraph.Add(new Run($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}", new Formatting { Highlight = Highlight.Cyan }));
+                    currentParagraph.AddText(new Run($"{{rgn {Helpers.ReadLiteralTextAfterTag(owner, html)}}}", new Formatting { Highlight = Highlight.Cyan }));
                 break;
             default:
-                currentParagraph.Add(html.Tag);
+                currentParagraph.AddText(html.Tag);
                 Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
                 break;
         }
@@ -77,7 +77,7 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
         if (m.Groups.ContainsKey("url") == false)
         {
             if (text.Length > 0)
-                currentParagraph.Add(text);
+                currentParagraph.AddText(text);
         }
         else
         {

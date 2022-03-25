@@ -75,13 +75,13 @@ namespace Markdig.Renderer.Docx.Blocks
                             switch (alignment)
                             {
                                 case TableColumnAlign.Left:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Left });
+                                    cellParagraph.Properties.Alignment = Alignment.Left;
                                     break;
                                 case TableColumnAlign.Center:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Center });
+                                    cellParagraph.Properties.Alignment = Alignment.Center;
                                     break;
                                 case TableColumnAlign.Right:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Right });
+                                    cellParagraph.Properties.Alignment = Alignment.Right;
                                     break;
                             }
                         }

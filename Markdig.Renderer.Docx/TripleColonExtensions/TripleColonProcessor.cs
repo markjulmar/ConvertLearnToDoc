@@ -32,7 +32,7 @@ internal static class TripleColonProcessor
         extension.Attributes.TryGetValue("highlight", out var highlight);
 
         var p = currentParagraph ?? document.AddParagraph();
-        p.Add(new Run($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}",
+        p.AddText(new Run($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}",
             new Formatting {Highlight = Highlight.Blue, Color = Color.White}));
         if (currentParagraph == null) p.Newline();
     }
@@ -47,7 +47,7 @@ internal static class TripleColonProcessor
             if (owner.ZonePivot == null)
             {
                 var p = currentParagraph ?? document.AddParagraph();
-                p.Add(new Run($"{{zonePivot: \"{pivot}\"}}", new Formatting {Highlight = Highlight.Red, Color = Color.White }));
+                p.AddText(new Run($"{{zonePivot: \"{pivot}\"}}", new Formatting {Highlight = Highlight.Red, Color = Color.White }));
                 if (currentParagraph == null) p.Newline();
             }
                 
@@ -56,7 +56,7 @@ internal static class TripleColonProcessor
             if (owner.ZonePivot == null)
             {
                 var p = currentParagraph ?? document.AddParagraph();
-                p.Add(new Run($"{{end-zonePivot: \"{pivot}\"}}",
+                p.AddText(new Run($"{{end-zonePivot: \"{pivot}\"}}",
                     new Formatting {Highlight = Highlight.Red, Color = Color.White}));
                 if (currentParagraph == null) p.Newline();
             }

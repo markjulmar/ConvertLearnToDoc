@@ -23,9 +23,11 @@ public class EmphasisInlineRenderer : DocxObjectRenderer<EmphasisInline>
         // .. and then change the style of that run.
         if (emphasis.DelimiterChar is '*' or '_')
         {
-            currentParagraph.MergeFormatting(emphasis.DelimiterCount == 2
+            var run = currentParagraph.Runs.Last();
+            run.Properties ??= new Formatting();
+            run.Properties += emphasis.DelimiterCount == 2
                 ? new Formatting {Bold = true}
-                : new Formatting {Italic = true});
+                : new Formatting {Italic = true};
         }
     }
 }

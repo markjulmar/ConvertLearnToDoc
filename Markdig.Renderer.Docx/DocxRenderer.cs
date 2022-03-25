@@ -194,26 +194,26 @@ public class DocxObjectRenderer : IDocxRenderer
 
         if (image != null)
         {
-            var drawing = image.CreatePicture(imageUrl, altText);
-            Debug.Assert(drawing.Picture != null);
-            if (drawing.Width > 600)
+            var picture = image.CreatePicture(imageUrl, altText);
+            if (picture.Width > 600 && picture.Height != null)
             {
-                double ratio = drawing.Height / drawing.Width;
-                drawing.Picture.Width = drawing.Width = 600;
-                drawing.Picture.Height = drawing.Height = Math.Round(600 * ratio);
+                double ratio = picture.Height.Value / picture.Width.Value;
+                picture.Drawing.Width = 600; picture.Width = 600;
+                var height = Math.Round(600 * ratio);
+                picture.Drawing.Height = height; picture.Height = height;
             }
 
             if (hasBorder)
-                drawing.Picture!.BorderColor = Color.DarkGray;
+                picture.BorderColor = Color.DarkGray;
 
-            drawing.Picture.Name = Path.GetFileName(imageUrl);
-            drawing.Picture.Description = altText;
-            currentParagraph.Add(drawing);
+            picture.Name = Path.GetFileName(imageUrl);
+            picture.Description = altText;
+            currentParagraph.Add(picture);
 
             if (!string.IsNullOrEmpty(title))
-                drawing.AddCaption(": " + title);
+                picture.Drawing.AddCaption(": " + title);
 
-            return drawing;
+            return picture.Drawing;
         }
             
         options?.Logger?.Invoke($"Error: unable to add image {imageUrl} to document.");

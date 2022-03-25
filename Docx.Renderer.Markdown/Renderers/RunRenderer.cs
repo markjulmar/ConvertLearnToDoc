@@ -46,7 +46,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                         if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
                             continue;
 
-                        p.Add(Text.Link(hl.Text, hl.Uri.OriginalString));
+                        p.Add(Text.Link(hl.Text, hl.Uri?.OriginalString ?? "#"));
                     }
                     else if (t.Value.Length > 0)
                     {

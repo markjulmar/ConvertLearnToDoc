@@ -53,7 +53,7 @@ public class LinkInlineRenderer : DocxObjectRenderer<LinkInline>
             }
             catch
             {
-                currentParagraph.Add($"{title} ({url})");
+                currentParagraph.AddText($"{title} ({url})");
             }
         }
     }
