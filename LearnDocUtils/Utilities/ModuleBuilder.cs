@@ -338,7 +338,7 @@ public class ModuleBuilder
         foreach (var header in doc.Paragraphs.Where(p => p.Properties.StyleName == "Heading1"))
         {
             string text = header.Text;
-            if (unitMetadata.Title == text)
+            if (unitMetadata.Title.Trim() == text.Trim())
             {
                 var tags = string.Join(' ', header.Comments.SelectMany(c =>
                         c.Comment.Paragraphs.Select(p => p.Text)))

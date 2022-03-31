@@ -45,7 +45,11 @@ try
         if (string.IsNullOrEmpty(options.OutputFileOrFolder))
             options.OutputFileOrFolder = Path.ChangeExtension(options.InputFileOrFolder, "");
 
-        await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, new MarkdownOptions { Debug = options.Debug });
+        await DocxToLearn.ConvertAsync(options.InputFileOrFolder, options.OutputFileOrFolder, 
+            new MarkdownOptions { Debug = options.Debug, 
+                UseAsterisksForBullets = true, UseAsterisksForEmphasis = true,
+                OrderedListUsesSequence = true, UseIndentsForCodeBlocks = true
+            });
 
         if (options.ZipOutput)
         {

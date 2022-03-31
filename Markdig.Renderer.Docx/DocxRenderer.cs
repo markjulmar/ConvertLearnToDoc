@@ -99,8 +99,15 @@ public class DocxObjectRenderer : IDocxRenderer
     public IDocxObjectRenderer FindRenderer(MarkdownObject obj)
     {
         var renderer = renderers.FirstOrDefault(r => r.CanRender(obj));
-        if (renderer == null)
-            options?.Logger?.Invoke($"Missing renderer for {obj.GetType()}");
+        if (renderer == null && options?.Logger != null)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder($"Missing renderer for {type}:").AppendLine();
+            foreach (var pi in type.GetProperties())
+                sb.AppendLine($"\t{pi.Name}=\"{pi.GetValue(obj)}\"");
+            options?.Logger?.Invoke(sb.ToString());
+        }
+
         return renderer;
     }
 

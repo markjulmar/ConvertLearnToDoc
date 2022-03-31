@@ -28,7 +28,6 @@ public static class DocToLearn
             UseAsterisksForBullets = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForBullets)], out var useAsterisksForBullets) && useAsterisksForBullets,
             UseAsterisksForEmphasis = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForEmphasis)], out var useAsterisksForEmphasis) && useAsterisksForEmphasis,
             OrderedListUsesSequence = bool.TryParse(input[nameof(DocToLearnModel.OrderedListUsesSequence)], out var orderedListUsesSequence) && orderedListUsesSequence,
-            UseAlternateHeaderSyntax = bool.TryParse(input[nameof(DocToLearnModel.UseAlternateHeaderSyntax)], out var useAlternateHeaderSyntax) && useAlternateHeaderSyntax,
             UseIndentsForCodeBlocks = bool.TryParse(input[nameof(DocToLearnModel.UseIndentsForCodeBlocks)], out var useIndentsForCodeBlocks) && useIndentsForCodeBlocks,
             PrettyPipeTables = bool.TryParse(input[nameof(DocToLearnModel.PrettyPipeTables)], out var prettyPipeTables) && prettyPipeTables
         };
@@ -65,7 +64,6 @@ public static class DocToLearn
                 UseAsterisksForBullets = model.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = model.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = model.OrderedListUsesSequence,
-                UseAlternateHeaderSyntax = model.UseAlternateHeaderSyntax,
                 UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks
             });
         }
