@@ -1,3 +1,4 @@
+using System.Drawing;
 using MDTable = Markdig.Extensions.Tables.Table;
 
 namespace Markdig.Renderer.Docx.Blocks;
@@ -27,11 +28,18 @@ public class ListRenderer : DocxObjectRenderer<ListBlock>
                     }
                 }
 
-                nd ??= document.NumberingStyles.Create(NumberingFormat.Numbered, startNumber);
+                nd ??= document.NumberingStyles.NumberStyle(startNumber);
             }
             else
             {
-                nd = document.NumberingStyles.Create(NumberingFormat.Bullet);
+                var quoteBlockOwner = block.Parent as QuoteSectionNoteBlock;
+                if (quoteBlockOwner?.SectionAttributeString?.ToLower().Contains("checklist") == true)
+                {
+                    nd = document.NumberingStyles.CustomBulletStyle("\u00FC", new FontFamily("Wingdings"));
+                    nd.Style.Levels.First().Formatting.Color = Color.Green;
+                }
+                else
+                    nd = document.NumberingStyles.BulletStyle();
             }
 
             int count = 0;

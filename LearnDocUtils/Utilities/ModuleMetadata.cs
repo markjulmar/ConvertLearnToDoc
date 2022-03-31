@@ -4,12 +4,12 @@ namespace LearnDocUtils;
 
 public class ModuleMetadata
 {
-    private readonly Module moduleData;
-    public Module ModuleData => moduleData;
+    public Module ModuleData { get; }
+
     public ModuleMetadata(Module moduleData)
     {
-        this.moduleData = moduleData ?? new Module();
-        this.moduleData.Metadata ??= new Metadata();
+        this.ModuleData = moduleData ?? new Module();
+        this.ModuleData.Metadata ??= new Metadata();
     }
 
     public static string GetList(List<string> items, string defaultValue) =>

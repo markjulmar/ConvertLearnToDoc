@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
+using Markdig.Extensions.Yaml;
 using Markdig.Renderer.Docx.Blocks;
 using Markdig.Renderer.Docx.Inlines;
 using CodeBlockRenderer = Markdig.Renderer.Docx.Blocks.CodeBlockRenderer;
@@ -62,6 +63,9 @@ public class DocxObjectRenderer : IDocxRenderer
 
         renderers = new List<IDocxObjectRenderer>
         {
+            // Ignored blocks
+            new IgnoredBlock(typeof(YamlFrontMatterBlock)),
+
             // Block handlers
             new HeadingRenderer(),
             new ParagraphRenderer(),
@@ -74,6 +78,7 @@ public class DocxObjectRenderer : IDocxRenderer
             new InclusionRenderer(),
             new LinkReferenceDefinitionGroupRenderer(),
             new HtmlBlockRenderer(),
+            new MonikerRangeRenderer(),
 
             // Inline handlers
             new LiteralInlineRenderer(),
