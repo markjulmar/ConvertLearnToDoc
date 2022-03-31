@@ -22,15 +22,14 @@ namespace Markdig.Renderer.Docx.Blocks
             }
 
             int totalColumns = table.Max(tr => ((TRow) tr).Count);
-            DXPlus.Table documentTable;
+            var documentTable = new DXPlus.Table(table.Count, totalColumns);
             if (currentParagraph != null)
             {
-                documentTable = new DXPlus.Table(table.Count, totalColumns);
-                currentParagraph.Append(documentTable);
+                currentParagraph.InsertAfter(documentTable);
             }
             else
             {
-                documentTable = document.AddTable(table.Count, totalColumns);
+                document.Add(documentTable);
             }
 
             bool firstRow = true;
@@ -40,7 +39,7 @@ namespace Markdig.Renderer.Docx.Blocks
                 var row = (TRow) table[rowIndex];
                 if (firstRow) {
                     documentTable.Design = row.IsHeader
-                        ? TableDesign.TableGrid : TableDesign.None;
+                        ? TableDesign.Grid : TableDesign.None;
                 }
 
                 firstRow = false;
@@ -53,10 +52,9 @@ namespace Markdig.Renderer.Docx.Blocks
                     if (columnWidths.Count > 0)
                     {
                         double width = columnWidths[colIndex];
-                        if (width == 0)
-                            documentCell.SetWidth(TableWidthUnit.Auto, 0);
-                        else
-                            documentCell.SetWidth(TableWidthUnit.Percentage, width);
+                        documentCell.CellWidth = width == 0 
+                            ? new TableWidth(TableWidthUnit.Auto, 0) 
+                            : TableWidth.FromPercent(width);
                         documentCell.SetMargins(0);
                     }
 
@@ -77,13 +75,13 @@ namespace Markdig.Renderer.Docx.Blocks
                             switch (alignment)
                             {
                                 case TableColumnAlign.Left:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Left });
+                                    cellParagraph.Properties.Alignment = Alignment.Left;
                                     break;
                                 case TableColumnAlign.Center:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Center });
+                                    cellParagraph.Properties.Alignment = Alignment.Center;
                                     break;
                                 case TableColumnAlign.Right:
-                                    cellParagraph.WithProperties(new ParagraphProperties { Alignment = Alignment.Right });
+                                    cellParagraph.Properties.Alignment = Alignment.Right;
                                     break;
                             }
                         }
@@ -101,7 +99,7 @@ namespace Markdig.Renderer.Docx.Blocks
 
             if (columnWidths.Count == 0)
             {
-                documentTable.AutoFit = true;
+                documentTable.AutoFit();
             }
         }
     }

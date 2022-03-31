@@ -15,19 +15,19 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         }
 
         var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
-        if (element.Properties.Bold)
+        if (element.Properties?.Bold == true)
             tf.Bold = true;
-        if (element.Properties.Italic)
+        if (element.Properties?.Italic == true)
             tf.Italic = true;
-        if (element.Properties.CapsStyle == CapsStyle.SmallCaps)
+        if (element.Properties?.CapsStyle == CapsStyle.SmallCaps)
             tf.KbdTag = true;
         if (!string.IsNullOrEmpty(tf.StyleName))
             tf.StyleName = element.StyleName;
-        if (TextFormatting.IsMonospaceFont(element.Properties.Font))
+        if (TextFormatting.IsMonospaceFont(element.Properties?.Font))
             tf.Monospace = true;
-        if (element.Properties.Subscript)
+        if (element.Properties?.Subscript == true)
             tf.Subscript = true;
-        if (element.Properties.Superscript)
+        if (element.Properties?.Superscript == true)
             tf.Superscript = true;
 
         foreach (var e in element.Elements)
@@ -46,7 +46,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                         if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
                             continue;
 
-                        p.Add(Text.Link(hl.Text, hl.Uri.OriginalString));
+                        p.Add(Text.Link(hl.Text, hl.Uri?.OriginalString ?? "#"));
                     }
                     else if (t.Value.Length > 0)
                     {
@@ -284,13 +284,13 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         string link = FindCommentValue(paragraph, "link");
         string lightboxUrl = FindCommentValue(paragraph, "lightbox");
 
-        if (border || d.IsDecorative || lightboxUrl != null
+        if (border || d.IsDecorative == true || lightboxUrl != null
             || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
         {
             var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
             if (!string.IsNullOrEmpty(locScope))
                 image.LocScope = locScope;
-            else if (d.IsDecorative)
+            else if (d.IsDecorative == true)
                 image.LocScope = "other";
             if (lightboxUrl != null)
                 image.Lightbox = lightboxUrl;

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertLearnToDoc": {
       "commandName": "Project",
-      "commandLineArgs": "-i /users/mark/downloads/output.docx -o /users/mark/downloads/output"
+      "commandLineArgs": "-i C:\\Users\\mark\\OneDrive\\Downloads\\monitor-azure-arc-enabled-servers.docx -o /users/mark/onedrive/downloads/output\""
     }
   }
 }

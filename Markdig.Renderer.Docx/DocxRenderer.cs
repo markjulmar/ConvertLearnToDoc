@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
+using Markdig.Extensions.Yaml;
 using Markdig.Renderer.Docx.Blocks;
 using Markdig.Renderer.Docx.Inlines;
 using CodeBlockRenderer = Markdig.Renderer.Docx.Blocks.CodeBlockRenderer;
@@ -62,6 +63,9 @@ public class DocxObjectRenderer : IDocxRenderer
 
         renderers = new List<IDocxObjectRenderer>
         {
+            // Ignored blocks
+            new IgnoredBlock(typeof(YamlFrontMatterBlock)),
+
             // Block handlers
             new HeadingRenderer(),
             new ParagraphRenderer(),
@@ -74,6 +78,7 @@ public class DocxObjectRenderer : IDocxRenderer
             new InclusionRenderer(),
             new LinkReferenceDefinitionGroupRenderer(),
             new HtmlBlockRenderer(),
+            new MonikerRangeRenderer(),
 
             // Inline handlers
             new LiteralInlineRenderer(),
@@ -176,7 +181,7 @@ public class DocxObjectRenderer : IDocxRenderer
                 stream.CopyTo(ms);
             }
 
-            image = document.AddImage(ms, DetermineContentTypeFromUrl(imageUrl));
+            image = document.CreateImage(ms, DetermineContentTypeFromUrl(imageUrl));
         }
 
         else if (!File.Exists(path))
@@ -184,36 +189,36 @@ public class DocxObjectRenderer : IDocxRenderer
             byte[] contents = GetFile(owner, imageUrl);
             if (contents != null)
             {
-                image = document.AddImage(new MemoryStream(contents, false), DetermineContentTypeFromUrl(imageUrl));
+                image = document.CreateImage(new MemoryStream(contents, false), DetermineContentTypeFromUrl(imageUrl));
             }
         }
         else
         {
-            image = document.AddImage(path);
+            image = document.CreateImage(path);
         }
 
         if (image != null)
         {
-            var drawing = image.CreatePicture(imageUrl, altText);
-
-            if (drawing.Width > 600)
+            var picture = image.CreatePicture(imageUrl, altText);
+            if (picture.Width > 600 && picture.Height != null)
             {
-                double ratio = drawing.Height / drawing.Width;
-                drawing.Width = drawing.Picture.Width = 600;
-                drawing.Height = drawing.Picture.Height = Math.Round(600 * ratio);
+                double ratio = picture.Height.Value / picture.Width.Value;
+                picture.Drawing.Width = 600; picture.Width = 600;
+                var height = Math.Round(600 * ratio);
+                picture.Drawing.Height = height; picture.Height = height;
             }
 
             if (hasBorder)
-                drawing.Picture.BorderColor = Color.DarkGray;
+                picture.BorderColor = Color.DarkGray;
 
-            drawing.Picture.Name = Path.GetFileName(imageUrl);
-            drawing.Picture.Description = altText;
-            currentParagraph.Append(drawing);
+            picture.Name = Path.GetFileName(imageUrl);
+            picture.Description = altText;
+            currentParagraph.Add(picture);
 
             if (!string.IsNullOrEmpty(title))
-                drawing.AddCaption(": " + title);
+                picture.Drawing.AddCaption(": " + title);
 
-            return drawing;
+            return picture.Drawing;
         }
             
         options?.Logger?.Invoke($"Error: unable to add image {imageUrl} to document.");

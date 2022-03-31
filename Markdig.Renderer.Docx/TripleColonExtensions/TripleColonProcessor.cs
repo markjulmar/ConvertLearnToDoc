@@ -32,9 +32,9 @@ internal static class TripleColonProcessor
         extension.Attributes.TryGetValue("highlight", out var highlight);
 
         var p = currentParagraph ?? document.AddParagraph();
-        p.Append($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}")
-            .WithFormatting(new Formatting { Highlight = Highlight.Blue, Color = Color.White });
-        if (currentParagraph == null) p.AppendLine();
+        p.AddText(new Run($"{{codeBlock: language={language}, source=\"{source}\", range={range}, highlight={highlight}}}",
+            new Formatting {Highlight = Highlight.Blue, Color = Color.White}));
+        if (currentParagraph == null) p.Newline();
     }
 
     private static void HandleZonePivot(IDocxObjectRenderer renderer, ContainerBlock block, 
@@ -47,9 +47,8 @@ internal static class TripleColonProcessor
             if (owner.ZonePivot == null)
             {
                 var p = currentParagraph ?? document.AddParagraph();
-                p.Append($"{{zonePivot: \"{pivot}\"}}")
-                    .WithFormatting(new Formatting {Highlight = Highlight.Red, Color = Color.White });
-                if (currentParagraph == null) p.AppendLine();
+                p.AddText(new Run($"{{zonePivot: \"{pivot}\"}}", new Formatting {Highlight = Highlight.Red, Color = Color.White }));
+                if (currentParagraph == null) p.Newline();
             }
                 
             renderer.WriteChildren(block, owner, document, currentParagraph);
@@ -57,9 +56,9 @@ internal static class TripleColonProcessor
             if (owner.ZonePivot == null)
             {
                 var p = currentParagraph ?? document.AddParagraph();
-                p.Append($"{{end-zonePivot: \"{pivot}\"}}")
-                    .WithFormatting(new Formatting { Highlight = Highlight.Red, Color = Color.White });
-                if (currentParagraph == null) p.AppendLine();
+                p.AddText(new Run($"{{end-zonePivot: \"{pivot}\"}}",
+                    new Formatting {Highlight = Highlight.Red, Color = Color.White}));
+                if (currentParagraph == null) p.Newline();
             }
         }
     }
