@@ -23,7 +23,7 @@ public static class PageToDoc
         log.LogInformation("PageToDoc invoked.");
 
         string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-        var model = JsonConvert.DeserializeObject<SinglePageToDocModel>(requestBody);
+        var model = JsonConvert.DeserializeObject<PageToDocModel>(requestBody);
         if (model == null || !model.IsValid())
         {
             log.LogError("Bad model received.");

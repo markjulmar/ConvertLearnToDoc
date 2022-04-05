@@ -1,6 +1,6 @@
 ﻿namespace ConvertLearnToDoc.AzureFunctions.Models;
 
-public class SinglePageToDocModel
+public class PageToDocModel
 {
     public string Repository { get; set; }
     public string Branch { get; set; }

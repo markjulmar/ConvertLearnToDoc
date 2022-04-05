@@ -2,7 +2,7 @@
 
 namespace ConvertLearnToDoc.AzureFunctions.Models;
 
-public class LearnToDocModel : SinglePageToDocModel
+public class LearnToDocModel : PageToDocModel
 {
     private static readonly string[] ValidRepos =
     {
