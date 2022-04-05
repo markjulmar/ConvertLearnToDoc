@@ -9,4 +9,5 @@ public interface IDocxRenderer
     Stream GetEmbeddedResource(string name);
     void AddComment(Paragraph owner, string commentText);
     byte[] GetFile(MarkdownObject source, string path);
+    string ConvertRelativeUrl(string url);
 }

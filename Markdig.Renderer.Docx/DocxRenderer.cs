@@ -29,6 +29,11 @@ public class DocxRendererOptions
     public Func<MarkdownObject,string,byte[]> ReadFile { get; set; }
 
     /// <summary>
+    /// Convert a relative URL found in content to an absolute URL for the document.
+    /// </summary>
+    public Func<string, string> ConvertRelativeUrl { get; set; }
+
+    /// <summary>
     /// Optional logger function
     /// </summary>
     public Action<string> Logger { get; set; }
@@ -79,6 +84,7 @@ public class DocxObjectRenderer : IDocxRenderer
             new LinkReferenceDefinitionGroupRenderer(),
             new HtmlBlockRenderer(),
             new MonikerRangeRenderer(),
+            new ThematicBreakRenderer(),
 
             // Inline handlers
             new LiteralInlineRenderer(),
@@ -152,6 +158,8 @@ public class DocxObjectRenderer : IDocxRenderer
             }
         }
     }
+
+    public string ConvertRelativeUrl(string url) => options?.ConvertRelativeUrl(url);
 
     public byte[] GetFile(MarkdownObject source, string path) => options?.ReadFile?.Invoke(source, path);
 

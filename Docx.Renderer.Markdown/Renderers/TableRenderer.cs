@@ -27,7 +27,7 @@ public sealed class TableRenderer : MarkdownObjectRenderer<DXTable>
             document.Add(mdTable);
         }
 
-        var tcf = element.ConditionalFormatting;
+        var tcf = element.Properties.ConditionalFormatting;
         var rows = element.Rows.ToList();
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {

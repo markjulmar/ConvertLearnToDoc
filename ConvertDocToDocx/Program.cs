@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.Design;
-using CommandLine;
+﻿using CommandLine;
 using LearnDocUtils;
 
 namespace ConvertDocToDocx;

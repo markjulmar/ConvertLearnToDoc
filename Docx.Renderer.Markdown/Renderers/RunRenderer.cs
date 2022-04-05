@@ -1,4 +1,5 @@
 ﻿using GenMarkdown.DocFx.Extensions;
+using Image = Julmar.GenMarkdown.Image;
 
 namespace Docx.Renderer.Markdown.Renderers;
 
@@ -46,7 +47,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                         if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
                             continue;
 
-                        p.Add(Text.Link(hl.Text, hl.Uri?.OriginalString ?? "#"));
+                        var url = renderer.ConvertAbsoluteUrl(hl.Uri?.OriginalString ?? "#");
+                        p.Add(Text.Link(hl.Text, url));
                     }
                     else if (t.Value.Length > 0)
                     {
@@ -77,6 +79,12 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                     var block = ProcessDrawing(renderer, d, element);
                     if (block != null)
                     {
+                        if (d.Hyperlink != null && block is Image image)
+                        {
+                            block = new ImageLink(d.Hyperlink.OriginalString, image.AltText, image.ImagePath,
+                                image.Description);
+                        }
+
                         // See if we're in a list. If so, remove the empty paragraph from the 
                         // list, and then add the image to the list so it's indented.
                         if (document.Last() is MarkdownList theList)
@@ -95,8 +103,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                         // Remove the empty paragraph from the document and add the image instead.
                         else
                         {
-                            Debug.Assert(blockOwner.ToString().TrimEnd('\r', '\n').Length == 0);
-                            document.Remove(blockOwner);
+                            if (blockOwner.ToString().TrimEnd('\r', '\n').Length == 0)
+                                document.Remove(blockOwner);
                             document.Add(block);
                         }
                     }

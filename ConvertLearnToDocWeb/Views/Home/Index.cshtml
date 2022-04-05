@@ -6,10 +6,10 @@
 
 <ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="true">Learn to Doc</a>
+        <a class="nav-link active" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="true">Docs To Word</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="false">Doc to Learn</a>
+        <a class="nav-link" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="false">Word to Docs</a>
     </li>
 </ul>
 
@@ -21,7 +21,7 @@
                     <div class="form-row">
                         <div class="col">
                             <div class="form-group">
-                                <label for="moduleUrl">MS Learn module URL</label>
+                                <label for="moduleUrl">MS Learn module <em>or</em> Docs conceptual page URL</label>
                                 <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts">
                                 <small id="urlHelp" class="form-text text-muted">
                                     <a href="https://docs.microsoft.com/learn/browse/?resource_type=module" target="_blank">Browse all Learn modules</a>
@@ -29,18 +29,14 @@
                             </div>
                             <b>OR</b>
                             <div class="form-group pt-2">
-                                <label class="form-label" for="githubRepo">GitHub repo</label>
-                                <select asp-for="GithubRepo" class="form-control" id="githubRepo">
-                                    <option>learn-pr</option>
-                                    <option>learn-bizapps-pr</option>
-                                    <option>learn-dynamics-pr</option>
-                                    <option>learn-m365-pr</option>
-                                </select>
+                                <label class="form-label" for="githubRepo">GitHub repo (must belong to MicrosoftDocs organization)</label>
+                                <input asp-for="GithubRepo" class="form-control" id="githubRepo" placeholder="learn-pr" aria-describedby="repoHelp">
+                                <small id="repoHelp" class="form-text text-muted">ex: learn-pr, azure-docs, microsoft-365-docs-pr, etc.</small>
                                 <label class="form-label" for="githubBranch">Branch</label>
                                 <input asp-for="GithubBranch" type="text" class="form-control" id="githubBranch" placeholder="live">
-                                <label class="form-label" for="githubFolder">Folder</label>
-                                <input asp-for="GithubFolder" type="text" class="form-control" id="githubFolder" aria-describedby="folderHelp" placeholder="MS Learn module folder from root of repo">
-                                <small id="folderHelp" class="form-text text-muted">ex: /learn-pr/wwl-azure/configure-storage-accounts</small>
+                                <label class="form-label" for="githubFolder">Module folder or path to conceptual Markdown page</label>
+                                <input asp-for="GithubFolder" type="text" class="form-control" id="githubFolder" aria-describedby="folderHelp" placeholder="Path to Learn module or Docs Markdown file">
+                                <small id="folderHelp" class="form-text text-muted">ex: /learn-pr/wwl-azure/configure-storage-accounts <em>or</em> /articles/aks/aks-migration.md</small>
                             </div>
                         </div>
                     </div>
@@ -57,7 +53,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" asp-for="EmbedNotebookData" id="EmbedNotebookData"/>
                                 <label class="form-check-label" for="EmbedNotebookData">
-                                    Embed any associated Jupyter Notebook content into document
+                                    Embed any associated Jupyter Notebook content into document (only used for MS Learn modules)
                                 </label>
                             </div>
                         </div>
@@ -129,7 +125,8 @@
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-4">Convert</button>
+                    <button type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
+                    <button type="submit" formaction="/Home/ConvertDocToPage" class="btn btn-primary mt-4">Convert to Docs page</button>
                 </form>
             </div>
             

@@ -1,6 +1,4 @@
-﻿using System.Security.Authentication.ExtendedProtection;
-
-namespace Docx.Renderer.Markdown.Renderers;
+﻿namespace Docx.Renderer.Markdown.Renderers;
 
 public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
 {

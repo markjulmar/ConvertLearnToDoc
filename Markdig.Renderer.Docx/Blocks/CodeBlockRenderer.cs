@@ -22,40 +22,52 @@ public class CodeBlockRenderer : DocxObjectRenderer<CodeBlock>
 
     private static void AddBlockedCodeStyle(IDocument document)
     {
-        if (!document.Styles.HasStyle("SourceCodeChar", StyleType.Character))
+        if (!document.Styles.Exists("SourceCodeChar", StyleType.Character))
         {
-            var codeStyle = document.Styles.AddStyle("SourceCodeChar", StyleType.Character);
-            codeStyle.Name = "Source Code Char";
+            var codeStyle = document.Styles.Add("SourceCodeChar", "Source Code Char", StyleType.Character);
             codeStyle.LinkedStyle = "SourceCodeBlock";
             codeStyle.BasedOn = "DefaultParagraphFont";
-            codeStyle.Formatting.Font = Globals.CodeFont;
-            codeStyle.Formatting.FontSize = Globals.CodeFontSize;
+            codeStyle.Formatting = new()
+            {
+                Font = Globals.CodeFont,
+                FontSize = Globals.CodeFontSize
+            };
         }
 
-        if (!document.Styles.HasStyle("CodeBlock", StyleType.Paragraph))
+        if (!document.Styles.Exists("CodeBlock", StyleType.Paragraph))
         {
-            var codeStyle = document.Styles.AddStyle("CodeBlock", StyleType.Paragraph);
-            codeStyle.Name = "Code block";
+            var codeStyle = document.Styles.Add("CodeBlock", "Code Block", StyleType.Paragraph);
             codeStyle.BasedOn = "Normal";
             codeStyle.LinkedStyle = "SourceCodeChar";
-            codeStyle.ParagraphFormatting.WordWrap = false;
-            codeStyle.ParagraphFormatting.LineSpacingAfter = 0;
+            codeStyle.ParagraphFormatting = new()
+            {
+                WordWrap = false,
+                LineSpacingAfter = 0,
+                Shading = new Shading { Fill = Globals.CodeBoxShade }
+            };
             codeStyle.ParagraphFormatting.SetOutsideBorders(new Border { Style = BorderStyle.Single, Color = Color.LightGray, Spacing = 5, Size = 2 });
-            codeStyle.ParagraphFormatting.Shading = new Shading { Fill = Globals.CodeBoxShade };
-            codeStyle.Formatting.Font = Globals.CodeFont;
-            codeStyle.Formatting.FontSize = Globals.CodeFontSize;
+            codeStyle.Formatting = new()
+            {
+                Font = Globals.CodeFont,
+                FontSize = Globals.CodeFontSize
+            };
         }
 
-        if (!document.Styles.HasStyle("CodeFooter", StyleType.Paragraph))
+        if (!document.Styles.Exists("CodeFooter", StyleType.Paragraph))
         {
-            var codeStyle = document.Styles.AddStyle("CodeFooter", StyleType.Paragraph);
-            codeStyle.Name = "Code Footer";
+            var codeStyle = document.Styles.Add("CodeFooter", "Code Footer", StyleType.Paragraph);
             codeStyle.BasedOn = "Normal";
-            codeStyle.Formatting.Italic = true;
-            codeStyle.Formatting.Superscript = true;
-            codeStyle.ParagraphFormatting.LineSpacingBefore = 0;
-            codeStyle.ParagraphFormatting.LineSpacingAfter = 5;
-            codeStyle.ParagraphFormatting.Alignment = Alignment.Right;
+            codeStyle.Formatting = new()
+            {
+                Italic = true,
+                Superscript = true
+            };
+            codeStyle.ParagraphFormatting = new()
+            {
+                LineSpacingBefore = 0,
+                LineSpacingAfter = 5,
+                Alignment = Alignment.Right
+            };
         }
     }
 }

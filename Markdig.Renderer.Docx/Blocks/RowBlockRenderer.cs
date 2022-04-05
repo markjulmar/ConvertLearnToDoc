@@ -7,7 +7,7 @@ public class RowBlockRenderer : DocxObjectRenderer<RowBlock>
         int totalColumns = rows.Max(r => r.Count);
 
         var documentTable = document.Add(new Table(rows.Count, totalColumns));
-        documentTable.Design = TableDesign.None;
+        documentTable.Properties.Design = TableDesign.Normal;
 
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {

@@ -10,7 +10,6 @@ namespace ConvertLearnToDocWeb.Models
         public string ModuleUrl { get; set; }
         public string GithubRepo { get; set; }
         public string GithubBranch { get; set; }
-        [RegularExpression("^(/[\\w-]+)+/*$", ErrorMessage = "Please specify the folder leading to the module index.yml.")]
         public string GithubFolder { get; set; }
         public string ZonePivot { get; set; }
         public bool EmbedNotebookData { get; set; }

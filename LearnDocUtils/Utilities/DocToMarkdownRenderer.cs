@@ -13,11 +13,13 @@ internal static class DocToMarkdownRenderer
     {
         text = text.Trim('\r').Trim('\n');
         text = text.Replace("\xa0", " "); // TODO: should this be &nbsp;?
+        text = text.Replace("{tabgroup-end}", "---");
 
         text = Regex.Replace(text, @"{rgn (.*?)}", m => $"<rgn>{m.Groups[1].Value.Trim()}</rgn>");
         text = Regex.Replace(text, @"{zonePivot:(.*?)}", m => $":::zone pivot={m.Groups[1].Value.Trim()}");
         text = Regex.Replace(text, @"{end-zonePivot:(.*?)}", m => $":::zone-end");
         text = Regex.Replace(text, @"{include ""(.*?)"".*}", m => $"[!include[]({m.Groups[1].Value.Trim()})]");
+        text = Regex.Replace(text, @"{tabgroup ""(.*?)"" (.*?)}", m => $"# [{m.Groups[1].Value.Trim()}](#tab/{m.Groups[2].Value.Trim()})]");
 
         // WWL templates use prefixes, convert these to our quote block note types.
         text = ProcessNotes(text, "note: ", "NOTE");

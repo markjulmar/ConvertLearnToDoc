@@ -95,7 +95,7 @@ internal class DocxDebug
     private void DumpTable(Table table, int level)
     {
         string prefix = new(' ', level * 3);
-        builder.AppendLine($"{prefix}tbl Design={table.Design} {table.CustomTableDesignName} {table.ConditionalFormatting}");
+        builder.AppendLine($"{prefix}tbl Design={table.Properties.Design} {table.Properties.ConditionalFormatting}");
         foreach (var row in table.Rows)
         {
             DumpRow(row, level + 1);

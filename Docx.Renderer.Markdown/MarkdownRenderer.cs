@@ -2,10 +2,10 @@
 
 public class MarkdownRenderer : IMarkdownRenderer
 {
-    private readonly MarkdownFormatting options;
+    private readonly DocxMarkdownFormatting options;
     private readonly List<IMarkdownObjectRenderer> renderers;
 
-    public MarkdownRenderer(MarkdownFormatting options)
+    public MarkdownRenderer(DocxMarkdownFormatting options)
     {
         this.options = options;
         renderers = new List<IMarkdownObjectRenderer>
@@ -19,6 +19,7 @@ public class MarkdownRenderer : IMarkdownRenderer
 
     public string MarkdownFolder { get; private set; }
     public string MediaFolder { get; private set; }
+    public string ConvertAbsoluteUrl(string url) => options?.ConvertAbsoluteUrls(url) ?? url;
 
     public void Convert(string docxFile, string markdownFile, string mediaFolder)
     {

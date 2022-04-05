@@ -42,7 +42,7 @@
 
 	<ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
-    <PackageReference Include="Julmar.MSLearnRepos" Version="2.0.0.1" />
+    <PackageReference Include="Julmar.MSLearnRepos" Version="2.0.1-preview" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.13" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>

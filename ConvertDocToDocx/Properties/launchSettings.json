@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mvc-app/start-mvc?view=aspnetcore-6.0&tabs=visual-studio -o /users/mark/onedrive/desktop/intro.docx"
+      "commandLineArgs": "-d -i /users/mark/onedrive/desktop/intro.docx -o /users/mark/onedrive/desktop/output.md"
     }
   }
 }

@@ -19,8 +19,7 @@ namespace LearnDocUtils;
 public static class MarkdownToDocConverter
 {
     public static async Task<List<string>> ConvertMarkdownToDocx(ILearnRepoService learnRepo, string inputLocation,
-        Module moduleData, string markdownFile, string docxFile, 
-        string zonePivot, bool dumpMarkdownDocument)
+        Module moduleData, string markdownFile, string docxFile, string zonePivot, bool dumpMarkdownDocument)
     {
         var errors = new List<string>();
 
@@ -51,6 +50,12 @@ public static class MarkdownToDocConverter
             .UseTripleColon(context)
             .UseNoloc()
             .Build();
+
+        // Get the web location for this content
+        string webLocation = moduleData != null ? moduleData.Url : "https://docs.microsoft.com/";
+        if (!webLocation.EndsWith('/')) webLocation += '/';
+        webLocation += inputLocation.Replace('\\', '/');
+        if (!webLocation.EndsWith('/')) webLocation += '/';
 
         string markdownText = await File.ReadAllTextAsync(markdownFile);
 
@@ -99,12 +104,14 @@ public static class MarkdownToDocConverter
                                         .Count(b => b is ListBlock { BulletType: '-' });
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForBullets), useAsterisksForLists.ToString());
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForEmphasis), useAsterisksForEmphasis.ToString());
+        SetCustomProperty(document, nameof(Uri), webLocation);
 
         // Render the markdown tree into the Word document.
         var docWriter = new DocxObjectRenderer(document, Path.GetDirectoryName(markdownFile), 
             new DocxRendererOptions {
                 Logger = text => errors.Add(text),
                 ReadFile = (_, path) => GetFile(learnRepo, inputLocation, moduleData, path, Path.GetDirectoryName(markdownFile)),
+                ConvertRelativeUrl = url => webLocation + url,
                 ZonePivot = zonePivot
             }
         );
@@ -340,7 +347,7 @@ public static class MarkdownToDocConverter
         string author = document.Properties.Creator ?? "author";
         DateTime lastUpdated = document.Properties.CreatedDate ?? DateTime.UtcNow;
 
-        document.Add(title).Style(HeadingType.Title);
+        document.Add(title.Trim('"')).Style(HeadingType.Title);
         document.Add($"Last modified on {lastUpdated.ToLocalTime().ToShortDateString()} by {author}@microsoft.com")
             .Style(HeadingType.Subtitle);
     }

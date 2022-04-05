@@ -28,18 +28,18 @@ public class ListRenderer : DocxObjectRenderer<ListBlock>
                     }
                 }
 
-                nd ??= document.NumberingStyles.NumberStyle(startNumber);
+                nd ??= document.NumberingStyles.AddNumberedDefinition(startNumber);
             }
             else
             {
                 var quoteBlockOwner = block.Parent as QuoteSectionNoteBlock;
                 if (quoteBlockOwner?.SectionAttributeString?.ToLower().Contains("checklist") == true)
                 {
-                    nd = document.NumberingStyles.CustomBulletStyle("\u00FC", new FontFamily("Wingdings"));
+                    nd = document.NumberingStyles.AddCustomDefinition("\u00FC", new FontFamily("Wingdings"));
                     nd.Style.Levels.First().Formatting.Color = Color.Green;
                 }
                 else
-                    nd = document.NumberingStyles.BulletStyle();
+                    nd = document.NumberingStyles.AddBulletDefinition();
             }
 
             int count = 0;
@@ -81,7 +81,7 @@ public class ListRenderer : DocxObjectRenderer<ListBlock>
                             currentParagraph = paragraphs[indentCheck];
                             if (childBlock is MDTable && currentParagraph.Table != null)
                             {
-                                currentParagraph.Table.Indent = Uom.FromInches(.5);
+                                currentParagraph.Table.Properties.Indent = Uom.FromInches(.5);
                             }
                             else if (currentParagraph.Properties.StyleName != "ListParagraph")
                             {

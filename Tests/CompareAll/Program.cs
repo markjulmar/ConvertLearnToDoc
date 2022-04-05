@@ -135,10 +135,16 @@ static async Task ProcessOneModuleAsync(string inputFolder, string outputDoc)
 static string GetDownloadFolderPath()
 {
     if (Environment.OSVersion.Platform is PlatformID.MacOSX or PlatformID.Unix)
-        return Path.Combine(Environment.GetEnvironmentVariable("HOME")??"", "Downloads");
-
-    return Convert.ToString(Microsoft.Win32.Registry.GetValue(
+    {
+        return Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? "", "Downloads");
+    }
+    else
+    {
+#pragma warning disable CA1416 // Validate platform compatibility
+        return Convert.ToString(Microsoft.Win32.Registry.GetValue(
             @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
             , "{374DE290-123F-4565-9164-39C4925E467B}"
-            , String.Empty));
+            , string.Empty));
+#pragma warning restore CA1416 // Validate platform compatibility
+    }
 }

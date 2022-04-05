@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Docx.Renderer.Markdown;
+﻿using Docx.Renderer.Markdown;
 using DXPlus;
 
 namespace LearnDocUtils;
@@ -19,10 +18,19 @@ public static class DocxToLearn
         if (!Directory.Exists(markdownFolder))
             Directory.CreateDirectory(markdownFolder);
 
-        options ??= new MarkdownOptions();
+        var conversionOptions = new DocxMarkdownFormatting
+        {
+            OrderedListUsesSequence = options?.OrderedListUsesSequence ?? false,
+            UseAlternateHeaderSyntax = false, // never allowed
+            UseAsterisksForEmphasis = options?.UseAsterisksForEmphasis ?? false,
+            UseAsterisksForBullets = options?.UseAsterisksForBullets ?? false,
+            UseIndentsForCodeBlocks = options?.UseIndentsForCodeBlocks ?? false,
+            EscapeAllIntrawordEmphasis = options?.EscapeAllIntrawordEmphasis ?? false,
+            PrettyPipeTables = options?.PrettyPipeTables ?? false
+        };
 
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
-
+        string baseUrl = null;
         var markdownFile = Path.Combine(markdownFolder, baseFilename + "-temp.g.md");
         var mediaFolder = Path.Combine(outputFolder, Constants.MediaFolder);
 
@@ -31,7 +39,7 @@ public static class DocxToLearn
             // Grab some pre-conversion options.
             using (var doc = Document.Load(docxFile))
             {
-                if (options.Debug)
+                if (options?.Debug == true)
                 {
                     await File.WriteAllTextAsync(
                         Path.Combine(outputFolder, baseFilename + "-temp.g.txt"),
@@ -43,13 +51,18 @@ public static class DocxToLearn
                 }
 
                 if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForBullets), out var yesNo))
-                    options.UseAsterisksForBullets = yesNo?.Value == "True";
+                    conversionOptions.UseAsterisksForBullets = yesNo?.Value == "True";
                 if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForEmphasis), out yesNo))
-                    options.UseAsterisksForEmphasis = yesNo?.Value == "True";
+                    conversionOptions.UseAsterisksForEmphasis = yesNo?.Value == "True";
+                if (doc.CustomProperties.TryGetValue(nameof(Uri), out var baseUri))
+                    baseUrl = baseUri?.Value;
             }
 
+            conversionOptions.ConvertAbsoluteUrls = url => 
+                !string.IsNullOrEmpty(baseUrl) && url.StartsWith(baseUrl) ? url[baseUrl.Length..] + ".md" : url;
+
             // Convert the docx file to a single .md file
-            new MarkdownRenderer(options).Convert(docxFile, markdownFile, mediaFolder);
+            new MarkdownRenderer(conversionOptions).Convert(docxFile, markdownFile, mediaFolder);
 
             // Do some post-processing.
             var markdownText = DocToMarkdownRenderer.PostProcessMarkdown(await File.ReadAllTextAsync(markdownFile));
@@ -66,7 +79,7 @@ public static class DocxToLearn
         }
         finally
         {
-            if (!options.Debug)
+            if (options == null || options.Debug == false)
             {
                 if (File.Exists(markdownFile))
                     File.Delete(markdownFile);

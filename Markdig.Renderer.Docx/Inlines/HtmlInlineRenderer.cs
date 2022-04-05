@@ -36,7 +36,7 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 break;
             case "a":
                 if (!isClose)
-                    ProcessRawAnchor(html, owner, document, currentParagraph);
+                    ProcessRawAnchor(html, owner, currentParagraph);
                 break;
             case "br":
                 if (html.Parent?.ParentBlock is not HeadingBlock)
@@ -61,10 +61,10 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
         }
     }
 
-    private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, IDocument document, Paragraph currentParagraph)
+    private static void ProcessRawAnchor(HtmlInline html, IDocxRenderer owner, Paragraph currentParagraph)
     {
         string text = Helpers.ReadLiteralTextAfterTag(owner, html);
-        Regex re = new Regex(@"(?inx)
+        var re = new Regex(@"(?inx)
                 <a \s [^>]*
                     href \s* = \s*
                         (?<q> ['""] )
@@ -74,7 +74,7 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
 
         // Ignore if we can't find a URL.
         var m = re.Match(html.Tag);
-        if (m.Groups.ContainsKey("url") == false)
+        if (!m.Success || m.Groups.ContainsKey("url") == false)
         {
             if (text.Length > 0)
                 currentParagraph.AddText(text);
