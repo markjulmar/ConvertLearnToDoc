@@ -1,16 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="CommandLineParser" Version="2.8.0" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+  </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\FileComparisonLib\FileComparisonLib.csproj" />
     <ProjectReference Include="..\..\lib\LearnDocUtils\LearnDocUtils.csproj" />
   </ItemGroup>
 

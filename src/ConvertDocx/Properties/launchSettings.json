@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConvertDocToDocx": {
+      "commandName": "Project",
+      "commandLineArgs": "-i /users/mark/onedrive/desktop/module.docx -o /users/mark/onedrive/desktop/modules"
+    }
+  }
+}

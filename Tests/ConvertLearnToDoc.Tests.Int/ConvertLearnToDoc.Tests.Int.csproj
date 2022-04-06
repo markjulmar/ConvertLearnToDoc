@@ -37,8 +37,8 @@
   </ItemGroup>
 	
   <ItemGroup>
-	<ProjectReference Include="..\..\LearnDocUtils\LearnDocUtils.csproj" />
-	<ProjectReference Include="..\FileComparisonLib\FileComparisonLib.csproj" />
+	<ProjectReference Include="..\..\lib\LearnDocUtils\LearnDocUtils.csproj" />
+	<ProjectReference Include="..\..\lib\FileComparisonLib\FileComparisonLib.csproj" />
   </ItemGroup>
 
 </Project>

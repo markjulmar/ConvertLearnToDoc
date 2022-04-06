@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "ConvertLearnToDoc": {
-      "commandName": "Project",
-      "commandLineArgs": "-d -i C:\\Users\\mark\\OneDrive\\Downloads\\monitor-azure-arc-enabled-servers.docx -o /users/mark/onedrive/downloads/output\""
-    }
-  }
-}
