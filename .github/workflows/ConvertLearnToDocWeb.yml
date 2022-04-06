@@ -10,13 +10,13 @@ env:
   AZURE_WEBAPP_NAME: ConvertLearnToDocWeb
   AZURE_WEBAPP_PACKAGE_PATH: ConvertLearnToDocWeb/publish
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.ConvertLearnToDocWeb_4514 }}
-  WEBAPP_WORKING_DIRECTORY: ConvertLearnToDocWeb
+  WEBAPP_WORKING_DIRECTORY: src/ConvertLearnToDocWeb
 
-  TESTS_WORKING_DIRECTORY: Tests/ConvertLearnToDoc.Tests.Int
+  TESTS_WORKING_DIRECTORY: tests/ConvertLearnToDoc.Tests.Int
 
   AZURE_FUNCTIONAPP_NAME: ConvertLearnToDocAzureFunctions
   AZURE_FUNCTIONAPP_PACKAGE_PATH: ConvertLearnToDoc.AzureFunctions/publish
-  FUNCTIONAPP_WORKING_DIRECTORY: ConvertLearnToDoc.AzureFunctions
+  FUNCTIONAPP_WORKING_DIRECTORY: src/ConvertLearnToDoc.AzureFunctions
 
 jobs:
   build-and-deploy:
