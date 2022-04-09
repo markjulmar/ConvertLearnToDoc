@@ -37,9 +37,6 @@ public class MarkdownRenderer : IMarkdownRenderer
         MarkdownFolder = Path.GetDirectoryName(markdownFile) ?? "";
         MediaFolder = mediaFolder;
 
-        if (!Directory.Exists(MediaFolder))
-            Directory.CreateDirectory(MediaFolder);
-
         if (File.Exists(markdownFile))
             File.Delete(markdownFile);
 

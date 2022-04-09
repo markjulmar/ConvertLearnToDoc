@@ -48,7 +48,11 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                             continue;
 
                         var url = renderer.ConvertAbsoluteUrl(hl.Uri?.OriginalString ?? "#");
-                        p.Add(Text.Link(hl.Text, url));
+
+                        var link = new InlineLink(hl.Text, url);
+                        if (tf.Bold) link.Bold = true;
+                        if (tf.Italic) link.Italic = true;
+                        p.Add(link);
                     }
                     else if (t.Value.Length > 0)
                     {
@@ -68,8 +72,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                 {
                     if (b.Type == BreakType.Line)
                     {
-                        //var p = (Paragraph)blockOwner;
-                        //p.Add(Text.LineBreak);
+                        var p = (Paragraph)blockOwner;
+                        p.Add(new RawInline("<br>"));
                     }
                     break;
                 }
@@ -177,18 +181,18 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
         // Get the filename for the image from the drawing properties, if null, use the picture name.
         string filename = d.Name ?? p.Name;
-        string folder = null;
+        string folder = string.Empty;
 
         if (!string.IsNullOrEmpty(filename))
         {
             // Word doesn't normally put folder names into the image name. Learn>Docx does though so we
-            // can look for folder info here and see if this was an image referenced outside the module
+            // can look for folder info here and see if this was an image referenced outside the local
             // folder - if so, we don't need to extract it.
             folder = Path.GetDirectoryName(filename);
             if (!string.IsNullOrEmpty(folder))
             {
                 if (folder.StartsWith('/')
-                    || folder != "." && !folder.StartsWith($"..{Path.DirectorySeparatorChar}media"))
+                    || folder.Split('/').Count(s => s == "..") > 1)
                     extractMedia = false;
             }
 
@@ -233,7 +237,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         if (svgExtension != null)
         {
             theImage = svgExtension.Image;
-            if (string.IsNullOrEmpty(filename))
+            if (string.IsNullOrEmpty(filename) && theImage != null)
                 filename = theImage.FileName;
         }
         else
@@ -245,28 +249,47 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
         // Strip any parameters
         string suffix = string.Empty;
-        int index = filename.IndexOf('#');
+        int index = filename?.IndexOf('#') ?? -1;
         if (index > 0)
         {
-            suffix = filename[index..];
+            suffix = filename![index..];
             filename = filename[..index];
         }
 
         // Extract the media if it wasn't originally in some other folder.
         if (extractMedia && theImage != null)
         {
+            string createPath;
+
+            if (folder == ".")
+            {
+                createPath = renderer.MarkdownFolder;
+            }
+            else if (folder!.Contains("media") == true)
+            {
+                createPath = renderer.MediaFolder;
+            }
+            else
+            {
+                createPath = Path.Combine(renderer.MarkdownFolder, folder!);
+            }
+
+            Debug.Assert(!string.IsNullOrEmpty(createPath));
+            if (!Directory.Exists(createPath))
+                Directory.CreateDirectory(createPath);
+
             // Write file
             using var input = theImage.OpenStream();
-            using var output = File.OpenWrite(Path.Combine(folder == "." ? renderer.MarkdownFolder : renderer.MediaFolder, filename));
+            using var output = File.OpenWrite(Path.Combine(createPath, filename));
             input.CopyTo(output);
 
             // Determine the URL for the Markdown content.
-            folder = folder == "." ? "" : Path.GetRelativePath(renderer.MarkdownFolder, renderer.MediaFolder);
+            folder = folder == "." ? string.Empty : Path.GetRelativePath(renderer.MarkdownFolder, createPath);
         }
 
         bool border = p.BorderColor != null;
         string imagePath = extractMedia
-            ? Path.Combine(folder, filename).Replace('\\', '/') + suffix
+            ? Path.Combine(folder!, filename!).Replace('\\', '/') + suffix
             : filename;
 
         var paragraph = d.Parent?.Parent as DXParagraph;

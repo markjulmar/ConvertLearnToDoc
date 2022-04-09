@@ -39,11 +39,23 @@ public class LinkInlineRenderer : DocxObjectRenderer<LinkInline>
             url = new Uri(owner.ConvertRelativeUrl(url[..^3]), UriKind.Absolute).OriginalString;
         }
 
+        Formatting formatting = null;
         string title = link.Title;
         if (string.IsNullOrEmpty(title))
         {
             if (link.FirstChild is LiteralInline literal)
                 title = literal.Content.ToString();
+            else if (link.FirstChild != null)
+            {
+                var childRenderer = owner.FindRenderer(link.FirstChild);
+                if (childRenderer != null)
+                {
+                    var p = new Paragraph();
+                    childRenderer.Write(link.FirstChild, owner, document, p);
+                    title = p.Text;
+                    formatting = p.Runs.LastOrDefault()?.Properties;
+                }
+            }
         }
 
         if (link.IsImage)
@@ -78,6 +90,12 @@ public class LinkInlineRenderer : DocxObjectRenderer<LinkInline>
             catch
             {
                 currentParagraph.AddText($"{title} ({url})");
+            }
+
+            if (formatting != null)
+            {
+                var run = currentParagraph.Runs.LastOrDefault();
+                run?.MergeFormatting(formatting);
             }
         }
     }

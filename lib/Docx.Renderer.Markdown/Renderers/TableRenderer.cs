@@ -47,6 +47,18 @@ public sealed class TableRenderer : MarkdownObjectRenderer<DXTable>
                 var p = new Paragraph();
                 tr.Add(p);
 
+                if (rowIndex == 0)
+                {
+                    var cp = col.Paragraphs.FirstOrDefault();
+                    mdTable.ColumnAlignments[colIndex] = cp?.Properties.Alignment switch
+                    {
+                        Alignment.Left => ColumnAlignment.Left,
+                        Alignment.Center => ColumnAlignment.Center,
+                        Alignment.Right => ColumnAlignment.Right,
+                        _ => ColumnAlignment.Default
+                    };
+                }
+
                 bool boldCol = (colIndex == 0 && (tcf & TableConditionalFormatting.FirstColumn) != 0
                                 || colIndex == row.Cells.Count - 1 &&
                                 (tcf & TableConditionalFormatting.LastColumn) != 0);

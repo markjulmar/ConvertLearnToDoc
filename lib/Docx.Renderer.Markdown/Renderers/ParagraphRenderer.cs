@@ -236,6 +236,7 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
         MarkdownList theList = document.Last() as MarkdownList;
         int? index = (element.GetListIndex() ?? 0) + 1;
         int? level = element.GetListLevel() ?? 0;
+        var nd = element.GetListNumberingDefinition();
 
         // See if we're in a list already.
         if (theList != null)
@@ -251,7 +252,14 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 {
                     var list = new TList();
                     if (list is OrderedList ol)
+                    {
                         ol.StartingNumber = index.Value;
+                        var style = nd?.Style;
+                        var levelDefinition = style?.Levels[level.Value!];
+                        if (levelDefinition?.Format is NumberingFormat.LowerLetter or NumberingFormat.UpperLetter)
+                            ol.Lettered = true;
+                    }
+
                     theList[^1].Add(list);
                     theList = list;
                     break;
@@ -265,7 +273,14 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
             Debug.Assert(level == 0);
             theList = new TList();
             if (theList is OrderedList ol)
+            {
                 ol.StartingNumber = index.Value;
+                var style = nd?.Style;
+                var levelDefinition = style?.Levels[level.Value!];
+                if (levelDefinition?.Format is NumberingFormat.LowerLetter or NumberingFormat.UpperLetter)
+                    ol.Lettered = true;
+            }
+
             document.Add(theList);
         }
 

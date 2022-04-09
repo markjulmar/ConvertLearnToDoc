@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Julmar.GenMarkdown" Version="1.0.5.5" />
+    <PackageReference Include="Julmar.GenMarkdown" Version="1.0.6-preview" />
   </ItemGroup>
 
 </Project>

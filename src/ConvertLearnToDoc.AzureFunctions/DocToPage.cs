@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
 using ConvertLearnToDoc.AzureFunctions.Models;
@@ -39,19 +40,25 @@ public static class DocToPage
 
         string baseFolder = Path.GetTempPath();
         string tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
-
-        // Copy the input file.
-        await using (var stream = File.Create(tempFile))
-        {
-            await model.WordDoc.CopyToAsync(stream);
-        }
-
-        // Create the output folder.
-        string markdownFile = Path.ChangeExtension(
-            Path.GetFileNameWithoutExtension(model.WordDoc.FileName) ?? Constants.DefaultModuleName, ".md");
+        string baseFileName = Path.GetFileNameWithoutExtension(model.WordDoc.FileName) ?? Constants.DefaultModuleName;
+        if (Path.GetInvalidPathChars().Any(ch => baseFileName.Contains(ch)))
+            baseFileName = Constants.DefaultModuleName;
+        string outputPath = Path.Combine(baseFolder, baseFileName);
 
         try
         {
+            // Copy the input file.
+            await using (var stream = File.Create(tempFile))
+            {
+                await model.WordDoc.CopyToAsync(stream);
+            }
+
+            Directory.CreateDirectory(outputPath);
+
+            // Get the markdown file.
+            string markdownFile = Path.Combine(outputPath, Path.ChangeExtension(baseFileName, ".md"));
+
+            // Convert the file to Markdown + media
             log.LogDebug($"DocToPage(inputFile:{tempFile}, markdownFile:{markdownFile})");
             await DocxToSinglePage.ConvertAsync(tempFile, markdownFile, new MarkdownOptions
             {
@@ -60,25 +67,57 @@ public static class DocToPage
                 OrderedListUsesSequence = model.OrderedListUsesSequence,
                 UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks
             });
+
+            // If we only produced a Markdown file, then return that.
+            if (Directory.GetFiles(outputPath).Length == 1)
+            {
+                if (File.Exists(markdownFile))
+                {
+                    log.LogDebug($"Returning Markdown file.");
+                    return new FileContentResult(await File.ReadAllBytesAsync(markdownFile), "text/markdown")
+                        { FileDownloadName = Path.GetFileName(markdownFile) };
+                }
+            }
+            else
+            {
+                string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(baseFileName, "zip"));
+                if (File.Exists(zipFile))
+                {
+                    log.LogDebug($"DELETE {zipFile} (existing).");
+                    File.Delete(zipFile);
+                }
+
+                log.LogDebug($"ZIP {outputPath} => {zipFile}");
+                System.IO.Compression.ZipFile.CreateFromDirectory(outputPath, zipFile);
+
+                if (File.Exists(zipFile))
+                {
+                    log.LogDebug($"Returning .ZIP file.");
+                    return new FileContentResult(await File.ReadAllBytesAsync(zipFile), "application/zip")
+                        {FileDownloadName = Path.GetFileName(zipFile)};
+                }
+            }
+        }
+        catch (AggregateException aex)
+        {
+            return new BadRequestErrorMessageResult(
+                $"Unable to convert {model.WordDoc.FileName}. {aex.Flatten().Message}.");
         }
         catch (Exception ex)
         {
-            log.LogError(ex.ToString());
-            return new BadRequestErrorMessageResult($"Error: {ex.Message}");
-        }
-
-        try
-        {
-            return new FileContentResult(await File.ReadAllBytesAsync(markdownFile), "text/markdown")
-                { FileDownloadName = Path.GetFileName(markdownFile) };
+            return new BadRequestErrorMessageResult(
+                $"Unable to convert {model.WordDoc.FileName}. {ex.Message}.");
         }
         finally
         {
             // Delete the temp stuff.
-            log.LogDebug($"DELETE {markdownFile}");
-            File.Delete(markdownFile);
+            log.LogDebug($"RMDIR {outputPath}");
+            Directory.Delete(outputPath, true);
             log.LogDebug($"DELETE {tempFile}");
             File.Delete(tempFile);
         }
+
+        return new BadRequestErrorMessageResult(
+            $"Unable to convert {model.WordDoc.FileName}. Possibly incorrect format?");
     }
 }

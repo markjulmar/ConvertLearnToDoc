@@ -427,6 +427,8 @@ public class ModuleBuilder
             metadata.ModuleData.Metadata.MsDate = doc.Properties.SaveDate.Value.ToString("MM/dd/yyyy");
         else if (doc.Properties.CreatedDate != null)
             metadata.ModuleData.Metadata.MsDate = doc.Properties.CreatedDate.Value.ToString("MM/dd/yyyy");
+        else
+            metadata.ModuleData.Metadata.MsDate = DateTime.Now.ToString("MM/dd/yyyy");
 
         return metadata;
     }
