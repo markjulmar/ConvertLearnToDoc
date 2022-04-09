@@ -70,7 +70,7 @@ public static class ModuleCombiner
                     await tempFile.WriteLineAsync($"### {question.Content}");
                     foreach (var choice in question.Choices)
                     {
-                        await tempFile.WriteAsync(choice.IsCorrect ? "- [X]" : "- [ ]");
+                        await tempFile.WriteAsync(choice.IsCorrect ? "- [x] " : "- [ ] ");
                         await tempFile.WriteLineAsync(EscapeContent(choice.Content));
                         if (!string.IsNullOrEmpty(choice.Explanation))
                         {

@@ -31,9 +31,6 @@ internal sealed class CommandLineOptions
     [Option('p', "Pivot", HelpText = "Zone pivot to render to doc, defaults to all")]
     public string ZonePivot { get; set; }
 
-    [Option('z', "zipOutput", HelpText = "Zip output folder, defaults to false")]
-    public bool ZipOutput { get; set; }
-
     [Option('n', "Notebook", HelpText = "Convert notebooks into document, only used on MS Learn content")]
     public bool ConvertNotebooks { get; set; }
 }

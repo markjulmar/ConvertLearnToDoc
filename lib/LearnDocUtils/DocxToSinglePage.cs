@@ -119,7 +119,7 @@ public static class DocxToSinglePage
             await writer.WriteLineAsync($"author: {author}");
             await writer.WriteLineAsync($"ms.date: {date}");
             // If it's a Learn module, don't add it.
-            if (additionalMetadata != null && !additionalMetadata.Contains("metadata:"))
+            if (additionalMetadata != null && !additionalMetadata.Contains("metadata"))
                 await writer.WriteAsync(additionalMetadata);
             await writer.WriteLineAsync("---");
 

@@ -69,7 +69,7 @@ public static class DocToPage
             });
 
             // If we only produced a Markdown file, then return that.
-            if (Directory.GetFiles(outputPath).Length == 1)
+            if (Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Length == 1)
             {
                 if (File.Exists(markdownFile))
                 {
