@@ -33,7 +33,7 @@ namespace ConvertLearnToDocWeb.Controllers
         [HttpPost]
         public async Task<IActionResult> ConvertLearnToDoc(ConversionViewModel viewModel)
         {
-            using var scope = logger.BeginScope($"ConvertLearnToDoc(Url: {viewModel.ModuleUrl}, Repo: {viewModel.GithubRepo}, Branch: {viewModel.GithubBranch}, Folder: \"{viewModel.GithubFolder}\")");
+            using var scope = logger.BeginScope($"ConvertLearnToDoc(Url: {viewModel.ModuleUrl}, Org: {viewModel.GitHubOrg} + Repo: {viewModel.GithubRepo}, Branch: {viewModel.GithubBranch}, Folder: \"{viewModel.GithubFolder}\")");
 
             if (!ModelState.IsValid)
             {
@@ -43,12 +43,13 @@ namespace ConvertLearnToDocWeb.Controllers
             if (string.IsNullOrWhiteSpace(viewModel.ZonePivot))
                 viewModel.ZonePivot = null;
 
-            string repo, branch, folder;
+            string org = null, repo = null, branch = null, folder = null;
             bool isDocsPage = false;
             if (!string.IsNullOrEmpty(viewModel.ModuleUrl)
                 && viewModel.ModuleUrl.ToLower().StartsWith("https"))
             {
                 var md = await DocsMetadata.LoadFromUrlAsync(viewModel.ModuleUrl);
+                org = md.Organization;
                 repo = md.Repository;
                 branch = md.Branch;
                 folder = md.ContentPath;
@@ -57,6 +58,7 @@ namespace ConvertLearnToDocWeb.Controllers
             else if (!string.IsNullOrEmpty(viewModel.GithubRepo)
                 && !string.IsNullOrEmpty(viewModel.GithubFolder))
             {
+                org = string.IsNullOrEmpty(viewModel.GitHubOrg) ? Constants.DocsOrganization : viewModel.GitHubOrg;
                 repo = viewModel.GithubRepo;
                 branch = string.IsNullOrEmpty(viewModel.GithubBranch) ? "live" : viewModel.GithubBranch;
                 folder = viewModel.GithubFolder;
@@ -64,9 +66,10 @@ namespace ConvertLearnToDocWeb.Controllers
                     folder = '/' + folder;
                 isDocsPage = folder.EndsWith(".md", StringComparison.InvariantCultureIgnoreCase);
             }
-            else
+            
+            if (org == null || repo == null || branch == null || folder == null)
             {
-                ModelState.AddModelError(string.Empty, "You must supply either a URL or GitHub specifics to identify a Learn module or Docs conceptual page.");
+                ModelState.AddModelError(string.Empty, "You must supply either a public docs.microsoft.com URL or GitHub specifics to identify a Learn module or Docs conceptual page.");
                 return View(nameof(Index));
             }
 
@@ -74,9 +77,10 @@ namespace ConvertLearnToDocWeb.Controllers
             {
                 var model = new LearnToDocModel
                 {
+                    Organization = org,
                     Repository = repo,
                     Branch = branch,
-                    Folder = isDocsPage ? folder : Path.GetDirectoryName(folder),
+                    Folder = isDocsPage ? folder : Path.HasExtension(folder) ? Path.GetDirectoryName(folder) : folder,
                     ZonePivot = viewModel.ZonePivot,
                     EmbedNotebookData = !isDocsPage && viewModel.EmbedNotebookData
                 };
@@ -120,7 +124,7 @@ namespace ConvertLearnToDocWeb.Controllers
         private Task<HttpResponseMessage> CallLearnToDocConverter(LearnToDocModel model)
             => ToDocConverter(model, configuration.GetValue<string>("Service:LearnToDoc"));
 
-        private async Task<HttpResponseMessage> ToDocConverter(LearnToDocModel model, string endpoint)
+        private static async Task<HttpResponseMessage> ToDocConverter(LearnToDocModel model, string endpoint)
         {
             if (string.IsNullOrEmpty(endpoint))
                 throw new InvalidOperationException("Missing configuration for conversion function endpoints.");
@@ -128,7 +132,7 @@ namespace ConvertLearnToDocWeb.Controllers
             return await client.PostAsync(endpoint, new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json"));
         }
 
-        private DocToLearnModel CreateToDocModel(ConversionViewModel viewModel)
+        private static DocToLearnModel CreateToDocModel(ConversionViewModel viewModel)
         {
             var contentType = viewModel.WordDoc?.ContentType;
             if (string.IsNullOrEmpty(viewModel.WordDoc?.FileName) || contentType != WordMimeType)

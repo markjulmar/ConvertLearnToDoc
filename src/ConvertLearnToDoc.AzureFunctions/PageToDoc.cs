@@ -47,8 +47,8 @@ public static class PageToDoc
 
         try
         {
-            log.LogDebug($"PageToDoc(repo:{model.Repository}, branch:{model.Branch}, folder:{model.Folder}: outputFile={outputFile})");
-            await SinglePageToDocx.ConvertFromRepoAsync(MSLearnRepos.Constants.DocsOrganization, model.Repository, model.Branch, model.Folder, outputFile,
+            log.LogDebug($"PageToDoc(org: {model.Organization}, repo:{model.Repository}, branch:{model.Branch}, folder:{model.Folder}: outputFile={outputFile})");
+            await SinglePageToDocx.ConvertFromRepoAsync(model.Organization, model.Repository, model.Branch, model.Folder, outputFile,
                 gitHubToken, new DocumentOptions { ZonePivot = model.ZonePivot });
         }
         catch (Exception ex)

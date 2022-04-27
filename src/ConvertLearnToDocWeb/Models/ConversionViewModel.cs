@@ -8,6 +8,7 @@ namespace ConvertLearnToDocWeb.Models
         // Learn to doc
         [Url(ErrorMessage = "Please specify a full URL to the Learn module page.")]
         public string ModuleUrl { get; set; }
+        public string GitHubOrg { get; set; }
         public string GithubRepo { get; set; }
         public string GithubBranch { get; set; }
         public string GithubFolder { get; set; }

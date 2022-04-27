@@ -29,7 +29,9 @@
                             </div>
                             <b>OR</b>
                             <div class="form-group pt-2">
-                                <label class="form-label" for="githubRepo">GitHub repo (must belong to MicrosoftDocs organization)</label>
+                                <label class="form-label" for="gitHubOrg">GitHub organization (defaults to MicrosoftDocs)</label>
+                                <input asp-for="GitHubOrg" class="form-control" id="gitHubOrg" placeholder="MicrosoftDocs">
+                                <label class="form-label" for="githubRepo">GitHub repo (must belong to the above organization)</label>
                                 <input asp-for="GithubRepo" class="form-control" id="githubRepo" placeholder="learn-pr" aria-describedby="repoHelp">
                                 <small id="repoHelp" class="form-text text-muted">ex: learn-pr, azure-docs, microsoft-365-docs-pr, etc.</small>
                                 <label class="form-label" for="githubBranch">Branch</label>
