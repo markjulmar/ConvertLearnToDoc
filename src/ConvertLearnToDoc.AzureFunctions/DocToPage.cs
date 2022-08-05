@@ -95,7 +95,7 @@ public static class DocToPage
                 {
                     log.LogDebug($"Returning .ZIP file.");
                     return new FileContentResult(await File.ReadAllBytesAsync(zipFile), "application/zip")
-                        {FileDownloadName = Path.GetFileName(zipFile)};
+                        {FileDownloadName = Path.GetFileName(zipFile).Replace(' ','-').ToLower()};
                 }
             }
         }

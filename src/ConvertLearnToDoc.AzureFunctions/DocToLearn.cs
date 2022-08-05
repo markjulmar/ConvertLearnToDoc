@@ -93,7 +93,7 @@ public static class DocToLearn
             try
             {
                 return new FileContentResult(await File.ReadAllBytesAsync(zipFile), "application/zip")
-                    { FileDownloadName = Path.GetFileName(zipFile) };
+                    { FileDownloadName = Path.GetFileName(zipFile).Replace(' ', '-').ToLower() };
             }
             finally
             {
