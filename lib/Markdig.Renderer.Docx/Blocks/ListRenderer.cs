@@ -35,7 +35,7 @@ public class ListRenderer : DocxObjectRenderer<ListBlock>
                 var quoteBlockOwner = block.Parent as QuoteSectionNoteBlock;
                 if (quoteBlockOwner?.SectionAttributeString?.ToLower().Contains("checklist") == true)
                 {
-                    nd = document.NumberingStyles.AddCustomDefinition("\u00FC", new FontFamily("Wingdings"));
+                    nd = document.NumberingStyles.AddCustomDefinition("\u00FC", new FontValue("Wingdings"));
                     nd.Style.Levels.First().Formatting.Color = Color.Green;
                 }
                 else

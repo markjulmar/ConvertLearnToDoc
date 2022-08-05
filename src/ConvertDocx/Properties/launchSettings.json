@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-p -i /users/mark/onedrive/downloads/test.docx -o /users/mark/onedrive/desktop/test.md"
+      "commandLineArgs": "-p -d -i /users/mark/onedrive/downloads/test.docx -o /users/mark/onedrive/desktop/t/test.md"
     }
   }
 }

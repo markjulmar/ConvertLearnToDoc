@@ -69,6 +69,7 @@ public sealed class TableRenderer : MarkdownObjectRenderer<DXTable>
                     tags.Remove(nameof(TextFormatting));
                     
                 renderer.WriteContainer(document, p, col.Paragraphs, tags);
+                RenderHelpers.CollapseEmptyTags(p);
             }
         }
     }

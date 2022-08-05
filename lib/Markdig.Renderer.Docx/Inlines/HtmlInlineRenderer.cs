@@ -19,7 +19,7 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 {
                     var r = currentParagraph.Runs.Last();
                     r.MergeFormatting(new Formatting {
-                        Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = FontFamily.GenericMonospace,
+                        Bold = true, CapsStyle = CapsStyle.SmallCaps, Font = Globals.CodeFont,
                         Color = Color.Black,
                         Shading = new Shading { Fill = Globals.CodeBoxShade }
                     });

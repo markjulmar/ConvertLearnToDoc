@@ -73,14 +73,26 @@ public static class DocxToSinglePage
 
     private static async Task WriteMetadata(string docxFile, string markdownFile)
     {
+        string[] validHeaders = {"Title", "Subtitle", "Author", "Abstract"};
         var doc = Document.Load(docxFile);
 
+        bool foundStart = false;
         string title = null, author = null, summary = null;
 
         foreach (var item in doc.Paragraphs)
         {
             var styleName = item.Properties.StyleName;
-            if (styleName == "Heading1") break;
+            if (styleName == "Heading1")
+            {
+                foundStart = true;
+                break;
+            }
+            
+            if (!validHeaders.Contains(styleName, StringComparer.CurrentCultureIgnoreCase))
+            {
+                break;
+            }
+
             switch (styleName)
             {
                 case "Title":
@@ -93,6 +105,7 @@ public static class DocxToSinglePage
                     summary = item.Text;
                     break;
             }
+
         }
 
         title ??= doc.Properties.Title;
@@ -135,7 +148,7 @@ public static class DocxToSinglePage
                 await writer.WriteAsync(additionalMetadata);
             await writer.WriteLineAsync("---");
 
-            bool started = false;
+            bool started = !foundStart;
             while (!reader.EndOfStream)
             {
                 string line = await reader.ReadLineAsync();
