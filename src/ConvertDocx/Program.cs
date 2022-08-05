@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Docx.Renderer.Markdown;
 using LearnDocUtils;
 using MSLearnRepos;
 
@@ -91,7 +92,7 @@ public static class Program
                     if (options.SinglePageOutput)
                     {
                         await DocxToSinglePage.ConvertAsync(options.InputFile, options.OutputFile,
-                            new MarkdownOptions {Debug = options.Debug});
+                            new MarkdownOptions {Debug = options.Debug}, options.PreferPlainMarkdown);
                     }
                     else
                     {

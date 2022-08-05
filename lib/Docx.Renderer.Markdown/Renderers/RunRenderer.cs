@@ -16,14 +16,57 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         }
 
         var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
-        if (element.Properties?.Bold == true)
+
+        // Pickup any formatting from the paragraph style - only do this for custom styles.
+        if (!string.IsNullOrEmpty(tf.StyleName))
+        {
+            var style = element.Owner.Styles.Find(tf.StyleName, StyleType.Paragraph);
+            if (style is {IsCustom: true})
+            {
+                if (style is { Formatting.Bold: true } || TextFormatting.IsBoldFont(style.Formatting?.Font))
+                    tf.Bold = true;
+                if (style is { Formatting.Italic: true })
+                    tf.Italic = true;
+                if (style is { Formatting.CapsStyle: CapsStyle.SmallCaps })
+                    tf.KbdTag = true;
+                if (TextFormatting.IsMonospaceFont(style.Formatting?.Font))
+                    tf.Monospace = true;
+                if (style is { Formatting.Subscript: true })
+                    tf.Subscript = true;
+                if (style is { Formatting.Superscript: true })
+                    tf.Superscript = true;
+            }
+        }
+
+        // Pickup any formatting from the run style
+        var runStyle = element.StyleName;
+        if (!string.IsNullOrEmpty(runStyle))
+        {
+            var style = element.Owner.Styles.Find(runStyle, StyleType.Character);
+            if (style != null)
+            {
+                if (style is {Formatting.Bold: true} || TextFormatting.IsBoldFont(style.Formatting?.Font))
+                    tf.Bold = true;
+                if (style is {Formatting.Italic: true})
+                    tf.Italic = true;
+                if (style is {Formatting.CapsStyle: CapsStyle.SmallCaps})
+                    tf.KbdTag = true;
+                if (TextFormatting.IsMonospaceFont(style.Formatting?.Font))
+                    tf.Monospace = true;
+                if (style is {Formatting.Subscript:true})
+                    tf.Subscript = true;
+                if (style is {Formatting.Superscript:true})
+                    tf.Superscript = true;
+            }
+        }
+
+        // Pickup any formatting from the run itself
+        if (element.Properties?.Bold == true || TextFormatting.IsBoldFont(element.Properties?.Font))
             tf.Bold = true;
         if (element.Properties?.Italic == true)
             tf.Italic = true;
         if (element.Properties?.CapsStyle == CapsStyle.SmallCaps)
             tf.KbdTag = true;
-        if (!string.IsNullOrEmpty(tf.StyleName))
-            tf.StyleName = element.StyleName;
         if (TextFormatting.IsMonospaceFont(element.Properties?.Font))
             tf.Monospace = true;
         if (element.Properties?.Subscript == true)
@@ -44,14 +87,18 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                     {
                         // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
                         // I'm handling the links. This will catch that edge case and ignore the second appearance.
-                        if (p.LastOrDefault() is InlineLink ll && ll.Url == hl.Uri.OriginalString && ll.Text == hl.Text)
+                        if (p.LastOrDefault() is InlineLink ll && (hl.Uri == null || ll.Url == hl.Uri.OriginalString) && ll.Text == hl.Text)
                             continue;
 
                         var url = renderer.ConvertAbsoluteUrl(hl.Uri?.OriginalString ?? "#");
 
+                        // Remove any bold/italic spaces before this.
+                        RenderHelpers.CollapseEmptyTags(p);
+
                         var link = new InlineLink(hl.Text, url);
                         if (tf.Bold) link.Bold = true;
                         if (tf.Italic) link.Italic = true;
+
                         p.Add(link);
                     }
                     else if (t.Value.Length > 0)
@@ -63,7 +110,11 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                         else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
                         else if (tf.Subscript) AppendText(p, t.Value, "<sub>", "</sub>");
                         else if (tf.Superscript) AppendText(p, t.Value, "<sup>", "</sup>");
-                        else p.Add(ConvertSpecialCharacters(t.Value));
+                        else
+                        {
+                            RenderHelpers.CollapseEmptyTags(p);
+                            p.Add(new Text(ConvertSpecialCharacters(t.Value)));
+                        }
                     }
                     break;
                 }
@@ -122,7 +173,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
     {
         // TODO: if this gets larger, move to a dictionary.
         return text.Replace("❎", "[x]")
-            .Replace("⬜", "[ ]");
+            .Replace("⬜", "[ ]")
+            .Replace((char)0xa0, ' ');
     }
 
     private static void AppendText<T>(Paragraph paragraph, string text) where T : Text
@@ -141,6 +193,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                 nameof(InlineCode) => new InlineCode(text),
                 _ => new Text(text)
             };
+
             paragraph.Add(t);
         }
     }
@@ -174,7 +227,21 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                 // See if there's a hyperlink.
                 videoUrl = p.Hyperlink?.OriginalString;
             }
-            return !string.IsNullOrEmpty(videoUrl) ? new BlockQuote($"[!VIDEO {videoUrl}]") : null;
+
+            if (string.IsNullOrEmpty(videoUrl))
+                return null;
+
+            if (renderer.PreferPlainMarkdown)
+            {
+                return new RawBlock(
+                   $"<video width=\"320\" height=\"240\" controls>{Environment.NewLine}"
+                      +$"   <source src=\"{videoUrl}\" type=\"video/mp4\">{Environment.NewLine}"
+                      +$"   Your browser does not support the video tag.{Environment.NewLine}"
+                      + "</video>"
+                );
+            }
+
+            return new BlockQuote($"[!VIDEO {videoUrl}]");
         }
 
         bool extractMedia = true;
@@ -315,8 +382,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         string link = FindCommentValue(paragraph, "link");
         string lightboxUrl = FindCommentValue(paragraph, "lightbox");
 
-        if (border || d.IsDecorative == true || lightboxUrl != null
-            || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link))
+        if (!renderer.PreferPlainMarkdown && (border || d.IsDecorative == true || lightboxUrl != null
+            || !string.IsNullOrEmpty(locScope) || useExtension || !string.IsNullOrEmpty(link)))
         {
             var image = new DocfxImage(altText, imagePath, description) { Border = border, Link = link };
             if (!string.IsNullOrEmpty(locScope))

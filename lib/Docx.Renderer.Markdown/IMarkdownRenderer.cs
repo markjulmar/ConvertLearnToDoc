@@ -2,6 +2,7 @@
 
 public interface IMarkdownRenderer
 {
+    bool PreferPlainMarkdown { get; }
     string MarkdownFolder { get; }
     string MediaFolder { get; }
     string ConvertAbsoluteUrl(string url);

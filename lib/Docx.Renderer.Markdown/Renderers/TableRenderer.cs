@@ -16,7 +16,7 @@ public sealed class TableRenderer : MarkdownObjectRenderer<DXTable>
                                 || FindCommentValue(element.Paragraphs.First(), Globals.UseExtension) != null
                                 || element.Properties.Design == TableDesign.Normal;
 
-        var mdTable = useRowExtension
+        var mdTable = useRowExtension && !renderer.PreferPlainMarkdown
             ? new DocfxTable(columnCount)
             : new Julmar.GenMarkdown.Table(columnCount);
 

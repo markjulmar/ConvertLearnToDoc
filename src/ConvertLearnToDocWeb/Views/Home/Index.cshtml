@@ -6,15 +6,114 @@
 
 <ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="true">Docs To Word</a>
+        <a class="nav-link active" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="true">Word to Docs</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="false">Word to Docs</a>
+        <a class="nav-link" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="false">Docs To Word</a>
     </li>
 </ul>
 
 <div class="tab-content" id="myTabContent">
-    <div id="todoc" class="tab-pane active" role="tabpanel" aria-labelledby="todoc-tab">
+
+    <div id="fromdoc" class="tab-pane active" role="tabpanel" aria-labelledby="fromdoc-tab">
+        <div class="panel panel-default pl-3 pt-3">
+            <div class="panel-body">
+                <form asp-action="convertDocToLearn" enctype="multipart/form-data">
+                        
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="form-group pb-2">
+                                <label>Choose a .docx file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="form-control-file custom-file-input" id="wordDoc"
+                                           name="wordDoc" aria-describedby="inputGroupFileAddon01">
+                                    <label class="custom-file-label" for="wordDoc">Choose file...</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    <div class="form-row">
+                        <div class="col">
+                            <hr/>
+                            <label><b>Markdown options</b></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UsePlainMarkdown" id="UsePlainMarkdown"/>
+                                <label class="form-check-label" for="UsePlainMarkdown">
+                                    Use plain Markdown (no docs extensions)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UseAsterisksForBullets" id="UseAsterisksForBullets"/>
+                                <label class="form-check-label" for="UseAsterisksForBullets">
+                                    Use asterisk for bullet lists (defaults to dash)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UseAsterisksForEmphasis" id="UseAsterisksForEmphasis"/>
+                                <label class="form-check-label" for="UseAsterisksForEmphasis">
+                                    Use asterisk for emphasis (defaults to underscore)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="OrderedListUsesSequence" id="OrderedListUsesSequence"/>
+                                <label class="form-check-label" for="OrderedListUsesSequence">
+                                    Ordered lists are always numbered sequentially (defaults to '1.' for each item unless starting number is provided)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UseAlternateHeaderSyntax" id="UseAlternateHeaderSyntax"/>
+                                <label class="form-check-label" for="UseAlternateHeaderSyntax">
+                                    Use two-row header syntax (defaults to '#' prefix)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UseIndentsForCodeBlocks" id="UseIndentsForCodeBlocks"/>
+                                <label class="form-check-label" for="UseIndentsForCodeBlocks">
+                                    Use indents for code blocks when language is not specified (defaults to triple-tick style)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="PrettyPipeTables" id="PrettyPipeTables"/>
+                                <label class="form-check-label" for="PrettyPipeTables">
+                                    Pretty-print pipe tables with spaces (preview)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
+                    <button type="submit" formaction="/Home/ConvertDocToPage" class="btn btn-primary mt-4">Convert to Docs page</button>
+                </form>
+            </div>
+                
+            <div class="card mt-4">
+                <h5 class="card-header">Hints</h5>
+                <div class="card-body">
+                    <p class="card-text">
+                        Here are some quick hints on structuring a new document.
+                        <ol>
+                            <li>For Learn content, use <b>Heading1</b> style to start a new unit.</li>
+                            <li>Keep text simple - Markdown only supports <b>Bold</b>, <i>Italic</i>, and <span style="font-family: MONOSPACE;">Monospaced fonts for code</span>.</li>
+                            <li>
+                                Tables, links, lists, images, and videos are all supported.
+                                <ol>
+                                    <li>Embed a placeholder video from YouTube if you don't know the link and then replace the Markdown link before publishing.</li>
+                                    <li>For images, make sure to set Alt Text. In addition, you can add a caption to the image to add screen-reader descriptions.</li>
+                                </ol>
+                            </li>
+                            <li>Set the document metadata - <code>Title</code>, <code>Author</code>, and <code>Save Date</code> - these will be used to fill in metadata.</li>
+                            <li>You can also set the <code>Comment</code> metadata field to the UID of a module. The tool will use that module's metadata where possible to fill in the blanks.</li>
+                            <li>There are more options - a full list is in the document template which you can download below.</li>
+                        </ol>
+                    </p>
+                    <a href="./resources/standard-module-template.docx" class="card-link">Document template</a>
+                    <a href="https://review.docs.microsoft.com/en-us/help/learn/?branch=main" target="_blank" class="card-link">Learn contributor guide</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="todoc" class="tab-pane" role="tabpanel" aria-labelledby="todoc-tab">
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertLearnToDoc">
@@ -67,98 +166,6 @@
         </div>
     </div>
 
-    <div id="fromdoc" class="tab-pane" role="tabpanel" aria-labelledby="fromdoc-tab">
-        <div class="panel panel-default pl-3 pt-3">
-            <div class="panel-body">
-                <form asp-action="convertDocToLearn" enctype="multipart/form-data">
-                    
-                    <div class="form-row">
-                        <div class="col">
-                            <div class="form-group pb-2">
-                                <label>Choose a .docx file</label>
-                                <div class="custom-file">
-                                    <input type="file" class="form-control-file custom-file-input" id="wordDoc"
-                                           name="wordDoc" aria-describedby="inputGroupFileAddon01">
-                                    <label class="custom-file-label" for="wordDoc">Choose file...</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="col">
-                            <hr/>
-                            <label><b>Markdown options</b></label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="UseAsterisksForBullets" id="UseAsterisksForBullets"/>
-                                <label class="form-check-label" for="UseAsterisksForBullets">
-                                    Use asterisk for bullet lists (defaults to dash)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="UseAsterisksForEmphasis" id="UseAsterisksForEmphasis"/>
-                                <label class="form-check-label" for="UseAsterisksForEmphasis">
-                                    Use asterisk for emphasis (defaults to underscore)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="OrderedListUsesSequence" id="OrderedListUsesSequence"/>
-                                <label class="form-check-label" for="OrderedListUsesSequence">
-                                    Ordered lists are always numbered sequentially (defaults to '1.' for each item unless starting number is provided)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="UseAlternateHeaderSyntax" id="UseAlternateHeaderSyntax"/>
-                                <label class="form-check-label" for="UseAlternateHeaderSyntax">
-                                    Use two-row header syntax (defaults to '#' prefix)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="UseIndentsForCodeBlocks" id="UseIndentsForCodeBlocks"/>
-                                <label class="form-check-label" for="UseIndentsForCodeBlocks">
-                                    Use indents for code blocks when language is not specified (defaults to triple-tick style)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="PrettyPipeTables" id="PrettyPipeTables"/>
-                                <label class="form-check-label" for="PrettyPipeTables">
-                                    Pretty-print pipe tables with spaces (preview)
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
-                    <button type="submit" formaction="/Home/ConvertDocToPage" class="btn btn-primary mt-4">Convert to Docs page</button>
-                </form>
-            </div>
-            
-            <div class="card mt-4">
-                <h5 class="card-header">Hints</h5>
-                <div class="card-body">
-                    <p class="card-text">
-                        Here are some quick hints on structuring a new document.
-                        <ol>
-                            <li>Use <b>Heading1</b> style to start a new unit.</li>
-                            <li>Keep text simple - Markdown only supports <b>Bold</b>, <i>Italic</i>, and <span style="font-family: MONOSPACE;">Monospaced fonts for code</span>.</li>
-                            <li>
-                                Tables, links, lists, images, and videos are all supported.
-                                <ol>
-                                    <li>Embed a placeholder video from YouTube if you don't know the link and then replace the Markdown link before publishing.</li>
-                                    <li>For images, make sure to set Alt Text. In addition, you can add a caption to the image to add screen-reader descriptions.</li>
-                                </ol>
-                            </li>
-                            <li>Set the document metadata - <code>Title</code>, <code>Author</code>, and <code>Save Date</code> - these will be used to fill in metadata.</li>
-                            <li>You can also set the <code>Comment</code> metadata field to the UID of a module. The tool will use that module's metadata where possible to fill in the blanks.</li>
-                            <li>There are more options - a full list is in the document template which you can download below.</li>
-                        </ol>
-                    </p>
-                    <a href="./resources/standard-module-template.docx" class="card-link">Document template</a>
-                    <a href="https://review.docs.microsoft.com/en-us/help/learn/?branch=main" target="_blank" class="card-link">Learn contributor guide</a>
-                </div>
-            </div>
-
-        </div>
-    </div>
 </div>
 
 <span class="text-danger">@Html.ValidationSummary(false)</span>

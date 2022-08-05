@@ -20,6 +20,7 @@ public class MarkdownRenderer : IMarkdownRenderer
     public string MarkdownFolder { get; private set; }
     public string MediaFolder { get; private set; }
     public string ConvertAbsoluteUrl(string url) => options?.ConvertAbsoluteUrls(url) ?? url;
+    public bool PreferPlainMarkdown => options.PreferPlainMarkdown;
 
     public void Convert(string docxFile, string markdownFile, string mediaFolder)
     {

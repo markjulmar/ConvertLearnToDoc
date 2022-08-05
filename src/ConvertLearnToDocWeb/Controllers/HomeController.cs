@@ -141,6 +141,7 @@ namespace ConvertLearnToDocWeb.Controllers
             return new DocToLearnModel
             {
                 WordDoc = viewModel.WordDoc,
+                UsePlainMarkdown = viewModel.UsePlainMarkdown,
                 OrderedListUsesSequence = viewModel.OrderedListUsesSequence,
                 UseAsterisksForBullets = viewModel.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = viewModel.UseAsterisksForEmphasis,
@@ -242,6 +243,7 @@ namespace ConvertLearnToDocWeb.Controllers
             var multiForm = new MultipartFormDataContent
             {
                 { new StringContent(model.UseAsterisksForBullets.ToString()), nameof(DocToLearnModel.UseAsterisksForBullets) },
+                { new StringContent(model.UsePlainMarkdown.ToString()), nameof(DocToLearnModel.UsePlainMarkdown) },
                 { new StringContent(model.UseAsterisksForEmphasis.ToString()), nameof(DocToLearnModel.UseAsterisksForEmphasis) },
                 { new StringContent(model.OrderedListUsesSequence.ToString()), nameof(DocToLearnModel.OrderedListUsesSequence) },
                 { new StringContent(model.UseIndentsForCodeBlocks.ToString()), nameof(DocToLearnModel.UseIndentsForCodeBlocks) },
@@ -252,7 +254,7 @@ namespace ConvertLearnToDocWeb.Controllers
             content.Headers.ContentType = new MediaTypeHeaderValue(WordMimeType);
             multiForm.Add(content, nameof(DocToLearnModel.WordDoc), model.WordDoc.FileName);
 
-            using var client = new HttpClient();
+            using var client = new HttpClient {Timeout = TimeSpan.FromMinutes(5)};
             return await client.PostAsync(endpoint, multiForm);
         }
 

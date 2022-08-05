@@ -25,6 +25,7 @@ public static class DocToPage
         var model = new DocToLearnModel
         {
             WordDoc = input.Files[nameof(DocToLearnModel.WordDoc)],
+            UsePlainMarkdown = bool.TryParse(input[nameof(DocToLearnModel.UsePlainMarkdown)], out var usePlainMarkdown) && usePlainMarkdown,
             UseAsterisksForBullets = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForBullets)], out var useAsterisksForBullets) && useAsterisksForBullets,
             UseAsterisksForEmphasis = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForEmphasis)], out var useAsterisksForEmphasis) && useAsterisksForEmphasis,
             OrderedListUsesSequence = bool.TryParse(input[nameof(DocToLearnModel.OrderedListUsesSequence)], out var orderedListUsesSequence) && orderedListUsesSequence,
@@ -66,7 +67,7 @@ public static class DocToPage
                 UseAsterisksForEmphasis = model.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = model.OrderedListUsesSequence,
                 UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks
-            });
+            }, model.UsePlainMarkdown);
 
             // If we only produced a Markdown file, then return that.
             if (Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Length == 1)

@@ -39,7 +39,7 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
             
         var tf = tags.Get<TextFormatting>(nameof(TextFormatting));
         tf.StyleName = element.Properties.StyleName;
-        if (element.Properties.DefaultFormatting.Bold)
+        if (element.Properties.DefaultFormatting.Bold || TextFormatting.IsBoldFont(element.Properties.DefaultFormatting.Font))
             tf.Bold = true;
         if (element.Properties.DefaultFormatting.Italic)
             tf.Italic = true;
@@ -69,9 +69,14 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     private static void CreateHeader(int level, IMarkdownRenderer renderer, MarkdownDocument document, 
         MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
     {
-        var p = new Heading(level);
-        document.Add(p);
-        renderer.WriteContainer(document, p, element.Runs, tags);
+        // Ignore empty/whitespace headings. This happens most often with page breaks where they inherit
+        // the _next_ page style (Hx).
+        if (element.Runs.Any(r => r.HasText || r.Elements.Any(re => re.ElementType == "drawing")))
+        {
+            var p = new Heading(level);
+            document.Add(p);
+            renderer.WriteContainer(document, p, element.Runs, tags);
+        }
     }
 
     private static void CreateBlockQuote(IMarkdownRenderer renderer, MarkdownDocument document, 
@@ -122,7 +127,8 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
 
                 index = key.Length;
 
-                if (blockHeaders.TryGetValue(key, out string header))
+                if (!renderer.PreferPlainMarkdown 
+                    && blockHeaders.TryGetValue(key, out string header))
                 {
                     newBlockQuote = false;
 
@@ -161,13 +167,21 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     private static void CreateParagraph(IMarkdownRenderer renderer, MarkdownDocument document, 
         MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
     {
-        if (blockOwner == null)
+        if (element.Runs.Any())
         {
-            blockOwner = new Paragraph();
-            document.Add(blockOwner);
-        }
+            if (document.LastOrDefault() is Paragraph lastParagraph)
+            {
+                RenderHelpers.CollapseEmptyTags(lastParagraph);
+            }
 
-        renderer.WriteContainer(document, blockOwner, element.Runs, tags);
+            if (blockOwner == null)
+            {
+                blockOwner = new Paragraph();
+                document.Add(blockOwner);
+            }
+
+            renderer.WriteContainer(document, blockOwner, element.Runs, tags);
+        }
     }
 
     private static void CreateCodeBlock(IMarkdownRenderer renderer, MarkdownDocument document, 
@@ -177,7 +191,7 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
 
         string language = null;
         var next = element.NextParagraph;
-        if (next.Properties.StyleName == "CodeFooter")
+        if (next?.Properties.StyleName == "CodeFooter")
         {
             language = next.Text;
         }
@@ -197,7 +211,7 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     private static void CreateListBlock(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
     {
         var format = element.HasListDetails() 
-            ? element.GetNumberingFormat() : NumberingFormat.None;
+         ? element.GetNumberingFormat() : NumberingFormat.None;
 
         switch (format)
         {
@@ -209,7 +223,9 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 break;
             case NumberingFormat.None:
             {
-                if (document.LastOrDefault() is MarkdownList list)
+                if (document.LastOrDefault() is MarkdownList list 
+                    && list.Metadata.TryGetValue("hasListDetails", out var hasDetails)
+                    && (bool) hasDetails)
                 {
                     var blocks = list[^1];
                     var paragraph = new Paragraph();
@@ -279,6 +295,12 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 var levelDefinition = style?.Levels[level.Value!];
                 if (levelDefinition?.Format is NumberingFormat.LowerLetter or NumberingFormat.UpperLetter)
                     ol.Lettered = true;
+            }
+
+            // Default bullet list?
+            else
+            {
+                theList.Metadata["hasListDetails"] = element.HasListDetails();
             }
 
             document.Add(theList);

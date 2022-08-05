@@ -6,7 +6,7 @@ namespace LearnDocUtils;
 
 public static class DocxToSinglePage
 {
-    public static async Task ConvertAsync(string docxFile, string markdownFile, MarkdownOptions options)
+    public static async Task ConvertAsync(string docxFile, string markdownFile, MarkdownOptions options, bool preferPlainMarkdown)
     {
         if (string.IsNullOrWhiteSpace(docxFile))
             throw new ArgumentException($"'{nameof(docxFile)}' cannot be null or whitespace.", nameof(docxFile));
@@ -23,7 +23,8 @@ public static class DocxToSinglePage
             UseAsterisksForBullets = options?.UseAsterisksForBullets ?? false,
             UseIndentsForCodeBlocks = options?.UseIndentsForCodeBlocks ?? false,
             EscapeAllIntrawordEmphasis = options?.EscapeAllIntrawordEmphasis ?? false,
-            PrettyPipeTables = options?.PrettyPipeTables ?? false
+            PrettyPipeTables = options?.PrettyPipeTables ?? false,
+            PreferPlainMarkdown = preferPlainMarkdown
         };
 
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
@@ -60,10 +61,13 @@ public static class DocxToSinglePage
         new MarkdownRenderer(conversionOptions).Convert(docxFile, markdownFile, mediaFolder);
 
         // Do some common post-processing.
-        var markdownText = DocToMarkdownRenderer.PostProcessMarkdown(await File.ReadAllTextAsync(markdownFile));
-        await File.WriteAllTextAsync(markdownFile, markdownText);
+        string markdownText = await File.ReadAllTextAsync(markdownFile);
+        if (!preferPlainMarkdown)
+        {
+            markdownText = DocToMarkdownRenderer.PostProcessMarkdown(markdownText);
+        }
 
-        // Pull out and write the YAML header
+        await File.WriteAllTextAsync(markdownFile, markdownText);
         await WriteMetadata(docxFile, markdownFile);
     }
 
@@ -95,6 +99,11 @@ public static class DocxToSinglePage
         summary ??= doc.Properties.Subject;
         author ??= doc.Properties.Creator;
 
+        // Cleanup any oddities from the doc text.
+        title = title?.ReplaceLineEndings("").Trim();
+        summary = summary?.ReplaceLineEndings("").Trim();
+        author = author?.ReplaceLineEndings("").Trim();
+
         // Use SaveDate first, then CreatedDate if unavailable.
         string date;
         if (doc.Properties.SaveDate != null)
@@ -114,9 +123,12 @@ public static class DocxToSinglePage
         using (var reader = new StreamReader(markdownFile))
         {
             await writer.WriteLineAsync("---");
-            await writer.WriteLineAsync($"title: {title}");
-            await writer.WriteLineAsync($"description: {summary}");
-            await writer.WriteLineAsync($"author: {author}");
+            if (!string.IsNullOrEmpty(title))
+                await writer.WriteLineAsync($"title: {title}");
+            if (!string.IsNullOrEmpty(summary))
+                await writer.WriteLineAsync($"description: {summary}");
+            if (!string.IsNullOrEmpty(author))
+                await writer.WriteLineAsync($"author: {author}");
             await writer.WriteLineAsync($"ms.date: {date}");
             // If it's a Learn module, don't add it.
             if (additionalMetadata != null && !additionalMetadata.Contains("metadata"))

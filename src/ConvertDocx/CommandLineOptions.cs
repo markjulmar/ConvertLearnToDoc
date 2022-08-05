@@ -28,9 +28,12 @@ internal sealed class CommandLineOptions
     [Option('d', "Debug", HelpText = "Debug output, save temp files")]
     public bool Debug { get; set; }
         
-    [Option('p', "Pivot", HelpText = "Zone pivot to render to doc, defaults to all")]
+    [Option('z', "ZonePivot", HelpText = "Zone pivot to render to doc, defaults to all")]
     public string ZonePivot { get; set; }
 
     [Option('n', "Notebook", HelpText = "Convert notebooks into document, only used on MS Learn content")]
     public bool ConvertNotebooks { get; set; }
+
+    [Option('p', "Plain", HelpText = "Prefer plain markdown (no docs extensions)")]
+    public bool PreferPlainMarkdown { get; set; }
 }
