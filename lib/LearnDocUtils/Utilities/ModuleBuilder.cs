@@ -391,14 +391,22 @@ public class ModuleBuilder
                             NullValueHandling = NullValueHandling.Ignore,
                             DateFormatString = "MM/dd/yyyy" // 06/21/2021
                         });
+
+                    // If the UID was changed/added to the doc, then ignore the custom property.
+                    // This was an existing module used to create something new.
+                    if (!string.IsNullOrEmpty(uid) && moduleData?.Uid != uid)
+                        moduleData = null;
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }
 
         var metadata = new ModuleMetadata(moduleData);
+        if (moduleData == null && !string.IsNullOrEmpty(uid))
+            metadata.ModuleData.Uid = uid;
 
         foreach (var item in doc.Paragraphs)
         {
