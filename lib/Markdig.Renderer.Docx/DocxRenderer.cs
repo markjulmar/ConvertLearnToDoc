@@ -99,6 +99,7 @@ public class DocxObjectRenderer : IDocxRenderer
             new LinkReferenceDefinitionRenderer(),
             new TaskListRenderer(),
             new HtmlInlineRenderer(),
+            new NolocInlineRenderer(),
             new TripleColonInlineRenderer()
         };
     }
@@ -145,7 +146,7 @@ public class DocxObjectRenderer : IDocxRenderer
                 do
                 {
                     rows.Add((RowBlock) block);
-                    block = mdDoc[++index];
+                    block = index+1 < markdownDocument.Count ? markdownDocument[++index] : null;
                 } while (block is RowBlock);
 
                 new RowBlockRenderer().Write(this, document, rows);

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertAll": {
       "commandName": "Project",
-      "commandLineArgs": "-d /users/mark/Git/learnRepos/learn-pr/learn-pr/advocates /users/mark/onedrive/downloads/learnDocs"
+      "commandLineArgs": "/users/mark/Source/repos/learn-pr/learn-pr /users/mark/learnDocs"
     }
   }
 }
