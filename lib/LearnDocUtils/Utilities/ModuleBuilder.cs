@@ -203,9 +203,12 @@ public class ModuleBuilder
             { "msauthor", metadata.ModuleData.Metadata.MsAuthor ?? "TBD" },
             { "author", metadata.ModuleData.Metadata.Author ?? "TBD" },
             { "badge-uid", metadata.ModuleData.Badge?.Uid ?? $"{moduleUid}-badge" },
-            { "levels-list", ModuleMetadata.GetList(metadata.ModuleData.Levels, "- beginner") },
-            { "roles-list", ModuleMetadata.GetList(metadata.ModuleData.Roles, "- developer") },
-            { "products-list", ModuleMetadata.GetList(metadata.ModuleData.Products, "- azure") },
+            { "levels-list", ModuleMetadata.GetOrCreateList(metadata.ModuleData.Levels, "- beginner") },
+            { "roles-list", ModuleMetadata.GetOrCreateList(metadata.ModuleData.Roles, "- developer") },
+            { "products-list", ModuleMetadata.GetOrCreateList(metadata.ModuleData.Products, "- azure") },
+            { "subjects-list", ModuleMetadata.GetList("subjects", metadata.ModuleData.Subjects) },
+            { "salesplays-list", ModuleMetadata.GetList("salesplays", metadata.ModuleData.SalesPlays) },
+            { "languages-list", ModuleMetadata.GetList("languages", metadata.ModuleData.Languages) },
             { "unit-uid-list", string.Join("\r\n", unitIds) }
         };
 
@@ -311,6 +314,7 @@ public class ModuleBuilder
             {
                 result = result.Replace(lookFor, value.Value.TrimEnd('\r','\n'));
             }
+            // No value. Remove the key from the template.
             else
             {
                 while (result.Contains(lookFor))

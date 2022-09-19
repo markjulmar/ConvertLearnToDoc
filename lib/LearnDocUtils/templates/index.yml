@@ -19,6 +19,9 @@ roles:
 {roles-list}
 products:
 {products-list}
+{subjects-list}
+{salesplays-list}
+{languages-list}
 units:
 {unit-uid-list}
 badge:
