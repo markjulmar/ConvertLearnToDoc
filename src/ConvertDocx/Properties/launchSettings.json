@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i C:\\Users\\mark\\Source\\Repos\\learn-pr\\learn-pr\\aspnetcore\\microservices-devops-aspnet-core -o /users/mark/test.docx"
+      "commandLineArgs": "-s -i C:\\Users\\mark\\OneDrive\\Desktop\\test.docx -o C:\\Users\\mark\\OneDrive\\Desktop\\t"
     }
   }
 }

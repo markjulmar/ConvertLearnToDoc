@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using MSLearnRepos;
@@ -426,7 +427,14 @@ public class ModuleBuilder
             }
         }
 
+        // Must have a title.
         metadata.ModuleData.Title ??= doc.Properties.Title;
+        if (string.IsNullOrEmpty(metadata.ModuleData.Title))
+            metadata.ModuleData.Title =
+                CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Path.GetFileNameWithoutExtension(docxFile));
+        if (string.IsNullOrEmpty(metadata.ModuleData.Title))
+            metadata.ModuleData.Title = Path.GetRandomFileName();
+
         metadata.ModuleData.Summary ??= doc.Properties.Subject;
         metadata.ModuleData.Metadata.MsAuthor ??= doc.Properties.Creator;
 

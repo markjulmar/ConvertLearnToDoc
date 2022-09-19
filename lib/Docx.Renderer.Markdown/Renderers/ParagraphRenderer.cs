@@ -167,21 +167,20 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     private static void CreateParagraph(IMarkdownRenderer renderer, MarkdownDocument document, 
         MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
     {
-        if (element.Runs.Any())
+        if (!element.Runs.Any()) return;
+
+        if (document.LastOrDefault() is Paragraph lastParagraph)
         {
-            if (document.LastOrDefault() is Paragraph lastParagraph)
-            {
-                RenderHelpers.CollapseEmptyTags(lastParagraph);
-            }
-
-            if (blockOwner == null)
-            {
-                blockOwner = new Paragraph();
-                document.Add(blockOwner);
-            }
-
-            renderer.WriteContainer(document, blockOwner, element.Runs, tags);
+            RenderHelpers.CollapseEmptyTags(lastParagraph);
         }
+
+        if (blockOwner == null)
+        {
+            blockOwner = new Paragraph();
+            document.Add(blockOwner);
+        }
+
+        renderer.WriteContainer(document, blockOwner, element.Runs, tags);
     }
 
     private static void CreateCodeBlock(IMarkdownRenderer renderer, MarkdownDocument document, 
@@ -189,23 +188,58 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     {
         Debug.Assert(blockOwner == null);
 
-        string language = null;
-        var next = element.NextParagraph;
-        if (next?.Properties.StyleName == "CodeFooter")
-        {
-            language = next.Text;
-        }
+        var lastBlock = document.LastOrDefault();
+        MarkdownList theList = null;
+        CodeBlock codeBlock = null;
 
-        var codeBlock = string.IsNullOrEmpty(language) ? new CodeBlock() : new CodeBlock(language);
-        codeBlock.Add(element.Text);
-
-        // See if we're in a list.
-        if (document.Last() is MarkdownList theList && element.Properties.LeftIndent > 0)
+        // First - see if this code block is part of a List (numbered or bullet).
+        if (lastBlock is MarkdownList list && element.Properties.LeftIndent > 0)
         {
+            theList = list;
             var blocks = theList[^1];
-            blocks.Add(codeBlock);
+            if (blocks != null)
+            {
+                codeBlock = blocks.LastOrDefault() as CodeBlock;
+            }
         }
-        else document.Add(codeBlock);
+        else if (lastBlock is CodeBlock block)
+        {
+            codeBlock = block;
+        }
+        
+        if (codeBlock == null)
+        {
+            string language = null;
+            var next = element.NextParagraph;
+            do
+            {
+                if (next?.Properties.StyleName == "CodeFooter")
+                {
+                    language = next.Text;
+                    break;
+                }
+
+                next = next?.NextParagraph;
+
+            } while (next != null
+                     && next.Properties.StyleName.Contains("code", StringComparison.CurrentCultureIgnoreCase));
+
+            codeBlock = string.IsNullOrEmpty(language) ? new CodeBlock() : new CodeBlock(language);
+
+            // See if we're in a list.
+            if (theList != null)
+            {
+                var blocks = theList[^1];
+                blocks.Add(codeBlock);
+            }
+            else document.Add(codeBlock);
+        }
+
+        string text = element.Text;
+        if (!text.EndsWith('\r') && !text.EndsWith('\n'))
+            text += Environment.NewLine;
+
+        codeBlock.Add(text);
     }
 
     private static void CreateListBlock(IMarkdownRenderer renderer, MarkdownDocument document, MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
@@ -286,7 +320,6 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
         // If this is a new list, then create it.
         if (theList == null)
         {
-            Debug.Assert(level == 0);
             theList = new TList();
             if (theList is OrderedList ol)
             {

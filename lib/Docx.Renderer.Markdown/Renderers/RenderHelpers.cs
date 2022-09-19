@@ -26,6 +26,12 @@ internal static class RenderHelpers
             {
                 dt.Text = dt.Text[..^1];
                 capturedSpaces = " ";
+
+                while (dt.Text.EndsWith(' '))
+                {
+                    dt.Text = dt.Text[..^1];
+                    capturedSpaces += ' ';
+                }
             }
         }
 

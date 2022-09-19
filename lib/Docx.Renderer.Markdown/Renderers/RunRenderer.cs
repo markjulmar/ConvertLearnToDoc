@@ -142,18 +142,28 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
                         // See if we're in a list. If so, remove the empty paragraph from the 
                         // list, and then add the image to the list so it's indented.
-                        if (document.Last() is MarkdownList theList)
+                        if (document.LastOrDefault() is MarkdownList theList)
                         {
                             var lastBlock = theList[^1];
                             if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
                                 lastBlock.Remove(blockOwner);
                             lastBlock.Add(block);
                         }
-                        else if (document.Last() is Julmar.GenMarkdown.Table table)
+                        else if (document.LastOrDefault() is Julmar.GenMarkdown.Table table)
                         {
-                            var row = table.Last();
-                            var cell = row.Last();
-                            cell.Content = block;
+                            var row = table.LastOrDefault();
+                            if (row == null)
+                                table.Add(new TableRow());
+
+                            var cell = row?.LastOrDefault();
+                            if (cell == null)
+                            {
+                                row.Add(block);
+                            }
+                            else
+                            {
+                                cell.Content = block;
+                            }
                         }
                         // Remove the empty paragraph from the document and add the image instead.
                         else
@@ -196,6 +206,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
             paragraph.Add(t);
         }
+
+        RenderHelpers.CollapseEmptyTags(paragraph);
     }
 
     private static void AppendText(Paragraph paragraph, string text, string prefix, string suffix)
@@ -332,7 +344,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
             {
                 createPath = renderer.MarkdownFolder;
             }
-            else if (folder!.Contains("media") == true)
+            else if (string.IsNullOrEmpty(folder) || folder!.Contains("media"))
             {
                 createPath = renderer.MediaFolder;
             }
