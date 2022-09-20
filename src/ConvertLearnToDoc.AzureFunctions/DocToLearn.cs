@@ -35,7 +35,7 @@ public static class DocToLearn
         var contentType = model.WordDoc?.ContentType;
         if (string.IsNullOrEmpty(model.WordDoc?.FileName) || contentType != Constants.WordMimeType)
         {
-            return new BadRequestErrorMessageResult("Invalid request.");
+            return new BadRequestErrorMessageResult("Must pass in a valid .docx (Word) document.");
         }
 
         string baseFolder = Path.GetTempPath();
@@ -70,7 +70,15 @@ public static class DocToLearn
         catch (Exception ex)
         {
             log.LogError(ex.ToString());
-            return new BadRequestErrorMessageResult($"Error: {ex.Message}");
+            if (Directory.Exists(outputPath))
+                Directory.Delete(outputPath, true);
+
+            string errorMessage = ex.InnerException != null
+                ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
+                : $"{ex.GetType()}: {ex.Message}";
+
+            return new BadRequestErrorMessageResult(
+                $"Unable to convert {model.WordDoc.FileName}. {errorMessage}.");
         }
 
         string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(moduleFolder, "zip"));

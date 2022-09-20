@@ -2,20 +2,63 @@
 
 @{
     ViewData["Title"] = "Home page";
+    string learnActive = Model?.IsLearnToDoc == true ? "tab-pane active" : "tab-pane";
+    string docActive = Model == null || Model.IsLearnToDoc == false ? "tab-pane active" : "tab-pane";
 }
 
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <strong>Error: </strong> @ViewData["ErrorMessage"]
+    </div>
+}
+
+<div class="modal fade" id="progressModal" tabindex="-1" role="dialog" aria-labelledby="progressModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Working. Please wait.</h5>
+            </div>
+            <div class="modal-body">
+                <div id="progressDiv" class="progress">
+                    <div class="progress-bar progress-bar-striped active"
+                         role="progressbar"
+                         aria-valuenow="100"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         style="width: 100%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <ul class="nav nav-tabs" id="myTab" role="tablist">
+@if (Model == null || Model.IsLearnToDoc == false)
+{
     <li class="nav-item">
         <a class="nav-link active" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="true">Word to Docs</a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="false">Docs To Word</a>
     </li>
+}
+else
+{
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" role="tab" id="fromdoc-tab" href="#fromdoc" aria-controls="fromdoc" aria-selected="false">Word to Docs</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" role="tab" id="todoc-tab" href="#todoc" aria-controls="todoc" aria-selected="true">Docs To Word</a>
+        </li>
+    }
 </ul>
 
 <div class="tab-content" id="myTabContent">
 
-    <div id="fromdoc" class="tab-pane active" role="tabpanel" aria-labelledby="fromdoc-tab">
+    <div id="fromdoc" class="@docActive" role="tabpanel" aria-labelledby="fromdoc-tab">
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertDocToLearn" enctype="multipart/form-data">
@@ -113,7 +156,7 @@
         </div>
     </div>
 
-    <div id="todoc" class="tab-pane" role="tabpanel" aria-labelledby="todoc-tab">
+    <div id="todoc" class="@learnActive" role="tabpanel" aria-labelledby="todoc-tab">
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertLearnToDoc">
@@ -167,5 +210,3 @@
     </div>
 
 </div>
-
-<span class="text-danger">@Html.ValidationSummary(false)</span>

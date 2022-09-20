@@ -5,6 +5,8 @@ namespace ConvertLearnToDocWeb.Models
 {
     public class ConversionViewModel
     {
+        public bool IsLearnToDoc { get; set; }
+
         // Learn to doc
         [Url(ErrorMessage = "Please specify a full URL to the Learn module page.")]
         public string ModuleUrl { get; set; }

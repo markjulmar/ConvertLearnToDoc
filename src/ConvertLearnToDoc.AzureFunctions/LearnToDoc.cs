@@ -27,7 +27,7 @@ public static class LearnToDoc
         if (model == null || !model.IsValid())
         {
             log.LogError("Bad model received.");
-            return new BadRequestErrorMessageResult("Invalid request.");
+            return new BadRequestErrorMessageResult($"Could not parse \"{model?.Organization}/{model?.Repository}:{model?.Branch}/{model?.Folder}\" into a Learn module - please check the input.");
         }
 
         model.Folder = model.Folder.Replace('\\', '/');
@@ -39,7 +39,7 @@ public static class LearnToDoc
         if (string.IsNullOrEmpty(gitHubToken) && !isLocal)
         {
             log.LogError("Missing GitHubToken in Function environment.");
-            return new BadRequestResult();
+            return new BadRequestErrorMessageResult("Could not connect to https://github.com.");
         }
 
         var outputFile = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(
@@ -54,7 +54,12 @@ public static class LearnToDoc
         catch (Exception ex)
         {
             log.LogError(ex.ToString());
-            return new BadRequestErrorMessageResult($"Error: {ex.Message}");
+            string errorMessage = ex.InnerException != null
+                ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
+                : $"{ex.GetType()}: {ex.Message}";
+
+            return new BadRequestErrorMessageResult(
+                $"Unable to convert \"{model.Organization}/{model.Repository}:{model.Branch}/{model.Folder}\". {errorMessage}.");
         }
 
         if (File.Exists(outputFile))
@@ -71,6 +76,6 @@ public static class LearnToDoc
         }
 
         return new BadRequestErrorMessageResult(
-            $"Unable to convert {model.Repository}:{model.Branch}/{model.Folder} to a Word document.");
+            $"Unable to convert \"{model.Organization}/{model.Repository}:{model.Branch}/{model.Folder}\" to a Word document.");
     }
 }

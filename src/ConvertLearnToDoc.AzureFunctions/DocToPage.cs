@@ -36,7 +36,7 @@ public static class DocToPage
         var contentType = model.WordDoc?.ContentType;
         if (string.IsNullOrEmpty(model.WordDoc?.FileName) || contentType != Constants.WordMimeType)
         {
-            return new BadRequestErrorMessageResult("Invalid request.");
+            return new BadRequestErrorMessageResult("Must pass in a valid .docx (Word) document.");
         }
 
         string baseFolder = Path.GetTempPath();
@@ -101,13 +101,18 @@ public static class DocToPage
         }
         catch (AggregateException aex)
         {
+            var ex = aex.Flatten();
             return new BadRequestErrorMessageResult(
-                $"Unable to convert {model.WordDoc.FileName}. {aex.Flatten().Message}.");
+                $"Unable to convert {model.WordDoc.FileName}. {ex.GetType()}: {ex.Message}.");
         }
         catch (Exception ex)
         {
+            string errorMessage = ex.InnerException != null
+                ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
+                : $"{ex.GetType()}: {ex.Message}";
+
             return new BadRequestErrorMessageResult(
-                $"Unable to convert {model.WordDoc.FileName}. {ex.Message}.");
+                $"Unable to convert {model.WordDoc.FileName}. {errorMessage}.");
         }
         finally
         {

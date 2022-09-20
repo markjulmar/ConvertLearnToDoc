@@ -15,6 +15,11 @@ using Activity = System.Diagnostics.Activity;
 
 namespace ConvertLearnToDocWeb.Controllers
 {
+    public class BadResponse
+    {
+        public string Message { get; set; }
+    }
+
     public class HomeController : Controller
     {
         const string WordMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -35,9 +40,11 @@ namespace ConvertLearnToDocWeb.Controllers
         {
             using var scope = logger.BeginScope($"ConvertLearnToDoc(Url: {viewModel.ModuleUrl}, Org: {viewModel.GitHubOrg} + Repo: {viewModel.GithubRepo}, Branch: {viewModel.GithubBranch}, Folder: \"{viewModel.GithubFolder}\")");
 
+            viewModel.IsLearnToDoc = true;
+
             if (!ModelState.IsValid)
             {
-                return View(nameof(Index));
+                return View(nameof(Index), viewModel);
             }
 
             if (string.IsNullOrWhiteSpace(viewModel.ZonePivot))
@@ -69,8 +76,9 @@ namespace ConvertLearnToDocWeb.Controllers
             
             if (org == null || repo == null || branch == null || folder == null)
             {
-                ModelState.AddModelError(string.Empty, "You must supply either a public docs.microsoft.com URL or GitHub specifics to identify a Learn module or Docs conceptual page.");
-                return View(nameof(Index));
+                ViewData["ErrorMessage"] =
+                    "You must supply either a public docs.microsoft.com URL or GitHub specifics to identify a Learn module or Docs conceptual page.";
+                return View(nameof(Index), viewModel);
             }
 
             try
@@ -108,15 +116,17 @@ namespace ConvertLearnToDocWeb.Controllers
                     };
                 }
 
-                throw new Exception(result.ReasonPhrase);
+                string message = await result.Content.ReadAsStringAsync();
+                message = JsonConvert.DeserializeObject<BadResponse>(message)?.Message ?? message;
+                ViewData["ErrorMessage"] = $"{result.ReasonPhrase}: {message}";
             }
             catch (Exception ex)
             {
                 logger.LogError(ex.ToString());
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewData["ErrorMessage"] = ex.Message;
             }
 
-            return View(nameof(Index));
+            return View(nameof(Index), viewModel);
         }
 
         private Task<HttpResponseMessage> CallPageToDocConverter(LearnToDocModel model) 
@@ -154,11 +164,14 @@ namespace ConvertLearnToDocWeb.Controllers
         public async Task<IActionResult> ConvertDocToPage(ConversionViewModel viewModel)
         {
             using var scope = logger.BeginScope("ConvertDocToPage");
+
+            viewModel.IsLearnToDoc = false;
+
             var model = CreateToDocModel(viewModel);
             if (model == null)
             {
-                ModelState.AddModelError(string.Empty, "You must upload a Word document.");
-                return View(nameof(Index));
+                ViewData["ErrorMessage"] = "You must upload a Word document.";
+                return View(nameof(Index), viewModel);
             }
 
             var filename = Path.GetFileName(viewModel.WordDoc.FileName);
@@ -178,15 +191,17 @@ namespace ConvertLearnToDocWeb.Controllers
                     };
                 }
 
-                throw new Exception(result.ReasonPhrase);
+                string message = await result.Content.ReadAsStringAsync();
+                message = JsonConvert.DeserializeObject<BadResponse>(message)?.Message ?? message;
+                ViewData["ErrorMessage"] = $"{result.ReasonPhrase}: {message}";
             }
             catch (Exception ex)
             {
                 logger.LogError(ex.ToString());
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewData["ErrorMessage"] = ex.Message;
             }
 
-            return View(nameof(Index));
+            return View(nameof(Index), viewModel);
         }
 
         [HttpPost]
@@ -194,11 +209,13 @@ namespace ConvertLearnToDocWeb.Controllers
         {
             using var scope = logger.BeginScope("ConvertDocToLearn");
 
+            viewModel.IsLearnToDoc = false;
+
             var model = CreateToDocModel(viewModel);
             if (model == null)
             {
-                ModelState.AddModelError(string.Empty, "You must upload a Word document.");
-                return View(nameof(Index));
+                ViewData["ErrorMessage"] = "You must upload a Word document.";
+                return View(nameof(Index), viewModel);
             }
 
             var filename = Path.GetFileName(viewModel.WordDoc.FileName);
@@ -217,16 +234,18 @@ namespace ConvertLearnToDocWeb.Controllers
                                            ?? Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".zip")
                     };
                 }
-                
-                throw new Exception(result.ReasonPhrase);
+
+                string message = await result.Content.ReadAsStringAsync();
+                message = JsonConvert.DeserializeObject<BadResponse>(message)?.Message ?? message;
+                ViewData["ErrorMessage"] = "{result.ReasonPhrase}: {message}";
             }
             catch (Exception ex)
             {
                 logger.LogError(ex.ToString());
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewData["ErrorMessage"] = ex.Message;
             }
 
-            return View(nameof(Index));
+            return View(nameof(Index), viewModel);
         }
 
         private Task<HttpResponseMessage> CallDocToLearnConverter(DocToLearnModel model) 
