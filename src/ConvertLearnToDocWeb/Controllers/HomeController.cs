@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using ConvertLearnToDocWeb.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -36,9 +37,13 @@ namespace ConvertLearnToDocWeb.Controllers
         public IActionResult Index() => View();
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConvertLearnToDoc(ConversionViewModel viewModel)
         {
             using var scope = logger.BeginScope($"ConvertLearnToDoc(Url: {viewModel.ModuleUrl}, Org: {viewModel.GitHubOrg} + Repo: {viewModel.GithubRepo}, Branch: {viewModel.GithubBranch}, Folder: \"{viewModel.GithubFolder}\")");
+
+            if (!string.IsNullOrEmpty(viewModel.TdRid))
+                Response.Cookies.Append(viewModel.TdRid, DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss:ff"), new CookieOptions { Expires = DateTimeOffset.Now + TimeSpan.FromMinutes(10) });
 
             viewModel.IsLearnToDoc = true;
 
@@ -55,7 +60,18 @@ namespace ConvertLearnToDocWeb.Controllers
             if (!string.IsNullOrEmpty(viewModel.ModuleUrl)
                 && viewModel.ModuleUrl.ToLower().StartsWith("https"))
             {
-                var md = await DocsMetadata.LoadFromUrlAsync(viewModel.ModuleUrl);
+                DocsMetadata md = null;
+                try
+                {
+                    md = await DocsMetadata.LoadFromUrlAsync(viewModel.ModuleUrl);
+                }
+                catch
+                {
+                    ViewData["ErrorMessage"] =
+                        "You must supply either a public docs.microsoft.com URL or GitHub specifics to identify a Learn module or Docs conceptual page.";
+                    return View(nameof(Index), viewModel);
+                }
+
                 org = md.Organization;
                 repo = md.Repository;
                 branch = md.Branch;
@@ -161,10 +177,13 @@ namespace ConvertLearnToDocWeb.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConvertDocToPage(ConversionViewModel viewModel)
         {
             using var scope = logger.BeginScope("ConvertDocToPage");
 
+            if (!string.IsNullOrEmpty(viewModel.FdRid))
+                Response.Cookies.Append(viewModel.FdRid, DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss:ff"), new CookieOptions { Expires = DateTimeOffset.Now + TimeSpan.FromMinutes(10) });
             viewModel.IsLearnToDoc = false;
 
             var model = CreateToDocModel(viewModel);
@@ -205,10 +224,13 @@ namespace ConvertLearnToDocWeb.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConvertDocToLearn(ConversionViewModel viewModel)
         {
             using var scope = logger.BeginScope("ConvertDocToLearn");
 
+            if (!string.IsNullOrEmpty(viewModel.FdRid))
+                Response.Cookies.Append(viewModel.FdRid, DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss:ff"), new CookieOptions { Expires = DateTimeOffset.Now + TimeSpan.FromMinutes(10) });
             viewModel.IsLearnToDoc = false;
 
             var model = CreateToDocModel(viewModel);
@@ -237,7 +259,7 @@ namespace ConvertLearnToDocWeb.Controllers
 
                 string message = await result.Content.ReadAsStringAsync();
                 message = JsonConvert.DeserializeObject<BadResponse>(message)?.Message ?? message;
-                ViewData["ErrorMessage"] = "{result.ReasonPhrase}: {message}";
+                ViewData["ErrorMessage"] = $"{result.ReasonPhrase}: {message}";
             }
             catch (Exception ex)
             {

@@ -16,6 +16,7 @@ namespace ConvertLearnToDocWeb.Models
         public string GithubFolder { get; set; }
         public string ZonePivot { get; set; }
         public bool EmbedNotebookData { get; set; }
+        public string TdRid { get; set; }
 
         // Doc to learn
         public IFormFile WordDoc { get; set; }
@@ -26,6 +27,7 @@ namespace ConvertLearnToDocWeb.Models
         public bool UseAlternateHeaderSyntax { get; set; }
         public bool UseIndentsForCodeBlocks { get; set; }
         public bool PrettyPipeTables { get; set; }
+        public string FdRid { get; set; }
 
     }
 }

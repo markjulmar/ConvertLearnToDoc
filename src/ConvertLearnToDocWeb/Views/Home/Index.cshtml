@@ -22,7 +22,7 @@
             </div>
             <div class="modal-body">
                 <div id="progressDiv" class="progress">
-                    <div class="progress-bar progress-bar-striped active"
+                    <div class="progress-bar progress-bar-striped progress-bar-animated active"
                          role="progressbar"
                          aria-valuenow="100"
                          aria-valuemin="0"
@@ -62,7 +62,7 @@ else
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertDocToLearn" enctype="multipart/form-data">
-                        
+                    <input type="hidden" name="fdrid" value="@Guid.NewGuid().ToString()" />
                     <div class="form-row">
                         <div class="col">
                             <div class="form-group pb-2">
@@ -124,8 +124,8 @@ else
                             </div>
                         </div>
                     </div>
-                    <button type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
-                    <button type="submit" formaction="/Home/ConvertDocToPage" class="btn btn-primary mt-4">Convert to Docs page</button>
+                    <button id="convertDocToLearn" type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
+                    <button id="convertDocToPage" type="submit" formaction="/Home/ConvertDocToPage" class="btn btn-primary mt-4">Convert to Docs page</button>
                 </form>
             </div>
                 
@@ -160,6 +160,7 @@ else
         <div class="panel panel-default pl-3 pt-3">
             <div class="panel-body">
                 <form asp-action="convertLearnToDoc">
+                    <input type="hidden" name="tdrid" value="@Guid.NewGuid().ToString()" />
                     <div class="form-row">
                         <div class="col">
                             <div class="form-group">
@@ -186,7 +187,7 @@ else
                     </div>
                     <div class="form-row">
                         <div class="col-12">
-                            <hr />
+                            <hr/>
                             <label><b>Options</b></label>
 
                             <div class="form-group">
@@ -203,7 +204,7 @@ else
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary mt-4">Convert</button>
+                    <button id="convertLearnToDoc" type="submit" class="btn btn-primary mt-4">Convert</button>
                 </form>
             </div>
         </div>
