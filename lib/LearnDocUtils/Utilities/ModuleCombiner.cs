@@ -33,6 +33,13 @@ public static class ModuleCombiner
             var mdText = !string.IsNullOrEmpty(unitFn)
                 ? await File.ReadAllTextAsync(Path.Combine(outputFolder, unitFn))
                 : unit.Content ?? "";
+
+            // Pull out any YAML header (this is added for localization).
+            string header = null;
+            if (ExtractYamlHeader(ref mdText, out header))
+            {
+                // TODO: where should we put this?
+            }
                 
             // Write the title (H1)
             await tempFile.WriteLineAsync($"# {unit.Title}");
@@ -83,6 +90,43 @@ public static class ModuleCombiner
         }
 
         return (module, markdownFile);
+    }
+
+    static bool ExtractYamlHeader(ref string mdText, out string header)
+    {
+        const string YamlMarker = "---";
+        header = null;
+
+        using var reader = new StringReader(mdText);
+        var line = reader.ReadLine();
+
+        // Skip blanks. Shouldn't be any.
+        while (line != null && string.IsNullOrWhiteSpace(line))
+            line = reader.ReadLine();
+
+        if (line == null) return false;
+
+        if (line.Trim().StartsWith(YamlMarker))
+        {
+            line = reader.ReadLine();
+            while (line != null && line.Trim().StartsWith(YamlMarker) == false)
+            {
+                header += line + Environment.NewLine;
+                line = reader.ReadLine();
+            }
+
+            // Never found ending mark.
+            if (line == null)
+            {
+                header = null;
+                return false;
+            }
+
+            mdText = reader.ReadToEnd();
+            return true;
+        }
+
+        return false;
     }
 
     private static string EscapeContent(string text) => text.Replace("{", @"\{");

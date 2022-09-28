@@ -11,6 +11,7 @@ using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 using MSLearnRepos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Octokit;
 using Formatting = Newtonsoft.Json.Formatting;
 using Paragraph = DXPlus.Paragraph;
 
@@ -161,7 +162,37 @@ public static class MarkdownToDocConverter
         }
 
         // Try direct.
-        var (binary, text) = learnRepo.ReadFileForPathAsync(remotePath).Result;
+        (byte[], string) result = (null,null); 
+        try
+        {
+            result = learnRepo.ReadFileForPathAsync(remotePath).Result;
+        }
+        catch (AggregateException aex)
+        {
+            if (aex.InnerException is not NotFoundException)
+                return null;
+
+            // If the repo is (possibly) a localized repo, look at the original (en-us) version.
+            if (learnRepo.Repository.Contains('.') && learnRepo is IRemoteLearnRepoService rlrs)
+            {
+                var gitHubToken = Environment.GetEnvironmentVariable("GitHubToken");
+                if (string.IsNullOrWhiteSpace(gitHubToken))
+                    gitHubToken = null;
+
+                string englishRepo = learnRepo.Repository[..learnRepo.Repository.IndexOf('.')];
+                var enRepo = LearnRepoService.Create(rlrs.Organization, englishRepo, rlrs.Branch, gitHubToken);
+                try
+                {
+                    result = enRepo.ReadFileForPathAsync(remotePath).Result;
+                }
+                catch // Not found.
+                {
+                    return null;
+                }
+            }
+        }
+
+        var (binary, text) = result;
         if (binary != null) return binary;
         if (text != null) return Encoding.Default.GetBytes(text);
 
