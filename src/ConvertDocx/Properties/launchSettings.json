@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-i https://learn.microsoft.com/es-es/training/modules/engage-amplify-with-flipgrid/ -o C:\\Users\\mark\\Test.docx"
+      "commandLineArgs": "-i C:\\Users\\Mark\\OneDrive\\Downloads\\test.docx -o C:\\Users\\mark\\OneDrive\\Desktop\\Test.md"
     }
   }
 }

@@ -189,6 +189,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
     private static void AppendText<T>(Paragraph paragraph, string text) where T : Text
     {
+        text = ConvertSpecialCharacters(text);
+
         if (paragraph.LastOrDefault() is T li)
         {
             li.Text += text;
@@ -212,6 +214,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
     private static void AppendText(Paragraph paragraph, string text, string prefix, string suffix)
     {
+        text = ConvertSpecialCharacters(text);
+
         // Check to see if the _previous_ text has the same emphasis. If so, we'll add this.
         if (paragraph.LastOrDefault()?.Text.EndsWith(suffix) == true)
         {
