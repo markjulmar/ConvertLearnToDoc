@@ -13,18 +13,21 @@ public class LearnToDocModel : PageToDocModel
         "learn-bizapps-pr",
         "learn-m365-pr",
         "learn-mec-pr",
+        "learn-mec-loconly-pr"
     };
 
     public bool EmbedNotebookData { get; set; }
 
     public override bool IsValid()
     {
-        string repository = Repository;
+        // Check mandatory input
+        if (!base.IsValid())
+            return false;
+
+        var repository = Repository;
         if (repository.Contains('.'))
             repository = repository[..repository.IndexOf('.')];
 
-        // Check mandatory input
-        return base.IsValid() 
-            && ValidRepos.Contains(repository);
+        return ValidRepos.Contains(repository);
     }
 }
