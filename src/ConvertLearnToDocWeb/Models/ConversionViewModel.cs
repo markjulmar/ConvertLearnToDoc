@@ -28,6 +28,7 @@ namespace ConvertLearnToDocWeb.Models
         public bool UseIndentsForCodeBlocks { get; set; }
         public bool PrettyPipeTables { get; set; }
         public string FdRid { get; set; }
-
+        public bool UseGenericIds { get; set; }
+        public bool IgnoreMetadata { get; set; }
     }
 }

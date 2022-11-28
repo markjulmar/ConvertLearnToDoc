@@ -29,7 +29,10 @@ public static class DocToLearn
             UseAsterisksForEmphasis = bool.TryParse(input[nameof(DocToLearnModel.UseAsterisksForEmphasis)], out var useAsterisksForEmphasis) && useAsterisksForEmphasis,
             OrderedListUsesSequence = bool.TryParse(input[nameof(DocToLearnModel.OrderedListUsesSequence)], out var orderedListUsesSequence) && orderedListUsesSequence,
             UseIndentsForCodeBlocks = bool.TryParse(input[nameof(DocToLearnModel.UseIndentsForCodeBlocks)], out var useIndentsForCodeBlocks) && useIndentsForCodeBlocks,
-            PrettyPipeTables = bool.TryParse(input[nameof(DocToLearnModel.PrettyPipeTables)], out var prettyPipeTables) && prettyPipeTables
+            PrettyPipeTables = bool.TryParse(input[nameof(DocToLearnModel.PrettyPipeTables)], out var prettyPipeTables) && prettyPipeTables,
+            IgnoreMetadata = bool.TryParse(input[nameof(DocToLearnModel.IgnoreMetadata)], out var ignoreMetadata) && ignoreMetadata,
+            UseGenericIds = bool.TryParse(input[nameof(DocToLearnModel.UseGenericIds)], out var useGenericIds) && useGenericIds,
+            UsePlainMarkdown = bool.TryParse(input[nameof(DocToLearnModel.UsePlainMarkdown)], out var usePlainMarkdown) && usePlainMarkdown,
         };
 
         var contentType = model.WordDoc?.ContentType;
@@ -59,12 +62,15 @@ public static class DocToLearn
         try
         {
             log.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
-            await DocxToLearn.ConvertAsync(tempFile, outputPath, new MarkdownOptions
+            await DocxToLearn.ConvertAsync(tempFile, outputPath, new LearnMarkdownOptions
             {
                 UseAsterisksForBullets = model.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = model.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = model.OrderedListUsesSequence,
-                UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks
+                UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks,
+                IgnoreMetadata = model.IgnoreMetadata,
+                UseGenericIds = model.UseGenericIds,
+                UsePlainMarkdown = model.UsePlainMarkdown,
             });
         }
         catch (Exception ex)

@@ -122,6 +122,18 @@ else
                                     Pretty-print pipe tables with spaces (preview)
                                 </label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="UseGenericIds" id="UseGenericIds" />
+                                <label class="form-check-label" for="UseGenericIds">
+                                    Use generic names and identifiers instead of section titles (auto-selected for non en-us documents)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="IgnoreMetadata" id="IgnoreMetadata" />
+                                <label class="form-check-label" for="IgnoreMetadata">
+                                    Ignore any training module metadata - select if you are creating a new module from an existing document
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <button id="convertDocToLearn" type="submit" formaction="/Home/ConvertDocToLearn" class="btn btn-primary mt-4">Convert to Learn module</button>
@@ -165,9 +177,9 @@ else
                         <div class="col">
                             <div class="form-group">
                                 <label for="moduleUrl">MS Learn module <em>or</em> Docs conceptual page URL</label>
-                                <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="https://docs.microsoft.com/en-us/learn/modules/configure-storage-accounts">
+                                <input type="url" asp-for="ModuleUrl" class="form-control" id="moduleUrl" aria-describedby="urlHelp" placeholder="https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/">
                                 <small id="urlHelp" class="form-text text-muted">
-                                    <a href="https://docs.microsoft.com/learn/browse/?resource_type=module" target="_blank">Browse all Learn modules</a>
+                                    <a href="https://learn.microsoft.com/training/browse/?resource_type=module" target="_blank">Browse all Learn modules</a>
                                 </small>
                             </div>
                             <b>OR</b>

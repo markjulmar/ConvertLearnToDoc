@@ -2,12 +2,19 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using MSLearnRepos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Document = DXPlus.Document;
 
 namespace LearnDocUtils;
+
+public sealed class LearnModuleOptions
+{
+    public bool IgnoreMetadata { get; set; }
+    public bool UseGenericIds { get; set; }
+}
 
 public class ModuleBuilder
 {
@@ -22,15 +29,14 @@ public class ModuleBuilder
         this.markdownFile = markdownFile;
     }
 
-    public async Task CreateModuleAsync()
+    public async Task CreateModuleAsync(LearnModuleOptions options)
     {
-        // Get the title metadata.
-        var metadata = await LoadDocumentMetadata(docxFile);
+        // Get any existing metadata
+        var metadata = LoadDocumentMetadata(docxFile, options.IgnoreMetadata, options.UseGenericIds);
 
         // Get the UID
-        var moduleUid = !string.IsNullOrEmpty(metadata.ModuleData.Uid)
-            ? metadata.ModuleData.Uid
-            : "learn." + GenerateFilenameFromTitle(metadata.ModuleData.Title ?? "");
+        var moduleUid = metadata.ModuleData.Uid;
+        Debug.Assert(!string.IsNullOrEmpty(moduleUid));
 
         string includeFolder = Path.Combine(outputFolder, Constants.IncludesFolder);
         Directory.CreateDirectory(includeFolder);
@@ -69,12 +75,15 @@ public class ModuleBuilder
 
                     // See if we can identify the unit metadata.
                     ModuleUnit unitMetadata = null;
-                    int pos = files.Count;
-                    if (metadata.ModuleData.Units.Count > pos)
+                    if (!options.IgnoreMetadata)
                     {
-                        var umd = metadata.ModuleData.Units[pos];
-                        if (FuzzyCompare(umd.Title, title) > .9)
-                            unitMetadata = umd;
+                        int pos = files.Count;
+                        if (metadata.ModuleData.Units.Count > pos)
+                        {
+                            var umd = metadata.ModuleData.Units[pos];
+                            if (FuzzyCompare(umd.Title, title) > .9)
+                                unitMetadata = umd;
+                        }
                     }
 
                     unitMetadata ??= new ModuleUnit
@@ -92,17 +101,17 @@ public class ModuleBuilder
                     currentUnit = new UnitMetadata(title, unitMetadata);
 
                     // Get the original filename if we can determine what it was.
-                    string fn = unitMetadata.GetContentFilename();
+                    string fn = options.UseGenericIds ? null : unitMetadata.GetContentFilename();
                     if (string.IsNullOrEmpty(fn))
                     {
                         // Get a unique filename based on the title + unit index.
-                        var baseFn = GenerateFilenameFromTitle(title);
+                        var baseFn = options.UseGenericIds || !HasOnlyEnglishOrNonLetters(title) ? "unit" : GenerateFilenameFromTitle(title);
                         if (string.IsNullOrEmpty(unitMetadata.Uid))
                         {
                             // Account for repeated titles.
                             var uid = $"{moduleUid}.{baseFn}";
-                            int suffix = 1;
-                            while (files.Any(f => f.Value.Metadata.Uid == baseFn))
+                            int suffix = 2;
+                            while (files.Any(f => f.Value.Metadata.Uid == uid))
                             {
                                 uid = $"{moduleUid}.{baseFn}{suffix}";
                                 suffix++;
@@ -339,7 +348,7 @@ public class ModuleBuilder
 
     private static bool LoadDocumentUnitMetadata(string docxFile, UnitMetadata unitMetadata)
     {
-        var doc = Document.Load(docxFile);
+        using var doc = Document.Load(docxFile);
         foreach (var header in doc.Paragraphs.Where(p => p.Properties.StyleName == "Heading1"))
         {
             string text = header.Text;
@@ -368,23 +377,17 @@ public class ModuleBuilder
         return false;
     }
 
-    private static async Task<ModuleMetadata> LoadDocumentMetadata(string docxFile)
+    static Regex AsciiOnly = new (@"^[\P{L}A-Za-z]*$");
+    private static bool HasOnlyEnglishOrNonLetters(string text) => AsciiOnly.IsMatch(text);
+
+    private static ModuleMetadata LoadDocumentMetadata(string docxFile, bool ignoreExisting, bool useGenericIds)
     {
-        var doc = Document.Load(docxFile);
+        using var doc = Document.Load(docxFile);
 
         MSLearnRepos.Module moduleData = null;
-
-        string uid = doc.Properties.Category;
-        if (!string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
+        if (!ignoreExisting && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var property) && property != null)
         {
-            if (uid.All(c =>  c is '.' or '-' or '_' || char.IsLetterOrDigit(c)))
-                moduleData = await GetModuleFromUidAsync(uid);
-        }
-
-        if (moduleData == null 
-            && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var property) && property != null)
-        {
-            string text = property.Value;
+            var text = property.Value;
             if (text?.Length > 0)
             {
                 try
@@ -396,11 +399,6 @@ public class ModuleBuilder
                             NullValueHandling = NullValueHandling.Ignore,
                             DateFormatString = "MM/dd/yyyy" // 06/21/2021
                         });
-
-                    // If the UID was changed/added to the doc, then ignore the custom property.
-                    // This was an existing module used to create something new.
-                    if (!string.IsNullOrEmpty(uid) && moduleData?.Uid != uid)
-                        moduleData = null;
                 }
                 catch
                 {
@@ -410,8 +408,6 @@ public class ModuleBuilder
         }
 
         var metadata = new ModuleMetadata(moduleData);
-        if (moduleData == null && !string.IsNullOrEmpty(uid))
-            metadata.ModuleData.Uid = uid;
 
         foreach (var item in doc.Paragraphs)
         {
@@ -442,6 +438,11 @@ public class ModuleBuilder
         metadata.ModuleData.Summary ??= doc.Properties.Subject;
         metadata.ModuleData.Metadata.MsAuthor ??= doc.Properties.Creator;
 
+        if (!HasOnlyEnglishOrNonLetters(metadata.ModuleData.Metadata.MsAuthor))
+        {
+            metadata.ModuleData.Metadata.MsAuthor = null;
+        }
+
         // Use SaveDate first, then CreatedDate if unavailable.
         if (doc.Properties.SaveDate != null)
             metadata.ModuleData.Metadata.MsDate = doc.Properties.SaveDate.Value.ToString("MM/dd/yyyy");
@@ -449,6 +450,26 @@ public class ModuleBuilder
             metadata.ModuleData.Metadata.MsDate = doc.Properties.CreatedDate.Value.ToString("MM/dd/yyyy");
         else
             metadata.ModuleData.Metadata.MsDate = DateTime.Now.ToString("MM/dd/yyyy");
+
+        // Fill in the UID if not present.
+        if (string.IsNullOrEmpty(metadata.ModuleData.Uid))
+        {
+            var uid = doc.Properties.Category;
+            if (!string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
+            {
+                if (!uid.All(c => c is '.' or '-' or '_' || char.IsLetterOrDigit(c)))
+                    uid = null;
+            }
+
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = useGenericIds || !HasOnlyEnglishOrNonLetters(metadata.ModuleData.Title)
+                    ? "learn.module.replace-me-tbd"
+                    : "learn." + GenerateFilenameFromTitle(metadata.ModuleData.Title ?? "");
+            }
+
+            metadata.ModuleData.Uid = uid;
+        }
 
         return metadata;
     }

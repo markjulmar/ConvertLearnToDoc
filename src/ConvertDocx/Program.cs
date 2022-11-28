@@ -97,7 +97,12 @@ public static class Program
                     else
                     {
                         await DocxToLearn.ConvertAsync(options.InputFile, options.OutputFile,
-                            new MarkdownOptions {Debug = options.Debug});
+                            new LearnMarkdownOptions
+                            {
+                                Debug = options.Debug, 
+                                IgnoreMetadata = options.IgnoreMetadata, 
+                                UseGenericIds = options.UseGenericIds
+                            });
                     }
                 }
 

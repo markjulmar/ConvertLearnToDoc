@@ -172,7 +172,9 @@ namespace ConvertLearnToDocWeb.Controllers
                 UseAsterisksForBullets = viewModel.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = viewModel.UseAsterisksForEmphasis,
                 UseIndentsForCodeBlocks = viewModel.UseIndentsForCodeBlocks,
-                PrettyPipeTables = viewModel.PrettyPipeTables
+                PrettyPipeTables = viewModel.PrettyPipeTables,
+                UseGenericIds = viewModel.UseGenericIds,
+                IgnoreMetadata = viewModel.IgnoreMetadata,
             };
         }
 
@@ -288,7 +290,9 @@ namespace ConvertLearnToDocWeb.Controllers
                 { new StringContent(model.UseAsterisksForEmphasis.ToString()), nameof(DocToLearnModel.UseAsterisksForEmphasis) },
                 { new StringContent(model.OrderedListUsesSequence.ToString()), nameof(DocToLearnModel.OrderedListUsesSequence) },
                 { new StringContent(model.UseIndentsForCodeBlocks.ToString()), nameof(DocToLearnModel.UseIndentsForCodeBlocks) },
-                { new StringContent(model.PrettyPipeTables.ToString()), nameof(DocToLearnModel.PrettyPipeTables) }
+                { new StringContent(model.PrettyPipeTables.ToString()), nameof(DocToLearnModel.PrettyPipeTables) },
+                { new StringContent(model.UseGenericIds.ToString()), nameof(DocToLearnModel.UseGenericIds) },
+                { new StringContent(model.IgnoreMetadata.ToString()), nameof(DocToLearnModel.IgnoreMetadata) },
             };
 
             var content = new StreamContent(model.WordDoc.OpenReadStream());

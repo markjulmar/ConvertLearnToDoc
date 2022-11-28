@@ -36,4 +36,10 @@ internal sealed class CommandLineOptions
 
     [Option('p', "Plain", HelpText = "Prefer plain markdown (no docs extensions)")]
     public bool PreferPlainMarkdown { get; set; }
+
+    [Option('x', "Ignore-Metadata", HelpText = "Ignore any existing metadata in the document. Only for training modules, use this to ensure a new module is created.")]
+    public bool IgnoreMetadata { get; set;}
+
+    [Option('u', "UseGenericIds", HelpText = "Generate filenames and UIDs based on generic pattern ('unit-xy')")]
+    public bool UseGenericIds { get; set; }
 }

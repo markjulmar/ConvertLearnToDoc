@@ -117,7 +117,7 @@ static async Task ProcessOneWordDocAsync(string inputDoc, string outputFolder, b
     if (!File.Exists(inputDoc)) throw new ArgumentException($"{inputDoc} does not exist.");
     if (outputFolder == null) throw new ArgumentNullException(nameof(outputFolder));
 
-    await DocxToLearn.ConvertAsync(inputDoc, outputFolder, new MarkdownOptions { Debug = debug });
+    await DocxToLearn.ConvertAsync(inputDoc, outputFolder, new LearnMarkdownOptions { Debug = debug });
 }
 
 static async Task ProcessOneModuleAsync(string inputFolder, string outputDoc)

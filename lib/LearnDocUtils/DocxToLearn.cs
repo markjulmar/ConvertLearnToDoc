@@ -5,7 +5,7 @@ namespace LearnDocUtils;
 
 public static class DocxToLearn
 {
-    public static async Task ConvertAsync(string docxFile, string outputFolder, MarkdownOptions options = null)
+    public static async Task ConvertAsync(string docxFile, string outputFolder, LearnMarkdownOptions options = null)
     {
         if (string.IsNullOrWhiteSpace(docxFile))
             throw new ArgumentException($"'{nameof(docxFile)}' cannot be null or whitespace.", nameof(docxFile));
@@ -26,7 +26,8 @@ public static class DocxToLearn
             UseAsterisksForBullets = options?.UseAsterisksForBullets ?? false,
             UseIndentsForCodeBlocks = options?.UseIndentsForCodeBlocks ?? false,
             EscapeAllIntrawordEmphasis = options?.EscapeAllIntrawordEmphasis ?? false,
-            PrettyPipeTables = options?.PrettyPipeTables ?? false
+            PrettyPipeTables = options?.PrettyPipeTables ?? false,
+            PreferPlainMarkdown = options?.UsePlainMarkdown ?? false,
         };
 
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
@@ -70,7 +71,11 @@ public static class DocxToLearn
 
             // Now build a module from the markdown contents
             var moduleBuilder = new ModuleBuilder(docxFile, outputFolder, markdownFile);
-            await moduleBuilder.CreateModuleAsync();
+            await moduleBuilder.CreateModuleAsync(new LearnModuleOptions
+            {
+                IgnoreMetadata  = options?.IgnoreMetadata ?? false, 
+                UseGenericIds = options?.UseGenericIds ?? false
+            });
         }
         catch
         {
