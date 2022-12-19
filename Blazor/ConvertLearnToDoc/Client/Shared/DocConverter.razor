@@ -1,0 +1,180 @@
+﻿@using ConvertLearnToDoc.Shared
+
+@inject HttpClient HttpClient
+@inject IJSRuntime JS
+
+<h3>@Title</h3>
+
+@if (!string.IsNullOrEmpty(errorText))
+{
+    <div class="alert alert-danger">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <strong>Error: </strong> @errorText
+    </div>
+}
+
+<p>
+    Upload the Word document to convert. @Instructions
+</p>
+
+<ProgressDialog @ref="progressDialog" />
+
+<EditForm id="convertForm" Model="@input" OnSubmit="@HandleSubmit" class="row g-3">
+
+    <div class="col-6">
+        <label for="wordDocument">Choose a .docx file</label>
+        <InputFile class="form-control" id="wordDocument" accept=".docx"
+                   OnChange="OnFileInputChanged" />
+    </div>
+    <div class="col-6"></div>
+
+    <label><b>Markdown options</b></label>
+
+    <div class="col-6">
+        <div class="form-check">
+            <InputCheckbox @bind-Value="input.UsePlainMarkdown" class="form-check-input" id="usePlainMarkdown" />
+            <label class="form-check-label" for="usePlainMarkdown">
+                Use plain Markdown (no Markdown extensions)
+            </label>
+        </div>
+
+        <div class="form-check">
+            <InputCheckbox @bind-Value="@input.UseAsterisksForBullets" class="form-check-input" id="useAsterisksForBullets" />
+            <label class="form-check-label" for="useAsterisksForBullets">
+                Use asterisk for bullet lists (defaults to dash)
+            </label>
+        </div>
+
+        <div class="form-check">
+            <InputCheckbox @bind-Value="input.UseAsterisksForEmphasis" class=" form-check-input" id="useAsterisksForEmphasis" />
+            <label class="form-check-label" for="useAsterisksForEmphasis">
+                Use asterisk for emphasis (defaults to underscore)
+            </label>
+        </div>
+
+        <div class="form-check">
+            <InputCheckbox @bind-Value="input.OrderedListUsesSequence" class="form-check-input" id="orderedListUsesSequence" />
+            <label class="form-check-label" for="orderedListUsesSequence">
+                Ordered lists are always numbered sequentially (defaults to '1.' for each item unless starting number is provided)
+            </label>
+        </div>
+    </div>
+
+    <div class="col-6">
+        <div class="form-check">
+            <InputCheckbox @bind-Value="input.UseIndentsForCodeBlocks" class="form-check-input" id="useIndentsForCodeBlocks" />
+            <label class="form-check-label" for="useIndentsForCodeBlocks">
+                Use indents for code blocks when language is not specified (defaults to triple-tick style)
+            </label>
+        </div>
+        <div class="form-check">
+            <InputCheckbox @bind-Value="input.PrettyPipeTables" class="form-check-input" id="prettyPipeTables" />
+            <label class="form-check-label" for="prettyPipeTables">
+                Pretty-print pipe tables with spaces (preview)
+            </label>
+        </div>
+
+        @if (!IsArticle)
+        {
+            <div class="form-check">
+                <InputCheckbox @bind-Value="input.UseGenericIds" class="form-check-input" id="useGenericIds" />
+                <label class="form-check-label" for="useGenericIds">
+                    Use generic names and identifiers instead of section titles
+                </label>
+            </div>
+
+            <div class="form-check">
+                <InputCheckbox @bind-Value="input.IgnoreMetadata" class="form-check-input" id="ignoreMetadata" />
+                <label class="form-check-label" for="ignoreMetadata">
+                    Ignore any module metadata - select if you are creating a new module from an existing document
+                </label>
+            </div>
+        }
+    </div>
+
+    <div class="col">
+        <button type="submit" disabled="@(selectedFile == null)" class="btn btn-success">Convert</button>
+    </div>
+
+</EditForm>
+
+<div class="pl-3 pt-3">
+    <div class="card mt-4">
+        <h5 class="card-header">Document Tips</h5>
+        <div class="card-body">
+            <p class="card-text">
+                <ul>
+                    <li>Keep text simple - Markdown only supports <b>Bold</b>, <i>Italic</i>, and <span style="font-family: MONOSPACE;">Monospaced fonts for code</span>.</li>
+                    <li>Tables, links, lists, images, and videos are all supported.</li>
+                    <li>Embed a placeholder video from YouTube if you don't know the link and then replace the Markdown link before publishing.</li>
+                    <li>For images, make sure to set Alt Text. In addition, you can add a caption to the image to add screen-reader descriptions.</li>
+                    @if (!IsArticle)
+                    {
+                        <li>Use the <b>Heading1</b> style to start a new unit.</li>
+                        <li>Set the document metadata - <code>Title</code>, <code>Author</code>, and <code>Save Date</code> - these will be used to fill in metadata.</li>
+                        <li>You can set the <code>Categories</code> to the module UID. The tool will use that module's metadata from the live content to fill in the blanks, if it doesn't exist then this will be considered a new module. <b>Important:</b> If you are using a document created from an <em>existing</em> module to generate a <em>new</em> module, then make sure to set <code>Categories</code> to a new value so the generated Learn module won't have the original module's metadata applied to it.</li>
+                    }
+                </ul>
+            </p>
+            @if (!IsArticle)
+            {
+                <p>
+                    There are more options - a full list is in the document template which you can download below.
+                </p>
+                <p>
+                    <a href="./resources/standard-module-template.docx" class="card-link">Document template</a>
+                    <a href="https://review.docs.microsoft.com/en-us/help/learn/?branch=main" target="_blank" class="card-link">Learn contributor guide</a>
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public bool IsArticle { get; set; }
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Instructions { get; set; }
+
+    private string? errorText;
+    private ProgressDialog? progressDialog;
+    private IBrowserFile? selectedFile;
+    private readonly ArticleOrModuleRef input = new();
+
+    private async Task HandleSubmit()
+    {
+        if (selectedFile is not { ContentType: Constants.WordMimeType })
+        {
+            errorText = "Selected file is not a Word document. " + selectedFile?.ContentType;
+            return;
+        }
+
+        input.Document = await BrowserFile.CreateAsync(selectedFile);
+        input.IsArticle = IsArticle;
+
+        progressDialog?.Show();
+
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("/api/DocConverter", input);
+            if (response.IsSuccessStatusCode)
+            {
+                string filename = FileHelpers.GetFilenameFromResponse(response, "output.zip");
+                await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
+            }
+            else
+            {
+                errorText = response.ReasonPhrase;
+            }
+        }
+        finally
+        {
+            progressDialog?.Hide();
+        }
+    }
+
+    private void OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+}

@@ -1,0 +1,35 @@
+﻿@using System.Reflection
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+        <div class="fixed-bottom pb-2" style="text-align: end; max-width: 250px;">
+            <span class="text-white pr-2">
+                <small style="padding-right: 10px;">V @GetVersion()</small>
+            </span>
+        </div>
+    </div>
+
+    <main style="max-width: 1024px;">
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code
+{
+    static string GetVersion()
+    {
+        var currentAssembly = typeof(Program).Assembly;
+
+        var attribute = currentAssembly.GetCustomAttribute<AssemblyTitleAttribute>();
+        var versionInfo = attribute?.Title;
+
+        return DateTime.TryParse(versionInfo, out var dt)
+            ? dt.ToString("yyyyMMdd.HHmmss")
+            : "1.0.0";
+    }
+
+}
