@@ -380,7 +380,14 @@ public class ModuleBuilder
     static Regex AsciiOnly = new (@"^[\P{L}A-Za-z]*$");
     private static bool HasOnlyEnglishOrNonLetters(string text) => AsciiOnly.IsMatch(text);
 
-    private static ModuleMetadata LoadDocumentMetadata(string docxFile, bool ignoreExisting, bool useGenericIds)
+    /// <summary>
+    /// Returns the module metadata for the given Word document if any exists.
+    /// </summary>
+    /// <param name="docxFile">Word document</param>
+    /// <param name="ignoreExisting">True to ignore any document data</param>
+    /// <param name="useGenericIds">True to use generic identifiers</param>
+    /// <returns>Module metadata</returns>
+    public static ModuleMetadata LoadDocumentMetadata(string docxFile, bool ignoreExisting, bool useGenericIds)
     {
         using var doc = Document.Load(docxFile);
 
@@ -479,13 +486,18 @@ public class ModuleBuilder
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Unable to determine title of document", nameof(title));
 
-        return new string(
+        title = new string(
             title
                 .Replace(" - ", "-")
                 .Replace(' ', '-')
-                .Where(ch => char.IsLetter(ch) || ch is '-')
+                .Where(ch => char.IsLetterOrDigit(ch) || ch is '-')
                 .Select(char.ToLower)
                 .ToArray());
+        
+        if (title.StartsWith('-')) title = title[1..];
+        if (title.EndsWith('-')) title = title.Remove(title.Length - 1);
+        
+        return title;
     }
 
     private static string GetTemplate(string templateKey)

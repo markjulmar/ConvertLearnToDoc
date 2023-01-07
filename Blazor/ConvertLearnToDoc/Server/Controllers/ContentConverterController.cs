@@ -20,35 +20,37 @@ public class ContentConverterController : ControllerBase
     [HttpGet]
     public async Task<ContentRef> Get(string url)
     {
-        if (!string.IsNullOrEmpty(url))
+        logger.LogInformation("GetMetadata({Url}", url);
+        
+        if (string.IsNullOrEmpty(url)) 
+            return new ContentRef();
+        
+        try
         {
-            try
+            var metadata = await MSLearnRepos.DocsMetadata.LoadFromUrlAsync(url);
+            if (metadata != null)
             {
-                var metadata = await MSLearnRepos.DocsMetadata.LoadFromUrlAsync(url);
-                if (metadata != null)
+                return new ContentRef
                 {
-                    return new()
-                    {
-                        Organization = metadata.Organization ?? string.Empty,
-                        Repository = metadata.Repository ?? string.Empty,
-                        Branch = metadata.Branch ?? string.Empty,
-                        Folder = metadata.ContentPath ?? string.Empty
-                    };
-                }
-            }
-            catch (Exception ex) 
-            {
-                logger.LogError(ex.ToString());
+                    Organization = metadata.Organization ?? string.Empty,
+                    Repository = metadata.Repository ?? string.Empty,
+                    Branch = metadata.Branch ?? string.Empty,
+                    Folder = metadata.ContentPath ?? string.Empty
+                };
             }
         }
+        catch (Exception ex) 
+        {
+            logger.LogError("GetMetadata failed. {Exception}", ex);
+        }
 
-        return new();
+        return new ContentRef();
     }
 
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] ContentRef contentRef)
     {
-        logger.LogInformation($"ContentConverter: {contentRef}");
+        logger.LogInformation("ContentConverter({ContentRef})", contentRef);
 
         if (!contentRef.IsValid())
         {
@@ -76,7 +78,7 @@ public class ContentConverterController : ControllerBase
         var gitHubToken = Environment.GetEnvironmentVariable("GitHubToken");
         if (string.IsNullOrEmpty(gitHubToken) && !isLocal)
         {
-            logger.LogError("Missing GitHubToken in server environment.");
+            logger.LogError("Missing GitHubToken in server environment");
             return Unauthorized();
         }
 
@@ -87,7 +89,7 @@ public class ContentConverterController : ControllerBase
 
         try
         {
-            logger.LogDebug($"ConvertFromRepoAsync({contentRef}) => {outputFile}");
+            logger.LogDebug("ConvertFromRepoAsync({ContentRef}) => {OutputFile}", contentRef, outputFile);
 
             if (pageType == PageType.Article)
             {
@@ -105,32 +107,21 @@ public class ContentConverterController : ControllerBase
                         EmbedNotebookContent = contentRef.EmbedNotebooks
                     });
             }
+            if (System.IO.File.Exists(outputFile))
+                return await this.FileAttachment(outputFile, Constants.WordMimeType);
+
+            return NotFound(
+                $"Unable to convert {contentRef} to a Word document.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex.ToString());
+            logger.LogError("ConvertFromRepoAsync failed - {Exception}", ex);
 
             string errorMessage = ex.InnerException != null
                 ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
                 : $"{ex.GetType()}: {ex.Message}";
 
-            return BadRequest($"Unable to convert {contentRef.Organization}/{contentRef.Repository}:{contentRef.Branch}/{contentRef.Folder} to a Word document. Error: {errorMessage}");
+            return BadRequest($"Unable to convert {contentRef} to a Word document. Error: {errorMessage}");
         }
-
-        if (System.IO.File.Exists(outputFile))
-        {
-            try
-            {
-                Response.Headers.Add("Content-Disposition", $"attachment;filename={Path.GetFileName(outputFile).Replace(' ', '-')}");
-                return File(await System.IO.File.ReadAllBytesAsync(outputFile), Constants.WordMimeType);
-            }
-            finally
-            {
-                System.IO.File.Delete(outputFile);
-            }
-        }
-
-        return NotFound(
-            $"Unable to convert {contentRef.Organization}/{contentRef.Repository}:{contentRef.Branch}/{contentRef.Folder} to a Word document.");
     }
 }

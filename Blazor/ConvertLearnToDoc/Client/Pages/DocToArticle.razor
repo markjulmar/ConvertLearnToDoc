@@ -1,11 +1,85 @@
 ﻿@page "/docToArticle"
 
+@using ConvertLearnToDoc.Shared
+
+@inject HttpClient HttpClient
+@inject IJSRuntime JS
+
 <PageTitle>Word to Learn Article</PageTitle>
 <HeadContent>
     <meta name="description" content="Convert Word documents into a Microsoft Learn article." />
     <meta name="author" content="markjulmar" />
 </HeadContent>
 
-<DocConverter IsArticle="true" 
-              Title="Convert a Word document into a single-page Learn article"
-              Instructions="The article will be returned as a single Markdown file, or as a .zip file with Markdown and images."/>
+<h3>Convert a Word document into a single-page Learn article</h3>
+
+<AlertBox ErrorText="@errorText" />
+
+<p>
+    Upload the Word document to convert. The article will be returned as a single Markdown file, or as a .zip file with Markdown and images.
+</p>
+
+<EditForm id="convertArticle" class="row g-3" Model="@input" OnSubmit="HandleSubmit">
+    <DocumentInput @bind-SelectedFile="selectedFile" />
+    
+    <label><b>Markdown options</b></label>
+    <MarkdownOptions Options="@input" />
+    
+    <div class="col">
+        <button type="submit" disabled="@(selectedFile == null)" class="btn btn-success">Convert</button>
+    </div>
+</EditForm>
+
+<div class="pl-3 pt-3">
+    <div class="card mt-4">
+        <h5 class="card-header">Document Tips</h5>
+        <div class="card-body">
+            <ul>
+                <li>Keep text simple - Markdown only supports <b>Bold</b>, <i>Italic</i>, and <span style="font-family: MONOSPACE;">Monospaced fonts for code</span>.</li>
+                <li>Tables, links, lists, images, and videos are all supported.</li>
+                <li>Embed a placeholder video from YouTube if you don't know the link and then replace the Markdown link before publishing.</li>
+                <li>For images, make sure to set Alt Text. In addition, you can add a caption to the image to add screen-reader descriptions.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    private string? errorText;
+    private readonly ArticleRef input = new();
+    private IBrowserFile? selectedFile;
+
+    private async Task HandleSubmit()
+    {
+        if (selectedFile is not { ContentType: Constants.WordMimeType } || selectedFile.Size < 100)
+        {
+            errorText = "Selected file is not a Word document. " + selectedFile?.ContentType;
+            return;
+        }
+
+        input.Document = await BrowserFile.CreateAsync(selectedFile);
+
+        await JS.InvokeVoidAsync("showWorkingDialog");
+        HttpResponseMessage response;
+
+        try
+        {
+            response = await HttpClient.PostAsJsonAsync("/api/DocConverter/article", input);
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("hideWorkingDialog");
+        }
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var filename = FileHelpers.GetFilenameFromResponse(response, "output.zip");
+            await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
+        }
+        else
+        {
+            errorText = response.ReasonPhrase;
+        }
+    }
+}

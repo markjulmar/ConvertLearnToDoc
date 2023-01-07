@@ -2,9 +2,6 @@
 
 @using Microsoft.AspNetCore.Components
 @using ConvertLearnToDoc.Shared
-@using System.Text.Json
-@using System.Text
-@using System.Net.Mime
 
 @inject HttpClient HttpClient
 @inject IJSRuntime JS
@@ -17,20 +14,12 @@
 
 <h3>Convert a Learn article or training module into a Word document</h3>
 
-@if (!string.IsNullOrEmpty(errorText))
-{
-    <div class="alert alert-danger">
-        <a href="#" class="close" data-dismiss="alert">&times;</a>
-        <strong>Error: </strong> @errorText
-    </div>
-}
+<AlertBox ErrorText="@errorText" />
 
 <p>
     Enter the GitHub details for the page or training module to convert to Word. 
-    You can also enter a URL from the <a href="https://learn.microsoft.com">Learn site</a> and use the <b>Get Repo Info</b> to populate the GitHub information directly from the URL.
+    You can also enter a URL from the <a href="https://learn.microsoft.com" target="_blank">Learn site</a> and use the <b>Get Repo Info</b> to populate the GitHub information directly from the URL.
 </p>
-
-<ProgressDialog @ref="progressDialog" />
 
 <EditForm id="convertForm" EditContext="@editContext" OnValidSubmit="@HandleSubmit" class="row g-3">
 
@@ -113,10 +102,9 @@
     private string? errorText;
     private string? urlError;
     private string? Url { get; set; }
-    private ContentRef input = new ();
+    private readonly ContentRef input = new ();
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
-    private ProgressDialog? progressDialog;
 
     protected override void OnInitialized()
     {
@@ -127,8 +115,9 @@
 
     private async Task GetRepoInfoAsync()
     {
-        messageStore?.Clear();
+        errorText = null;
         urlError = null;
+        messageStore?.Clear();
 
         if (!string.IsNullOrWhiteSpace(Url))
         {
@@ -169,25 +158,27 @@
         errorText = null;
         urlError = null;
 
-        progressDialog?.Show();
+        await JS.InvokeVoidAsync("showWorkingDialog");
+        HttpResponseMessage response;
 
         try
         {
-            var response = await HttpClient.PostAsJsonAsync("api/ContentConverter", input);
-            if (response.IsSuccessStatusCode)
-            {
-                string filename = FileHelpers.GetFilenameFromResponse(response, "output.docx");
-                await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
-                Url = null;
-            }
-            else
-            {
-                errorText = response.ReasonPhrase;
-            }
+            response = await HttpClient.PostAsJsonAsync("api/ContentConverter", input);
         }
         finally
         {
-            progressDialog?.Hide();
+            await JS.InvokeVoidAsync("hideWorkingDialog");
+        }
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var filename = FileHelpers.GetFilenameFromResponse(response, "output.docx");
+            await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
+            Url = null;
+        }
+        else
+        {
+            errorText = response.ReasonPhrase;
         }
     }
 }

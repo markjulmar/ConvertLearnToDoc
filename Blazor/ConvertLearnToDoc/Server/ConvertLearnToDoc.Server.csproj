@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\lib\LearnDocUtils\LearnDocUtils.csproj" />
     <ProjectReference Include="..\Client\ConvertLearnToDoc.Client.csproj" />
     <ProjectReference Include="..\Shared\ConvertLearnToDoc.Shared.csproj" />
   </ItemGroup>

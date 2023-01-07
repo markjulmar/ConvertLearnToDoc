@@ -6,17 +6,17 @@ namespace ConvertLearnToDoc.Client.Shared
     {
         public static string GetFilenameFromResponse(HttpResponseMessage response, string defaultFileName)
         {
-            if (response.Content.Headers.TryGetValues("Content-Disposition", out var values))
+            if (!response.Content.Headers.TryGetValues("Content-Disposition", out var values)) 
+                return defaultFileName;
+            
+            const string filenameTag = "filename=";
+            foreach (var cd in values)
             {
-                const string filenameTag = "filename=";
-                foreach (var cd in values)
+                int pos = cd.IndexOf(filenameTag, StringComparison.InvariantCultureIgnoreCase);
+                if (pos > 0)
                 {
-                    int pos = cd.IndexOf(filenameTag, StringComparison.InvariantCultureIgnoreCase);
-                    if (pos > 0)
-                    {
-                        pos += filenameTag.Length;
-                        defaultFileName = cd[pos..];
-                    }
+                    pos += filenameTag.Length;
+                    defaultFileName = cd[pos..];
                 }
             }
 

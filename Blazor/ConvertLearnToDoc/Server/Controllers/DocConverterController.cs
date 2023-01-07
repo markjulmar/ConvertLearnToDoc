@@ -15,32 +15,68 @@ public class DocConverterController : ControllerBase
         this.logger = logger;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody] ArticleOrModuleRef articleRef)
+    private static bool IsValidDocument(BrowserFile? document)
     {
-        logger.LogInformation($"DocConverter: {articleRef}");
+        return document is {ContentType: Constants.WordMimeType} 
+               && !string.IsNullOrWhiteSpace(document.FileName) 
+               && document.Contents.Length > 100;
+    }
 
-        if (articleRef.Document is not {ContentType: Constants.WordMimeType} 
-            || string.IsNullOrWhiteSpace(articleRef.Document.FileName) 
-            || articleRef.Document.Contents.Length <= 0)
+    [HttpPost]
+    [Route("metadata")]
+    public async Task<IActionResult> GetModuleInfo([FromBody] BrowserFile document)
+    {
+        logger.LogInformation("GetModuleInfo({Document})", document);
+
+        if (!IsValidDocument(document))
+            return BadRequest("Document is not valid");
+
+        var baseFolder = Path.GetTempPath();
+        var tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
+
+        // Copy the input file.
+        await using (var stream = System.IO.File.Create(tempFile))
         {
-            return BadRequest("Bad input.");
+            await stream.WriteAsync(document.Contents);
         }
 
         try
         {
-            if (articleRef.IsArticle)
+            var md = ModuleBuilder.LoadDocumentMetadata(tempFile, false, false);
+            if (md.ModuleData != null)
             {
-                return await ConvertArticleAsync(articleRef);
+                return Ok(YamlUtilities.ObjectToYamlString(md.ModuleData));
             }
+            else
+            {
+                return NotFound();
+            }
+        }
+        finally
+        {
+            System.IO.File.Delete(tempFile);
+        }
+    }
 
-            return await ConvertModuleAsync(articleRef);
+
+    [HttpPost]
+    [Route("article")]
+    public async Task<IActionResult> Post([FromBody] ArticleRef article)
+    {
+        logger.LogInformation("ArticleConverter({ArticleRef})", article);
+
+        if (!IsValidDocument(article.Document))
+            return BadRequest("Document is not valid");
+
+        try
+        {
+            return await ConvertArticleAsync(article);
         }
         catch (AggregateException aex)
         {
             var ex = aex.Flatten();
             return BadRequest(
-                $"Unable to convert {articleRef.Document.FileName}. {ex.GetType()}: {ex.Message}.");
+                $"Unable to convert {article.Document?.FileName}. {ex.GetType()}: {ex.Message}.");
         }
         catch (Exception ex)
         {
@@ -49,11 +85,41 @@ public class DocConverterController : ControllerBase
                 : $"{ex.GetType()}: {ex.Message}";
 
             return BadRequest(
-                $"Unable to convert {articleRef.Document.FileName}. {errorMessage}.");
+                $"Unable to convert {article.Document?.FileName}. {errorMessage}.");
         }
     }
 
-    private async Task<IActionResult> ConvertModuleAsync(ArticleOrModuleRef articleRef)
+    [HttpPost]
+    [Route("module")]
+    public async Task<IActionResult> Post([FromBody] ModuleRef module)
+    {
+        logger.LogInformation("ModuleConverter({ModuleRef})", module);
+
+        if (!IsValidDocument(module.Document))
+            return BadRequest("Document is not valid");
+
+        try
+        {
+            return await ConvertModuleAsync(module);
+        }
+        catch (AggregateException aex)
+        {
+            var ex = aex.Flatten();
+            return BadRequest(
+                $"Unable to convert {module.Document?.FileName}. {ex.GetType()}: {ex.Message}.");
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = ex.InnerException != null
+                ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
+                : $"{ex.GetType()}: {ex.Message}";
+
+            return BadRequest(
+                $"Unable to convert {module.Document?.FileName}. {errorMessage}.");
+        }
+    }
+
+    private async Task<IActionResult> ConvertModuleAsync(ModuleRef moduleRef)
     {
         string baseFolder = Path.GetTempPath();
         string tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
@@ -61,11 +127,11 @@ public class DocConverterController : ControllerBase
         // Copy the input file.
         await using (var stream = System.IO.File.Create(tempFile))
         {
-            await stream.WriteAsync(articleRef.Document!.Contents);
+            await stream.WriteAsync(moduleRef.Document!.Contents);
         }
 
         // Create the output folder.
-        var moduleFolder = Path.GetFileNameWithoutExtension(articleRef.Document.FileName);
+        var moduleFolder = Path.GetFileNameWithoutExtension(moduleRef.Document.FileName);
         if (Path.GetInvalidPathChars().Any(ch => moduleFolder.Contains(ch)))
         {
             moduleFolder = Constants.DefaultModuleName;
@@ -76,21 +142,21 @@ public class DocConverterController : ControllerBase
 
         try
         {
-            logger.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
+            logger.LogDebug("DocxToLearn({InputFile}) => {OutputFile})", tempFile, outputPath);
             await DocxToLearn.ConvertAsync(tempFile, outputPath, 
                 new LearnMarkdownOptions {
-                    UseAsterisksForBullets = articleRef.UseAsterisksForBullets,
-                    UseAsterisksForEmphasis = articleRef.UseAsterisksForEmphasis,
-                    OrderedListUsesSequence = articleRef.OrderedListUsesSequence,
-                    UseIndentsForCodeBlocks = articleRef.UseIndentsForCodeBlocks,
-                    IgnoreMetadata = articleRef.IgnoreMetadata,
-                    UseGenericIds = articleRef.UseGenericIds,
-                    UsePlainMarkdown = articleRef.UsePlainMarkdown,
+                    UseAsterisksForBullets = moduleRef.UseAsterisksForBullets,
+                    UseAsterisksForEmphasis = moduleRef.UseAsterisksForEmphasis,
+                    OrderedListUsesSequence = moduleRef.OrderedListUsesSequence,
+                    UseIndentsForCodeBlocks = moduleRef.UseIndentsForCodeBlocks,
+                    IgnoreMetadata = moduleRef.IgnoreMetadata,
+                    UseGenericIds = moduleRef.UseGenericIds,
+                    UsePlainMarkdown = moduleRef.UsePlainMarkdown,
                 });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex.ToString());
+            logger.LogError("DocxToLearn failed, {Exception}", ex);
             if (Directory.Exists(outputPath))
                 Directory.Delete(outputPath, true);
 
@@ -99,42 +165,32 @@ public class DocConverterController : ControllerBase
                 : $"{ex.GetType()}: {ex.Message}";
 
             return BadRequest(
-                $"Unable to convert {articleRef.Document.FileName}. {errorMessage}.");
+                $"Unable to convert {moduleRef.Document.FileName}. {errorMessage}.");
         }
 
         var zipFile = Path.Combine(baseFolder, Path.ChangeExtension(moduleFolder, "zip"));
         if (System.IO.File.Exists(zipFile))
         {
-            logger.LogDebug($"DELETE {zipFile}");
+            logger.LogDebug("DELETE {ZipFile}", zipFile);
             System.IO.File.Delete(zipFile);
         }
-        logger.LogDebug($"ZIP {outputPath} => {zipFile}");
+        logger.LogDebug("ZIP {OutputPath} => {ZipFile}", outputPath, zipFile);
         System.IO.Compression.ZipFile.CreateFromDirectory(outputPath, zipFile);
 
         // Delete the temp stuff.
-        logger.LogDebug($"RMDIR {outputPath}");
+        logger.LogDebug("RMDIR {OutputPath}", outputPath);
         Directory.Delete(outputPath, true);
-        logger.LogDebug($"DELETE {tempFile}");
+        logger.LogDebug("DELETE {InputFile}", tempFile);
         System.IO.File.Delete(tempFile);
 
         if (System.IO.File.Exists(zipFile))
-        {
-            try
-            {
-                Response.Headers.Add("Content-Disposition", $"attachment;filename={Path.GetFileName(zipFile).Replace(' ', '-')}");
-                return File(await System.IO.File.ReadAllBytesAsync(zipFile), Constants.ZipMimeType);
-            }
-            finally
-            {
-                System.IO.File.Delete(zipFile);
-            }
-        }
+            return await this.FileAttachment(zipFile, Constants.ZipMimeType);
 
         return BadRequest(
-            $"Unable to convert {articleRef.Document.FileName} to a training module.");
+            $"Unable to convert {moduleRef.Document.FileName} to a training module.");
     }
 
-    private async Task<IActionResult> ConvertArticleAsync(ArticleOrModuleRef articleRef)
+    private async Task<IActionResult> ConvertArticleAsync(ArticleRef articleRef)
     {
         var baseFolder = Path.GetTempPath();
         var tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
@@ -154,10 +210,10 @@ public class DocConverterController : ControllerBase
             Directory.CreateDirectory(outputPath);
 
             // Get the markdown file.
-            string markdownFile = Path.Combine(outputPath, Path.ChangeExtension(baseFileName, ".md"));
+            var markdownFile = Path.Combine(outputPath, Path.ChangeExtension(baseFileName, ".md"));
 
             // Convert the file to Markdown + media
-            logger.LogDebug($"DocToPage(inputFile:{tempFile}, markdownFile:{markdownFile})");
+            logger.LogDebug("DocToPage({InputFile}) => {MarkdownFile}", tempFile, markdownFile);
             await DocxToSinglePage.ConvertAsync(tempFile, markdownFile, new MarkdownOptions
             {
                 UseAsterisksForBullets = articleRef.UseAsterisksForBullets,
@@ -171,38 +227,35 @@ public class DocConverterController : ControllerBase
             {
                 if (System.IO.File.Exists(markdownFile))
                 {
-                    logger.LogDebug($"Returning Markdown file.");
-
-                    Response.Headers.Add("Content-Disposition", $"attachment;filename={Path.GetFileName(markdownFile).Replace(' ', '-')}");
-                    return File(await System.IO.File.ReadAllBytesAsync(markdownFile), Constants.MarkdownMimeType);
+                    logger.LogDebug("Returning Markdown file");
+                    return await this.FileAttachment(markdownFile, Constants.MarkdownMimeType);
                 }
             }
             else
             {
-                string zipFile = Path.Combine(baseFolder, Path.ChangeExtension(baseFileName, "zip"));
+                var zipFile = Path.Combine(baseFolder, Path.ChangeExtension(baseFileName, "zip"));
                 if (System.IO.File.Exists(zipFile))
                 {
-                    logger.LogDebug($"DELETE {zipFile} (existing).");
+                    logger.LogDebug("DELETE {ZipFile} (existing)", zipFile);
                     System.IO.File.Delete(zipFile);
                 }
 
-                logger.LogDebug($"ZIP {outputPath} => {zipFile}");
+                logger.LogDebug("ZIP {OutputPath} => {ZipFile}", outputPath, zipFile);
                 System.IO.Compression.ZipFile.CreateFromDirectory(outputPath, zipFile);
 
                 if (System.IO.File.Exists(zipFile))
                 {
-                    logger.LogDebug($"Returning .ZIP file.");
-                    Response.Headers.Add("Content-Disposition", $"attachment;filename={Path.GetFileName(zipFile).Replace(' ', '-')}");
-                    return File(await System.IO.File.ReadAllBytesAsync(zipFile), Constants.ZipMimeType);
+                    logger.LogDebug("Returning .ZIP file");
+                    return await this.FileAttachment(zipFile, Constants.ZipMimeType);
                 }
             }
         }
         finally
         {
             // Delete the temp stuff.
-            logger.LogDebug($"RMDIR {outputPath}");
+            logger.LogDebug("RMDIR {OutputPath}", outputPath);
             Directory.Delete(outputPath, true);
-            logger.LogDebug($"DELETE {tempFile}");
+            logger.LogDebug("DELETE {TempFile}", tempFile);
             System.IO.File.Delete(tempFile);
         }
 

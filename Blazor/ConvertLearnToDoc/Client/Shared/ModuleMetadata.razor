@@ -1,0 +1,260 @@
+﻿@using Microsoft.AspNetCore.Components
+@using ConvertLearnToDoc.Shared
+@using System.Runtime.CompilerServices
+@using System.Collections
+@using System.Globalization
+@using YamlDotNet.Serialization
+@using YamlDotNet.Serialization.NodeTypeResolvers
+
+<div class="modal-container modal fade show" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Title</h5>
+                <button type="button" class="btn-close" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body dialog">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="list-group scrolling-list" role="tablist">
+                                @foreach (var item in OrderKeys(metadata))
+                                {
+                                    var value = metadata[item];
+                                    if (ignoreKeys.Contains(item, StringComparer.InvariantCultureIgnoreCase))
+                                        continue;
+
+                                    if (value is Dictionary<object, object> dct)
+                                    {
+                                        foreach (var child in dct)
+                                        {
+                                            var key = item + "." + child.Key;
+                                            var isActive = key == selectedKey ? " active" : "";
+                                            <button type="button" @onclick="@(() => OnSelectKey(key))"
+                                                    class="list-group-item list-group-item-action @isActive">@key</button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var isActive = item == selectedKey ? " active" : "";
+                                        <button type="button" @onclick="@(() => OnSelectKey(item))"
+                                                class="list-group-item list-group-item-action @isActive">@item</button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="col-8">
+                            @{
+                                var id = selectedKey?.Replace(" ", "");
+                                var selected = SelectedValue;
+
+                                if (selected == null)
+                                {
+                                    <p>Select a value.</p>
+                                    return;
+                                }
+
+                                if (IsBoolean(selected, out var bvalue))
+                                {
+                                    <label for="@id" class="form-check-label">@selectedKey</label>
+                                    <input type="checkbox" class="form-check-input ms-3" style="max-width: 16px;" id="@id"
+                                           value="@bvalue" @onchange="ChangeValue" />
+                                }
+                                else if (selected is string svalue)
+                                {
+                                    <label for="@id" class="form-label">@selectedKey</label>
+                                    if (multilineInput.Contains(selectedKey, StringComparer.InvariantCultureIgnoreCase)
+                                            || svalue.Contains('\r'))
+                                    {
+                                        <textarea class="form-control" id="@id" rows="10" @onchange="ChangeValue">
+                                            @svalue
+                                        </textarea>
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control" id="@id"
+                                            value="@svalue" @onchange="ChangeValue" />
+                                    }
+                                }
+                                else if (selected is List<object> lst)
+                                {
+                                    <label for="@id" class="form-label">@selectedKey</label>
+                                    <ListEditor Items="lst" />
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
+                <button type="button" class="btn btn-success" @onclick="OnOK">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isShowing;
+    private string? selectedKey = null;
+    Dictionary<object,object> metadata = new();
+
+    private string[] ignoreKeys = {"units"};
+    private string[] multilineInput = {"abstract", "prerequisites", "metadata.description", "summary"};
+
+    [Parameter]
+    public string Title { get; set; } = "Metadata";
+
+    [Parameter]
+    public bool IsShowing
+    {
+        get => isShowing;
+        set
+        {
+            isShowing = value;
+            if (isShowing)
+            {
+                metadata = YamlUtilities.YamlStringToDictionary(Metadata) ?? new();
+                selectedKey = OrderKeys(metadata).FirstOrDefault();
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<bool> IsShowingChanged { get; set; }
+
+    [Parameter] 
+    public string Metadata { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<string> MetadataChanged { get; set; }
+
+    private async Task OnClose()
+    {
+        IsShowing = false;
+        await IsShowingChanged.InvokeAsync(IsShowing);
+    }
+
+    private async Task OnOK()
+    {
+        Metadata = YamlUtilities.DictionaryToYamlString(metadata);
+        metadata = new();
+        await MetadataChanged.InvokeAsync(Metadata);
+
+        await OnClose();
+    }
+
+    private object? SelectedValue
+    {
+        get
+        {
+            if (selectedKey == null) return null;
+            if (metadata.TryGetValue(selectedKey, out var value))
+                return value;
+
+            int pos = selectedKey.IndexOf('.');
+            if (pos > 0)
+            {
+                if (metadata.TryGetValue(selectedKey[..pos], out value))
+                {
+                    pos++;
+                    if (value is Dictionary<object, object> dct
+                            && dct.TryGetValue(selectedKey[pos..], out value)) 
+                        return value;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    private bool IsBoolean(object value, out bool result)
+    {
+        switch (value)
+        {
+            case bool b:
+                result = b;
+                return true;
+            case string s when string.Compare(s, "true", StringComparison.InvariantCultureIgnoreCase) == 0:
+                result = true;
+                return true;
+            case string s when string.Compare(s, "false", StringComparison.InvariantCultureIgnoreCase) == 0:
+                result = false;
+                return true;
+            default:
+                result = false;
+                return false;
+        }
+    }
+
+    private IEnumerable<string> OrderKeys(Dictionary<object, object> dictionary)
+    {
+        List<string> keys = dictionary.Keys
+            .Select(k => k.ToString())
+            .Where(str => !string.IsNullOrWhiteSpace(str))
+            .Cast<string>()
+            .ToList();
+
+        string? IndexOf(string lookFor)
+        {
+            int pos = keys.FindIndex(str => string.Compare(str, lookFor, StringComparison.InvariantCultureIgnoreCase) == 0);
+            if (pos < 0) return null;
+            string value = keys[pos];
+            keys.RemoveAt(pos);
+            return value;
+        }
+
+        string[] lookFor = {"uid", "title", "summary", "abstract", "description"};
+        foreach (var item in lookFor)
+        {
+            var value = IndexOf(item);
+            if (value != null) yield return value;
+        }
+
+        foreach (var item in keys)
+            yield return item;
+    }
+
+    private void OnSelectKey(string key)
+    {
+        var selectedItem = SelectedValue;
+        if (selectedItem != null)
+        {
+            if (SelectedValue is List<object> lst)
+            {
+                for (var i = lst.Count-1; i >= 0; i--)
+                {
+                    if (string.IsNullOrWhiteSpace(lst[i].ToString()))
+                        lst.RemoveAt(i);
+                }
+            }
+        }
+
+        selectedKey = key;
+        StateHasChanged();
+    }
+
+    private void ChangeValue(ChangeEventArgs e)
+    {
+        if (selectedKey == null) return;
+        if (metadata.ContainsKey(selectedKey))
+        {
+            metadata[selectedKey] = e.Value;
+            return;
+        }
+            
+        int pos = selectedKey.IndexOf('.');
+        if (pos > 0)
+        {
+            if (metadata.TryGetValue(selectedKey[..pos], out var value))
+            {
+                var childKey = selectedKey[(pos + 1)..];
+                if (value is Dictionary<object, object> dct
+                    && dct.ContainsKey(childKey))
+                {
+                    dct[childKey] = e.Value;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,52 @@
+﻿@using ConvertLearnToDoc.Shared
+
+<div class="col-6">
+    <div class="form-check">
+        <InputCheckbox @bind-Value="Options.UsePlainMarkdown" class="form-check-input" id="usePlainMarkdown" />
+        <label class="form-check-label" for="usePlainMarkdown">
+            Use plain Markdown (no Markdown extensions)
+        </label>
+    </div>
+
+    <div class="form-check">
+        <InputCheckbox @bind-Value="@Options.UseAsterisksForBullets" class="form-check-input" id="useAsterisksForBullets" />
+        <label class="form-check-label" for="useAsterisksForBullets">
+            Use asterisk for bullet lists (defaults to dash)
+        </label>
+    </div>
+
+    <div class="form-check">
+        <InputCheckbox @bind-Value="Options.UseAsterisksForEmphasis" class=" form-check-input" id="useAsterisksForEmphasis" />
+        <label class="form-check-label" for="useAsterisksForEmphasis">
+            Use asterisk for emphasis (defaults to underscore)
+        </label>
+    </div>
+</div>
+
+<div class="col-6">
+    <div class="form-check">
+        <InputCheckbox @bind-Value="Options.UseIndentsForCodeBlocks" class="form-check-input" id="useIndentsForCodeBlocks" />
+        <label class="form-check-label" for="useIndentsForCodeBlocks">
+            Use indents for code blocks when language is not specified (defaults to triple-tick style)
+        </label>
+    </div>
+    <div class="form-check">
+        <InputCheckbox @bind-Value="Options.PrettyPipeTables" class="form-check-input" id="prettyPipeTables" />
+        <label class="form-check-label" for="prettyPipeTables">
+            Pretty-print pipe tables with spaces (preview)
+        </label>
+    </div>
+    <div class="form-check">
+        <InputCheckbox @bind-Value="Options.OrderedListUsesSequence" class="form-check-input" id="orderedListUsesSequence" />
+        <label class="form-check-label" for="orderedListUsesSequence">
+            Ordered lists are always numbered sequentially (defaults to '1.' for each item unless starting number is provided)
+        </label>
+    </div>
+</div>
+
+@code {
+
+    [Parameter, EditorRequired] 
+    public ArticleRef Options { get; set; } = null!;
+
+}

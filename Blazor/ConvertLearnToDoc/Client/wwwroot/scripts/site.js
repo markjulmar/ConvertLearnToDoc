@@ -10,40 +10,33 @@
     URL.revokeObjectURL(url);
 }
 
-var workingDialog;
+function showWorkingDialog() {
+    const modalElement = document.getElementById("progressDialog");
+    modalElement.classList.add("modalShow");
+    const bsModal = new bootstrap.Modal(modalElement);
 
-function showWorkingDialog(element) {
-    $('.alert').hide();
+    modalElement.addEventListener('shown.bs.modal', () => {
+        if (!modalElement.classList.contains("modalShow")) {
+            // Work was finished before modal fade-in was completed.
+            // Go ahead and hide it now that it's showing.
+            bsModal.hide();
+        }
+    }, { once: true });
 
-    if (workingDialog === null || workingDialog === undefined) {
-        workingDialog = new bootstrap.Modal(element,
-            {
-                keyboard: false,
-                focus: true,
-                backdrop: 'static'
-            });
-        workingDialog.show();
-    }
+    bsModal.show();
 }
 
 function hideWorkingDialog() {
+    const modalElement = document.getElementById("progressDialog");
+    modalElement.classList.remove("modalShow");
 
-    if (workingDialog !== null && workingDialog !== undefined) {
-        workingDialog.hide();
-        //workingDialog.dispose();
+    const bsModal = bootstrap.Modal.getInstance(modalElement);
+    if (bsModal) {
 
-        workingDialog = null;
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            bsModal.dispose();
+        }, { once: true });
+
+        bsModal.hide();
     }
 }
-
-$(function () {
-    $('.alert').alert();
-
-    $(document).on('change', '.custom-file-input', function (event) {
-        $(this).next('.custom-file-label').html(event.target.files[0].name);
-    })
-
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (_e) {
-        $('.alert').hide();
-    });
-});

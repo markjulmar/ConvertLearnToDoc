@@ -24,10 +24,15 @@ public class ContentRef
         Organization = Repository = Branch = Folder = string.Empty;
     }
 
+    public override string ToString()
+    {
+        return $"{Organization}/{Repository}/{Branch}/{Folder}";
+    }
+
     public bool IsValid()
     {
         // Do some cleanup of input
-        Organization = string.IsNullOrEmpty(Organization) ? MSLearnRepos.Constants.DocsOrganization : Organization.Trim();
+        Organization = string.IsNullOrEmpty(Organization) ? "MicrosoftDocs" : Organization.Trim();
         Repository = Repository.Trim().ToLower();
         Branch = Branch.Trim();
         Folder = Folder.Trim();
