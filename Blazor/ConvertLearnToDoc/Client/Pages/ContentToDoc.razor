@@ -21,10 +21,25 @@
     You can also enter a URL from the <a href="https://learn.microsoft.com" target="_blank">Learn site</a> and use the <b>Get Repo Info</b> to populate the GitHub information directly from the URL.
 </p>
 
+<div class="row">
+    <div class="input-group mb-3">
+        <input id="url" @bind="Url" @bind:event="oninput" class="form-control"
+               placeholder="https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/" />
+    </div>
+    @if (!string.IsNullOrEmpty(urlError))
+    {
+        <div class="text-danger">
+            <p>@urlError</p>
+        </div>
+    }
+
+</div>
+
+<hr />
+
 <EditForm id="convertForm" EditContext="@editContext" OnValidSubmit="@HandleSubmit" class="row g-3">
 
     <DataAnnotationsValidator />
-    <ValidationSummary />
 
     <div class="col-md-4">
         <label for="gitHubOrg">Organization</label>
@@ -61,14 +76,16 @@
         <InputText @bind-Value="input.ZonePivot" class="form-control" id="zonePivot" 
                    DisplayName="Zone Pivot" />
     </div>
-    
-    <div class="col-md-6 row">
-        <div class="d-flex align-items-center">
-            <div>
-                <InputCheckbox @bind-Value="input.EmbedNotebooks" class="form-check-input" id="EmbedNotebookData"/>
-                <label class="form-check-label" for="EmbedNotebookData">
-                    Embed any associated Jupyter Notebook
-                </label>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <div>
+                    <InputCheckbox @bind-Value="input.EmbedNotebooks" class="form-check-input" id="EmbedNotebookData"/>
+                    <label class="form-check-label" for="EmbedNotebookData">
+                        Embed any associated Jupyter Notebook
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -79,29 +96,39 @@
 
 </EditForm>
 
-<hr />
-
-<div class="row">
-    <div class="input-group mb-3">
-        <input id="url" @bind="Url" @bind:event="oninput" class="form-control"
-               placeholder="https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/" />
-        <div class="input-group-append">
-            <button class="btn btn-primary" type="button" disabled="@string.IsNullOrWhiteSpace(Url)" @onclick="GetRepoInfoAsync">Get Repo Info</button>
-        </div>
-    </div>
-    @if (!string.IsNullOrEmpty(urlError))
-    {
-        <div class="text-danger">
-            <p>@urlError</p>
-        </div>
-    }
-
-</div>
-
 @code {
     private string? errorText;
     private string? urlError;
-    private string? Url { get; set; }
+    private string? url;
+
+    private string? Url
+    {
+        get => url;
+        set
+        {
+            errorText = null;
+            urlError = null;
+
+            url = value;
+
+            _ = GetRepoInfoAsync()
+                .ContinueWith(t =>
+                {
+                    if (!t.Result)
+                    {
+                        input.Organization =
+                            input.Repository =
+                                input.Branch =
+                                    input.Folder = string.Empty;
+                    }
+
+                    editContext!.MarkAsUnmodified();
+                    StateHasChanged();
+
+                }, TaskScheduler.Current);
+        }
+    }
+
     private readonly ContentRef input = new ();
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
@@ -113,24 +140,19 @@
         base.OnInitialized();
     }
 
-    private async Task GetRepoInfoAsync()
+    private async Task<bool> GetRepoInfoAsync()
     {
-        errorText = null;
-        urlError = null;
-        messageStore?.Clear();
-
+        urlError = string.Empty;
         if (!string.IsNullOrWhiteSpace(Url))
         {
-            if (!Url.ToLower().StartsWith("http")
-                || !Uri.IsWellFormedUriString(Url, UriKind.Absolute))
-            {
-                urlError = "Please enter a valid URL to a training module or conceptual article.";
-            }
-            else
+            if (Url.ToLower().StartsWith("http")
+                && Uri.IsWellFormedUriString(Url, UriKind.Absolute))
             {
                 var urlDetails = await HttpClient.GetFromJsonAsync<ContentRef>($"api/ContentConverter?url={Url}");
                 if (urlDetails?.IsValid() == true)
                 {
+                    input.PageType = urlDetails.PageType;
+
                     input.Organization = urlDetails.Organization;
                     editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Organization)));
 
@@ -139,24 +161,34 @@
 
                     input.Folder = urlDetails.Folder;
                     editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Folder)));
-                    
+
                     input.Branch = urlDetails.Branch;
                     editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Branch)));
 
-                    //editContext?.Validate();
-                }
-                else
-                {
-                    urlError = "URL doesn't point to an article or training module on the public site. Please specify the full GitHub details instead.";
+                    var pageType = urlDetails.PageType.ToLower();
+                    if (pageType == "conceptual" || pageType == "learn.module")
+                        return true;
                 }
             }
+
+            urlError = "The URL does not correspond to an article or training module.";
         }
+
+        return false;
     }
 
     private async Task HandleSubmit()
     {
         errorText = null;
         urlError = null;
+        messageStore!.Clear();
+
+        // Fill in the repo details.
+        if (!input.IsValid() && !string.IsNullOrWhiteSpace(Url))
+        {
+            if (!await GetRepoInfoAsync())
+                return;
+        }
 
         await JS.InvokeVoidAsync("showWorkingDialog");
         HttpResponseMessage response;

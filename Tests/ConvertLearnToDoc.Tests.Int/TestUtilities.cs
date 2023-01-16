@@ -43,7 +43,7 @@ namespace ConvertLearnToDoc.Tests.Int
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
 
-            return DocxToLearn.ConvertAsync(inputDoc, outputFolder, new LearnMarkdownOptions());
+            return DocxToLearn.ConvertAsync(inputDoc, outputFolder, new MarkdownOptions());
         }
     }
 }

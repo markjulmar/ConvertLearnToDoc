@@ -3,16 +3,20 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using ConvertLearnToDoc.Shared;
 using MSLearnRepos;
+using MSLearnRepos.Parser;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Document = DXPlus.Document;
+using Module = MSLearnRepos.Module;
 
 namespace LearnDocUtils;
 
 public sealed class LearnModuleOptions
 {
-    public bool IgnoreMetadata { get; set; }
+    public string Metadata { get; set; }
+    public bool IgnoreEmbeddedMetadata { get; set; }
     public bool UseGenericIds { get; set; }
 }
 
@@ -32,7 +36,7 @@ public class ModuleBuilder
     public async Task CreateModuleAsync(LearnModuleOptions options)
     {
         // Get any existing metadata
-        var metadata = LoadDocumentMetadata(docxFile, options.IgnoreMetadata, options.UseGenericIds);
+        var metadata = LoadDocumentMetadata(docxFile, options.IgnoreEmbeddedMetadata, options.UseGenericIds, options.Metadata);
 
         // Get the UID
         var moduleUid = metadata.ModuleData.Uid;
@@ -75,7 +79,7 @@ public class ModuleBuilder
 
                     // See if we can identify the unit metadata.
                     ModuleUnit unitMetadata = null;
-                    if (!options.IgnoreMetadata)
+                    if (!options.IgnoreEmbeddedMetadata)
                     {
                         int pos = files.Count;
                         if (metadata.ModuleData.Units.Count > pos)
@@ -92,9 +96,9 @@ public class ModuleBuilder
                         Metadata = new MSLearnRepos.UnitMetadata
                         {
                             Title = title,
-                            Author = metadata.ModuleData.Metadata.Author,
-                            MsAuthor = metadata.ModuleData.Metadata.MsAuthor,
-                            MsDate = metadata.ModuleData.Metadata.MsDate,
+                            Author = metadata.ModuleData.Metadata?.Author ??"",
+                            MsAuthor = metadata.ModuleData.Metadata?.MsAuthor??"",
+                            MsDate = metadata.ModuleData.Metadata?.MsDate??"",
                         }
                     };
 
@@ -169,7 +173,7 @@ public class ModuleBuilder
                 { "title", EscapeReservedYamlChars(unitMetadata.Title) },
                 { "seotitle", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Title ?? unitMetadata.Title) },
                 { "seodescription", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Description ?? "TBD") },
-                { "duration", EstimateDuration(unitMetadata.Metadata.DurationInMinutes, unitMetadata.Lines, quizText).ToString() },
+                { "duration", EstimateDuration(unitMetadata.Metadata.DurationInMinutes ?? 0, unitMetadata.Lines, quizText).ToString() },
                 { "saveDate", unitMetadata.Metadata.Metadata.MsDate }, // 09/24/2018
                 { "mstopic", unitMetadata.Metadata.Metadata.MsTopic ?? "interactive-tutorial" },
                 { "msproduct", unitMetadata.Metadata.Metadata.MsProduct ?? "learning-azure" },
@@ -200,17 +204,11 @@ public class ModuleBuilder
         {
             { "module-uid", moduleUid },
             { "title", EscapeReservedYamlChars(metadata.ModuleData.Title ?? "TBD") },
+            { "metadata", BuildDynamicMetadata(metadata.ModuleData.Metadata) },
             { "summary", FormatMultiLineYaml(metadata.ModuleData.Summary) ?? "TBD" },
-            { "seotitle", EscapeReservedYamlChars(metadata.ModuleData.Metadata.Title ?? "TBD") },
-            { "seodescription", EscapeReservedYamlChars(metadata.ModuleData.Metadata.Description ?? "TBD") },
             { "abstract", FormatMultiLineYaml(metadata.ModuleData.Abstract) ?? "TBD" },
             { "prerequisites", FormatMultiLineYaml(metadata.ModuleData.Prerequisites) ?? "TBD" },
             { "iconUrl", metadata.ModuleData.IconUrl ?? "/learn/achievements/generic-badge.svg" },
-            { "saveDate", metadata.ModuleData.Metadata.MsDate }, // 09/24/2018
-            { "mstopic", metadata.ModuleData.Metadata.MsTopic ?? "interactive-tutorial" },
-            { "msproduct", metadata.ModuleData.Metadata.MsProduct ?? "learning-azure" },
-            { "msauthor", metadata.ModuleData.Metadata.MsAuthor ?? "TBD" },
-            { "author", metadata.ModuleData.Metadata.Author ?? "TBD" },
             { "badge-uid", metadata.ModuleData.Badge?.Uid ?? $"{moduleUid}-badge" },
             { "levels-list", ModuleMetadata.GetOrCreateList(metadata.ModuleData.Levels, "- beginner") },
             { "roles-list", ModuleMetadata.GetOrCreateList(metadata.ModuleData.Roles, "- developer") },
@@ -221,8 +219,18 @@ public class ModuleBuilder
             { "unit-uid-list", string.Join("\r\n", unitIds) }
         };
 
-        await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"),
-            PopulateTemplate("index.yml", moduleValues));
+        var yamlText = PopulateTemplate("index.yml", moduleValues);
+        await File.WriteAllTextAsync(Path.Combine(outputFolder, "index.yml"), yamlText);
+    }
+
+    private static string BuildDynamicMetadata(Metadata metadata)
+    {
+        var sb = new StringBuilder().AppendLine("metadata:");
+        foreach (var kvp in metadata)
+        {
+            sb.AppendLine($"  {kvp.Key}: {kvp.Value}");
+        }
+        return sb.ToString();
     }
 
     private static string CreateContentLine(UnitMetadata unitMetadata, string unitFileName)
@@ -386,26 +394,43 @@ public class ModuleBuilder
     /// <param name="docxFile">Word document</param>
     /// <param name="ignoreExisting">True to ignore any document data</param>
     /// <param name="useGenericIds">True to use generic identifiers</param>
+    /// <param name="suppliedMetadata">Metadata which should be used if possible</param>
     /// <returns>Module metadata</returns>
-    public static ModuleMetadata LoadDocumentMetadata(string docxFile, bool ignoreExisting, bool useGenericIds)
+    public static ModuleMetadata LoadDocumentMetadata(string docxFile, bool ignoreExisting, bool useGenericIds, string suppliedMetadata)
     {
+        const string moduleHeader = "### YamlMime:Module";
+        Module moduleData = null;
+
+        // Try using any passed metadata first.
+        if (!string.IsNullOrWhiteSpace(suppliedMetadata))
+        {
+            if (!suppliedMetadata.StartsWith(moduleHeader))
+            {
+                suppliedMetadata = moduleHeader + "\r\n" + suppliedMetadata;
+            }
+
+            try
+            {
+                moduleData =
+                    ContentParser.LoadContentFromString<Module>(YamlType.Module, suppliedMetadata);
+            }
+            catch
+            {
+                // Ignored
+            }
+        }
+
         using var doc = Document.Load(docxFile);
 
-        MSLearnRepos.Module moduleData = null;
-        if (!ignoreExisting && doc.CustomProperties.TryGetValue(nameof(MSLearnRepos.Module.Metadata), out var property) && property != null)
+        if (moduleData == null && !ignoreExisting && doc.CustomProperties.TryGetValue(nameof(Module.Metadata), out var property) && property != null)
         {
             var text = property.Value;
             if (text?.Length > 0)
             {
                 try
                 {
-                    moduleData = JsonConvert.DeserializeObject<MSLearnRepos.Module>(text,
-                        new JsonSerializerSettings
-                        {
-                            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                            NullValueHandling = NullValueHandling.Ignore,
-                            DateFormatString = "MM/dd/yyyy" // 06/21/2021
-                        });
+                    moduleData = PersistenceUtilities
+                        .JsonStringToObject<Module>(text);
                 }
                 catch
                 {
@@ -414,52 +439,66 @@ public class ModuleBuilder
             }
         }
 
-        var metadata = new ModuleMetadata(moduleData);
+        moduleData ??= new Module();
+        moduleData.Metadata ??= new Metadata();
+        var firstH1Text = "";
 
         foreach (var item in doc.Paragraphs)
         {
             var styleName = item.Properties.StyleName;
-            if (styleName == "Heading1") break;
+            if (styleName == "Heading1")
+            {
+                firstH1Text = item.Text;
+                break;
+            }
             switch (styleName)
             {
                 case "Title":
-                    metadata.ModuleData.Title = item.Text;
+                    moduleData.Title = item.Text;
                     break;
                 case "Author":
-                    metadata.ModuleData.Metadata.MsAuthor = item.Text;
+                    moduleData.Metadata.MsAuthor = item.Text;
                     break;
                 case "Abstract":
-                    metadata.ModuleData.Summary = item.Text;
+                    moduleData.Summary = item.Text;
                     break;
             }
         }
 
         // Must have a title.
-        metadata.ModuleData.Title ??= doc.Properties.Title;
-        if (string.IsNullOrEmpty(metadata.ModuleData.Title))
-            metadata.ModuleData.Title =
-                CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Path.GetFileNameWithoutExtension(docxFile));
-        if (string.IsNullOrEmpty(metadata.ModuleData.Title))
-            metadata.ModuleData.Title = Path.GetRandomFileName();
-
-        metadata.ModuleData.Summary ??= doc.Properties.Subject;
-        metadata.ModuleData.Metadata.MsAuthor ??= doc.Properties.Creator;
-
-        if (!HasOnlyEnglishOrNonLetters(metadata.ModuleData.Metadata.MsAuthor))
+        if (string.IsNullOrWhiteSpace(moduleData.Title))
         {
-            metadata.ModuleData.Metadata.MsAuthor = null;
+            moduleData.Title = FirstNonEmptyValue(
+                new[] {doc.Properties.Title, firstH1Text},
+                () => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Path.GetFileNameWithoutExtension(docxFile)),
+                Path.GetRandomFileName);
         }
+
+        if (string.IsNullOrWhiteSpace(moduleData.Summary))
+            moduleData.Summary = FirstNonEmptyValue(new[] {doc.Properties.Subject});
+
+        if (string.IsNullOrWhiteSpace(moduleData.Metadata.MsAuthor))
+            moduleData.Metadata.MsAuthor = FirstNonEmptyValue(new[] { doc.Properties.Creator });
+
+        if (!HasOnlyEnglishOrNonLetters(moduleData.Metadata.MsAuthor))
+            moduleData.Metadata.MsAuthor = "TBD";
+
+        if (string.IsNullOrWhiteSpace(moduleData.Metadata.Author))
+            moduleData.Metadata.Author = moduleData.Metadata.MsAuthor;
+
+        if (!HasOnlyEnglishOrNonLetters(moduleData.Metadata.Author))
+            moduleData.Metadata.Author = "TBD";
 
         // Use SaveDate first, then CreatedDate if unavailable.
         if (doc.Properties.SaveDate != null)
-            metadata.ModuleData.Metadata.MsDate = doc.Properties.SaveDate.Value.ToString("MM/dd/yyyy");
+            moduleData.Metadata.MsDate = doc.Properties.SaveDate.Value.ToString("MM/dd/yyyy");
         else if (doc.Properties.CreatedDate != null)
-            metadata.ModuleData.Metadata.MsDate = doc.Properties.CreatedDate.Value.ToString("MM/dd/yyyy");
+            moduleData.Metadata.MsDate = doc.Properties.CreatedDate.Value.ToString("MM/dd/yyyy");
         else
-            metadata.ModuleData.Metadata.MsDate = DateTime.Now.ToString("MM/dd/yyyy");
+            moduleData.Metadata.MsDate = DateTime.Now.ToString("MM/dd/yyyy");
 
         // Fill in the UID if not present.
-        if (string.IsNullOrEmpty(metadata.ModuleData.Uid))
+        if (string.IsNullOrEmpty(moduleData.Uid))
         {
             var uid = doc.Properties.Category;
             if (!string.IsNullOrEmpty(uid) && uid.StartsWith("learn."))
@@ -470,15 +509,42 @@ public class ModuleBuilder
 
             if (string.IsNullOrEmpty(uid))
             {
-                uid = useGenericIds || !HasOnlyEnglishOrNonLetters(metadata.ModuleData.Title)
+                uid = useGenericIds || !HasOnlyEnglishOrNonLetters(moduleData.Title)
                     ? "learn.module.replace-me-tbd"
-                    : "learn." + GenerateFilenameFromTitle(metadata.ModuleData.Title ?? "");
+                    : "learn." + GenerateFilenameFromTitle(moduleData.Title ?? "");
             }
 
-            metadata.ModuleData.Uid = uid;
+            moduleData.Uid = uid;
         }
 
-        return metadata;
+        if (string.IsNullOrWhiteSpace(moduleData.Metadata.Title))
+            moduleData.Metadata.Title = FirstNonEmptyValue(new[] { moduleData.Title });
+
+        if (string.IsNullOrWhiteSpace(moduleData.Metadata.Description))
+            moduleData.Metadata.Description = FirstNonEmptyValue(new[] { moduleData.Summary });
+
+        if (string.IsNullOrWhiteSpace(moduleData.Metadata.MsTopic))
+            moduleData.Metadata.MsTopic = "interactive-tutorial";
+
+        return new ModuleMetadata(moduleData);
+    }
+
+    private static string FirstNonEmptyValue(string[] textValues, params Func<string>[] funcValues)
+    {
+        foreach (var text in textValues)
+        {
+            if (!string.IsNullOrWhiteSpace(text))
+                return text;
+        }
+
+        foreach (var func in funcValues)
+        {
+            var value = func();
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return "TBD";
     }
 
     private static string GenerateFilenameFromTitle(string title)

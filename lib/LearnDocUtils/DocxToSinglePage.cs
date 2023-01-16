@@ -1,6 +1,7 @@
 ﻿using Docx.Renderer.Markdown;
-using DXPlus;
 using MSLearnRepos;
+using ConvertLearnToDoc.Shared;
+using Document = DXPlus.Document;
 
 namespace LearnDocUtils;
 
@@ -68,13 +69,47 @@ public static class DocxToSinglePage
         }
 
         await File.WriteAllTextAsync(markdownFile, markdownText);
-        await WriteMetadata(docxFile, markdownFile);
+
+        Dictionary<object, object> suppliedMetadata = null;
+        if (options?.Metadata != null)
+        {
+            try
+            {
+                suppliedMetadata = PersistenceUtilities.YamlStringToDictionary(options.Metadata);
+            }
+            catch
+            {
+                // Ignore
+            }
+        }
+
+        await WriteMetadata(docxFile, markdownFile, suppliedMetadata);
     }
 
-    private static async Task WriteMetadata(string docxFile, string markdownFile)
+    private static async Task WriteMetadata(string docxFile, string markdownFile, Dictionary<object,object> suppliedMetadata)
     {
         string[] validHeaders = {"Title", "Subtitle", "Author", "Abstract"};
         var doc = Document.Load(docxFile);
+
+        // Load any original metadata from the document.
+        if (suppliedMetadata == null && 
+            doc.CustomProperties.TryGetValue(nameof(Metadata), out var jsonText))
+        {
+            if (jsonText?.Value != null)
+            {
+                // Get the dictionary of values.
+                try
+                {
+                    suppliedMetadata = PersistenceUtilities
+                        .JsonStringToObject<Dictionary<object,object>>(jsonText.Value);
+                }
+                catch
+                {
+                    // Ignore
+                }
+
+            }
+        }
 
         bool foundStart = false;
         string title = null, author = null, summary = null;
@@ -126,9 +161,16 @@ public static class DocxToSinglePage
         else
             date = DateTime.Now.ToString("MM/dd/yyyy");
 
-        string additionalMetadata = doc.CustomProperties.TryGetValue(nameof(Metadata), out var property) == true
-            ? property?.Value
-            : null;
+        suppliedMetadata ??= new Dictionary<object, object>();
+
+        if (!string.IsNullOrWhiteSpace(title))
+            suppliedMetadata["title"] = title;
+        if (!string.IsNullOrWhiteSpace(summary))
+            suppliedMetadata["description"] = summary;
+        if (!string.IsNullOrWhiteSpace(author))
+            suppliedMetadata["author"] = author;
+
+        suppliedMetadata["ms.date"] = date;
 
         string updatedFile = Path.ChangeExtension(markdownFile, ".tmp");
 
@@ -136,16 +178,9 @@ public static class DocxToSinglePage
         using (var reader = new StreamReader(markdownFile))
         {
             await writer.WriteLineAsync("---");
-            if (!string.IsNullOrEmpty(title))
-                await writer.WriteLineAsync($"title: {title}");
-            if (!string.IsNullOrEmpty(summary))
-                await writer.WriteLineAsync($"description: {summary}");
-            if (!string.IsNullOrEmpty(author))
-                await writer.WriteLineAsync($"author: {author}");
-            await writer.WriteLineAsync($"ms.date: {date}");
-            // If it's a Learn module, don't add it.
-            if (additionalMetadata != null && !additionalMetadata.Contains("metadata"))
-                await writer.WriteAsync(additionalMetadata);
+
+            await writer.WriteAsync(PersistenceUtilities.DictionaryToYamlString(suppliedMetadata));
+
             await writer.WriteLineAsync("---");
 
             bool started = !foundStart;

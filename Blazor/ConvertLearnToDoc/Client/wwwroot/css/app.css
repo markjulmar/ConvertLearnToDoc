@@ -74,6 +74,11 @@ a, .btn-link {
     height: 500px;
 }
 
+.left-label {
+    vertical-align: middle !important;
+    margin-top: .5em;
+}
+
 .dialog label {
     font-weight: bold;
 }

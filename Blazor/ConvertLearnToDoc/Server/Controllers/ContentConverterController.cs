@@ -28,16 +28,18 @@ public class ContentConverterController : ControllerBase
         try
         {
             var metadata = await MSLearnRepos.DocsMetadata.LoadFromUrlAsync(url);
-            if (metadata != null)
+            string pageType = metadata.PageType??string.Empty;
+            if (pageType.ToLower() == "learn")
+                pageType += "." + metadata.PageKind;
+
+            return new ContentRef
             {
-                return new ContentRef
-                {
-                    Organization = metadata.Organization ?? string.Empty,
-                    Repository = metadata.Repository ?? string.Empty,
-                    Branch = metadata.Branch ?? string.Empty,
-                    Folder = metadata.ContentPath ?? string.Empty
-                };
-            }
+                Organization = metadata.Organization ?? string.Empty,
+                Repository = metadata.Repository ?? string.Empty,
+                Branch = metadata.Branch ?? string.Empty,
+                Folder = metadata.ContentPath ?? string.Empty,
+                PageType = pageType,
+            };
         }
         catch (Exception ex) 
         {

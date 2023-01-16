@@ -8,8 +8,10 @@ public class ModuleMetadata
 
     public ModuleMetadata(Module moduleData)
     {
-        this.ModuleData = moduleData ?? new Module();
-        this.ModuleData.Metadata ??= new Metadata();
+        if (moduleData?.Metadata == null)
+            throw new ArgumentNullException(nameof(moduleData));
+
+        ModuleData = moduleData;
     }
 
     public static string GetList(string header, List<string> items)

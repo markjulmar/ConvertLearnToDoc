@@ -42,15 +42,24 @@ public class DocConverterController : ControllerBase
 
         try
         {
-            var md = ModuleBuilder.LoadDocumentMetadata(tempFile, false, false);
-            if (md.ModuleData != null)
+            if (document.IsArticle)
             {
-                return Ok(YamlUtilities.ObjectToYamlString(md.ModuleData));
+                var dictionary = DocsDownloader.GetArticleMetadataFromDocument(tempFile);
+                if (dictionary.Count > 0)
+                {
+                    return Ok(PersistenceUtilities.ObjectToYamlString(dictionary));
+                }
             }
             else
             {
-                return NotFound();
+                var md = ModuleBuilder.LoadDocumentMetadata(tempFile, false, false, null);
+                if (md.ModuleData != null)
+                {
+                    return Ok(PersistenceUtilities.ObjectToYamlString(md.ModuleData));
+                }
             }
+
+            return NotFound();
         }
         finally
         {
@@ -121,8 +130,8 @@ public class DocConverterController : ControllerBase
 
     private async Task<IActionResult> ConvertModuleAsync(ModuleRef moduleRef)
     {
-        string baseFolder = Path.GetTempPath();
-        string tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
+        var baseFolder = Path.GetTempPath();
+        var tempFile = Path.Combine(baseFolder, Path.GetTempFileName());
 
         // Copy the input file.
         await using (var stream = System.IO.File.Create(tempFile))
@@ -144,12 +153,13 @@ public class DocConverterController : ControllerBase
         {
             logger.LogDebug("DocxToLearn({InputFile}) => {OutputFile})", tempFile, outputPath);
             await DocxToLearn.ConvertAsync(tempFile, outputPath, 
-                new LearnMarkdownOptions {
+                new MarkdownOptions {
                     UseAsterisksForBullets = moduleRef.UseAsterisksForBullets,
                     UseAsterisksForEmphasis = moduleRef.UseAsterisksForEmphasis,
                     OrderedListUsesSequence = moduleRef.OrderedListUsesSequence,
                     UseIndentsForCodeBlocks = moduleRef.UseIndentsForCodeBlocks,
-                    IgnoreMetadata = moduleRef.IgnoreMetadata,
+                    IgnoreEmbeddedMetadata = moduleRef.IgnoreMetadata,
+                    Metadata = moduleRef.Metadata,
                     UseGenericIds = moduleRef.UseGenericIds,
                     UsePlainMarkdown = moduleRef.UsePlainMarkdown,
                 });
@@ -219,7 +229,8 @@ public class DocConverterController : ControllerBase
                 UseAsterisksForBullets = articleRef.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = articleRef.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = articleRef.OrderedListUsesSequence,
-                UseIndentsForCodeBlocks = articleRef.UseIndentsForCodeBlocks
+                UseIndentsForCodeBlocks = articleRef.UseIndentsForCodeBlocks,
+                Metadata = articleRef.Metadata,
             }, articleRef.UsePlainMarkdown);
 
             // If we only produced a Markdown file, then return that.

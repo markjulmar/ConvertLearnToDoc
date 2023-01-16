@@ -10,8 +10,9 @@ The GitHub repo has several related projects:
 
 | Project | Description |
 |---------|-------------|
-| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. |
-| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. |
+| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/) | A Blazor client/server version of the conversion tool.
+| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. This is no longer published and has been replaced with the Blazor version. |
+| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. This is no longer published and has been replaced with the Blazor version. |
 | [ConvertAll](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertAll) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
 | [ConvertDocx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. |
 

@@ -30,10 +30,11 @@
   <ItemGroup>
 	<PackageReference Include="Julmar.DxPlus" Version="1.3.4-preview" />
 	<PackageReference Include="Julmar.MSLearnCatalogAPI" Version="2.2.1" />
-    <PackageReference Include="Julmar.MSLearnRepos" Version="2.0.3" />
+    <PackageReference Include="Julmar.MSLearnRepos" Version="2.0.4.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Blazor\ConvertLearnToDoc\Shared\ConvertLearnToDoc.Shared.csproj" />
     <ProjectReference Include="..\Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj" />
     <ProjectReference Include="..\Docx.Renderer.Markdown\Docx.Renderer.Markdown.csproj" />
   </ItemGroup>

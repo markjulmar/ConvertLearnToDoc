@@ -19,14 +19,23 @@
     Upload the Word document to convert. The article will be returned as a single Markdown file, or as a .zip file with Markdown and images.
 </p>
 
+@if (editMetadata)
+{
+    <ModuleMetadata @bind-Metadata="metadata" @bind-IsShowing="editMetadata" Title="Learn Article Metadata" />
+}
+
 <EditForm id="convertArticle" class="row g-3" Model="@input" OnSubmit="HandleSubmit">
-    <DocumentInput @bind-SelectedFile="selectedFile" />
+    <DocumentInput @bind-SelectedFile="SelectedFile" />
     
+    <div class="col-12">
+        <button class="btn btn-secondary" type="button" disabled="@(SelectedFile == null)" @onclick="GetMetadataFromDocument">Edit Metadata</button>
+    </div>
+
     <label><b>Markdown options</b></label>
     <MarkdownOptions Options="@input" />
     
     <div class="col">
-        <button type="submit" disabled="@(selectedFile == null)" class="btn btn-success">Convert</button>
+        <button type="submit" disabled="@(SelectedFile == null)" class="btn btn-success">Convert</button>
     </div>
 </EditForm>
 
@@ -49,16 +58,59 @@
     private string? errorText;
     private readonly ArticleRef input = new();
     private IBrowserFile? selectedFile;
+    private IBrowserFile? SelectedFile
+    {
+        get => selectedFile;
+        set
+        {
+            if (selectedFile != value)
+            {
+                selectedFile = value;
+                metadata = null;
+            }
+        }
+    }
+
+    private string? metadata;
+    private bool editMetadata;
+
+    private async Task GetMetadataFromDocument()
+    {
+        if (metadata == null)
+        {
+            if (SelectedFile is not { ContentType: Constants.WordMimeType } || SelectedFile.Size < 100)
+            {
+                errorText = "Selected file is not a Word document. " + SelectedFile?.ContentType;
+                return;
+            }
+
+            var document = await BrowserFile.CreateAsync(SelectedFile);
+            document.IsArticle = true;
+
+            var response = await HttpClient.PostAsJsonAsync("/api/DocConverter/metadata", document);
+            if (response.IsSuccessStatusCode)
+            {
+                metadata = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                errorText = response.ReasonPhrase;
+            }
+        }
+
+        editMetadata = true;
+    }
 
     private async Task HandleSubmit()
     {
-        if (selectedFile is not { ContentType: Constants.WordMimeType } || selectedFile.Size < 100)
+        if (SelectedFile is not { ContentType: Constants.WordMimeType } || SelectedFile.Size < 100)
         {
-            errorText = "Selected file is not a Word document. " + selectedFile?.ContentType;
+            errorText = "Selected file is not a Word document. " + SelectedFile?.ContentType;
             return;
         }
 
-        input.Document = await BrowserFile.CreateAsync(selectedFile);
+        input.Document = await BrowserFile.CreateAsync(SelectedFile);
+        input.Metadata = metadata;
 
         await JS.InvokeVoidAsync("showWorkingDialog");
         HttpResponseMessage response;

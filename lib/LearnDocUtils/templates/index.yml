@@ -1,13 +1,6 @@
 ﻿### YamlMime:Module
 uid: {module-uid}
-metadata:
-  title: {seotitle}
-  description: {seodescription}
-  ms.date: {saveDate}
-  author: {author}
-  ms.author: {msauthor}
-  ms.topic: {mstopic}
-  ms.prod: {msproduct}
+{metadata}
 title: {title}
 summary: {summary}
 abstract: {abstract}

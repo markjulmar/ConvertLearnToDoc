@@ -62,13 +62,13 @@ public static class DocToLearn
         try
         {
             log.LogDebug($"DocxToLearn(inputFile:{tempFile}, outputPath:{outputPath})");
-            await DocxToLearn.ConvertAsync(tempFile, outputPath, new LearnMarkdownOptions
+            await DocxToLearn.ConvertAsync(tempFile, outputPath, new MarkdownOptions
             {
                 UseAsterisksForBullets = model.UseAsterisksForBullets,
                 UseAsterisksForEmphasis = model.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = model.OrderedListUsesSequence,
                 UseIndentsForCodeBlocks = model.UseIndentsForCodeBlocks,
-                IgnoreMetadata = model.IgnoreMetadata,
+                IgnoreEmbeddedMetadata = model.IgnoreMetadata,
                 UseGenericIds = model.UseGenericIds,
                 UsePlainMarkdown = model.UsePlainMarkdown,
             });

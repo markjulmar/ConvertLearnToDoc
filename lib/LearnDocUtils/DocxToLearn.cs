@@ -5,7 +5,7 @@ namespace LearnDocUtils;
 
 public static class DocxToLearn
 {
-    public static async Task ConvertAsync(string docxFile, string outputFolder, LearnMarkdownOptions options = null)
+    public static async Task ConvertAsync(string docxFile, string outputFolder, MarkdownOptions options = null)
     {
         if (string.IsNullOrWhiteSpace(docxFile))
             throw new ArgumentException($"'{nameof(docxFile)}' cannot be null or whitespace.", nameof(docxFile));
@@ -73,7 +73,8 @@ public static class DocxToLearn
             var moduleBuilder = new ModuleBuilder(docxFile, outputFolder, markdownFile);
             await moduleBuilder.CreateModuleAsync(new LearnModuleOptions
             {
-                IgnoreMetadata  = options?.IgnoreMetadata ?? false, 
+                IgnoreEmbeddedMetadata  = options?.IgnoreEmbeddedMetadata ?? false, 
+                Metadata = options?.Metadata,
                 UseGenericIds = options?.UseGenericIds ?? false
             });
         }

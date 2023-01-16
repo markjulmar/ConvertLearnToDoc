@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using ConvertLearnToDoc.Shared;
 using DXPlus;
 using Julmar.GenMarkdown;
 using Markdig;
@@ -53,7 +54,7 @@ public static class MarkdownToDocConverter
             .Build();
 
         // Get the web location for this content
-        string webLocation = moduleData != null ? moduleData.Url : "https://docs.microsoft.com/";
+        string webLocation = moduleData != null ? moduleData.Url : "https://learn.microsoft.com/";
         if (!webLocation.EndsWith('/')) webLocation += '/';
         webLocation += inputLocation.Replace('\\', '/');
         if (!webLocation.EndsWith('/')) webLocation += '/';
@@ -325,7 +326,6 @@ public static class MarkdownToDocConverter
             return index > 0 ? (text[..index].Trim().ToLower(), text[(index+1)..].Trim()) : ($"key{x}", text);
         }).ToDictionary(kvp => kvp.Item1, kvp => kvp.Item2);
 
-        var additionalMetadata = new StringBuilder();
         foreach (var kvp in keys)
         {
             if (kvp.Key == "title")
@@ -343,29 +343,24 @@ public static class MarkdownToDocConverter
                 document.Properties.CreatedDate = dt.ToUniversalTime();
                 document.Properties.SaveDate = dt.ToUniversalTime();
             }
-            else
-            {
-                additionalMetadata.AppendLine($"{kvp.Key}: {kvp.Value}");
-            }
         }
 
-        if (additionalMetadata.Length > 0)
-            document.CustomProperties.Add(nameof(Metadata), additionalMetadata.ToString());
+        if (keys.Count > 0)
+        {
+            var jsonText = PersistenceUtilities.ObjectToJsonString(keys);
+            document.CustomProperties.Add(nameof(Metadata), jsonText);
+        }
     }
 
     private static void AddMetadata(Module moduleData, IDocument document)
     {
         document.Properties.Title = moduleData.Title;
         document.Properties.Subject = moduleData.Summary;
-        document.Properties.Creator = moduleData.Metadata.MsAuthor;
-        document.Properties.LastSavedBy = moduleData.Metadata.MsAuthor;
+        document.Properties.Creator = moduleData.Metadata?.MsAuthor ?? moduleData.Metadata?.Author ?? "TBD";
+        document.Properties.LastSavedBy = moduleData.Metadata?.MsAuthor ?? moduleData.Metadata?.Author ?? "TBD";
 
-        SetCustomProperty(document, nameof(Module.Metadata), 
-            JsonConvert.SerializeObject(moduleData, Formatting.None,
-                new JsonSerializerSettings {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                    NullValueHandling = NullValueHandling.Ignore
-                }));
+        var jsonText = PersistenceUtilities.ObjectToJsonString(moduleData);
+        SetCustomProperty(document, nameof(Module.Metadata), jsonText);
 
         var dt = moduleData.LastUpdated?.ToUniversalTime() ?? DateTime.UtcNow;
         document.Properties.CreatedDate = dt;

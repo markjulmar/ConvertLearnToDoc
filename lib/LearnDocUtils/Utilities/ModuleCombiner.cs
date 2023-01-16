@@ -77,7 +77,7 @@ public static class ModuleCombiner
                     await tempFile.WriteLineAsync($"### {question.Content}");
                     foreach (var choice in question.Choices)
                     {
-                        await tempFile.WriteAsync(choice.IsCorrect ? "- [x] " : "- [ ] ");
+                        await tempFile.WriteAsync(choice.IsCorrect??false ? "- [x] " : "- [ ] ");
                         await tempFile.WriteLineAsync(EscapeContent(choice.Content));
                         if (!string.IsNullOrEmpty(choice.Explanation))
                         {
@@ -92,7 +92,7 @@ public static class ModuleCombiner
         return (module, markdownFile);
     }
 
-    static bool ExtractYamlHeader(ref string mdText, out string header)
+    private static bool ExtractYamlHeader(ref string mdText, out string header)
     {
         const string YamlMarker = "---";
         header = null;

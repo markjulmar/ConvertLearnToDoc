@@ -1,26 +1,25 @@
 ﻿
 <div class="container-fluid">
-    <div class="mb-3 row">
-        <div class="col">
-            <button class="btn btn-primary float-end" @onclick="AddNew">Add New</button>
-        </div>
-    </div>
-
     @for (var index = 0; index < Items.Count; index++)
     {
         var i = index;
         var item = Items[i];
 
         <div class="row pb-3">
-            <div class="col-11">
-                <input type="text" class="form-control" placeholder="Enter a value" 
-                       value="@item" @onchange="@(e => ChangeText(i, e))"/>
-            </div>
-            <div class="col">
-                <button class="btn-close" @onclick="@(() => RemoveItem(i))"></button>
+            <div class="input-group position-relative d-inline-flex align-items-center">
+                <input type="text" class="form-control" placeholder="Enter a value"
+                   value="@item" @onchange="@(e => ChangeText(i, e))" />
+                <i class="oi oi-x position-absolute"aria-label="Delete" @onclick="@(() => RemoveItem(i))"
+                    style="right: 20px; top: 10px; cursor: pointer;z-index: 100;">
+                </i>
             </div>
         </div>
     }
+    <div class="mb-3 row">
+        <div class="col">
+            <button class="btn btn-primary float-end" @onclick="AddNew">Add New</button>
+        </div>
+    </div>
 </div>
 
 @code {

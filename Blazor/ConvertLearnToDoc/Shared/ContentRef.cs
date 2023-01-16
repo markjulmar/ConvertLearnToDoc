@@ -18,10 +18,11 @@ public class ContentRef
     
     public string? ZonePivot { get; set; }
     public bool EmbedNotebooks { get; set; }
+    public string PageType { get; set; }
 
     public ContentRef()
     {
-        Organization = Repository = Branch = Folder = string.Empty;
+        Organization = Repository = Branch = Folder = PageType = string.Empty;
     }
 
     public override string ToString()
@@ -39,6 +40,11 @@ public class ContentRef
         ZonePivot = ZonePivot?.Trim();
         if (ZonePivot == string.Empty) ZonePivot = null;
         if (string.IsNullOrEmpty(Branch)) Branch = "live";
+
+        // Must be Learn module or conceptual article.
+        if (string.Compare(PageType, "conceptual", StringComparison.InvariantCultureIgnoreCase) != 0
+            && string.Compare(PageType, "learn.module", StringComparison.InvariantCultureIgnoreCase) != 0)
+            return false;
 
         // Check mandatory input
         return !string.IsNullOrEmpty(Organization)
