@@ -32,12 +32,14 @@ public static class PersistenceUtilities
 
     public static string ObjectToYamlString(object input)
     {
-        return new SerializerBuilder()
+        var result = new SerializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
             .WithEventEmitter(nextEmitter => new MultilineQuoteFixupEmitter(nextEmitter))
             .Build()
             .Serialize(input);
+
+        return result;
     }
 
     //public static string YamlStringToJson(string text)
@@ -115,9 +117,9 @@ public static class PersistenceUtilities
                         }
                     }
 
-                    base.Emit(eventInfo, emitter);
                 }
             }
+            base.Emit(eventInfo, emitter);
         }
     }
 }
