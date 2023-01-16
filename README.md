@@ -1,6 +1,6 @@
 # ConvertLearnToDoc
 
-[![Build and deploy .NET Core app to Windows WebApp ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.yml/badge.svg)](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.yml)
+[![Build and deploy .NET Core app to Windows WebApp ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.Blazor.yml/badge.svg)](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.Blazor.yml)
 
 Tools to convert Learn module to Word doc and back
 
@@ -10,7 +10,7 @@ The GitHub repo has several related projects:
 
 | Project | Description |
 |---------|-------------|
-| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/) | A Blazor client/server version of the conversion tool.
+| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/ConvertLearnToDoc) | A Blazor client/server version of the conversion tool.
 | [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. This is no longer published and has been replaced with the Blazor version. |
 | [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. This is no longer published and has been replaced with the Blazor version. |
 | [ConvertAll](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertAll) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
