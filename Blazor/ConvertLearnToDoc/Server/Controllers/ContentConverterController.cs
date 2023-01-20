@@ -20,7 +20,8 @@ public class ContentConverterController : ControllerBase
     [HttpGet]
     public async Task<ContentRef> Get(string url)
     {
-        logger.LogInformation("GetMetadata({Url}", url);
+        var user = ControllerExtensions.GetUsername(this.HttpContext) ?? "Local User";
+        logger.LogInformation("GetMetadata({Url}) by {User}", url, user);
         
         if (string.IsNullOrEmpty(url)) 
             return new ContentRef();
@@ -52,7 +53,8 @@ public class ContentConverterController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] ContentRef contentRef)
     {
-        logger.LogInformation("ContentConverter({ContentRef})", contentRef);
+        var user = ControllerExtensions.GetUsername(this.HttpContext) ?? "Local User";
+        logger.LogInformation("ContentConverter({ContentRef}) by {User}", contentRef, user);
 
         if (!contentRef.IsValid())
         {

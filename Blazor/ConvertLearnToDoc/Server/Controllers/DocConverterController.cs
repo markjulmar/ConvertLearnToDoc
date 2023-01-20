@@ -26,7 +26,8 @@ public class DocConverterController : ControllerBase
     [Route("metadata")]
     public async Task<IActionResult> GetModuleInfo([FromBody] BrowserFile document)
     {
-        logger.LogInformation("GetModuleInfo({Document})", document);
+        var user = ControllerExtensions.GetUsername(this.HttpContext) ?? "Local User";
+        logger.LogInformation("GetModuleInfo({Document}) by {User}", document, user);
 
         if (!IsValidDocument(document))
             return BadRequest("Document is not valid");
@@ -72,7 +73,8 @@ public class DocConverterController : ControllerBase
     [Route("article")]
     public async Task<IActionResult> Post([FromBody] ArticleRef article)
     {
-        logger.LogInformation("ArticleConverter({ArticleRef})", article);
+        var user = ControllerExtensions.GetUsername(this.HttpContext) ?? "Local User";
+        logger.LogInformation("ArticleConverter({ArticleRef}) by {User}", article, user);
 
         if (!IsValidDocument(article.Document))
             return BadRequest("Document is not valid");

@@ -653,7 +653,7 @@ public class ModuleBuilder
                 var text = line.Trim().TrimStart('-').TrimStart('*').TrimStart();
                 Debug.Assert(text.Length>0);
 
-                if (text[0] == '[') // choice?
+                if (text.Length > 3 && text[0] == '[') // choice?
                 {
                     var isCorrect = text.Replace(" ", "").ToLower().StartsWith("[x]");
                     start = text.IndexOf(']') + 1;
