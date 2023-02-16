@@ -147,6 +147,15 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                             var lastBlock = theList[^1];
                             if (blockOwner.ToString().TrimEnd('\r','\n').Length == 0)
                                 lastBlock.Remove(blockOwner);
+
+                            // If this block doesn't have anything in it, then we should remove it
+                            // and move up to the last non-empty block.
+                            while (lastBlock.Count == 0 && theList.Count > 1)
+                            {
+                                theList.Remove(lastBlock);
+                                lastBlock = theList[^1];
+                            }
+                            
                             lastBlock.Add(block);
                         }
                         else if (document.LastOrDefault() is Julmar.GenMarkdown.Table table)

@@ -6,8 +6,6 @@ using System.Text.RegularExpressions;
 using ConvertLearnToDoc.Shared;
 using MSLearnRepos;
 using MSLearnRepos.Parser;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Document = DXPlus.Document;
 using Module = MSLearnRepos.Module;
 
@@ -106,7 +104,7 @@ public class ModuleBuilder
 
                     // Get the original filename if we can determine what it was.
                     string fn = options.UseGenericIds ? null : unitMetadata.GetContentFilename();
-                    if (string.IsNullOrEmpty(fn))
+                    if (string.IsNullOrEmpty(fn) || fn == unitMetadata.Content)
                     {
                         // Get a unique filename based on the title + unit index.
                         var baseFn = options.UseGenericIds || !HasOnlyEnglishOrNonLetters(title) ? "unit" : GenerateFilenameFromTitle(title);
@@ -160,7 +158,7 @@ public class ModuleBuilder
 
             var quizText = ExtractQuiz(unitMetadata.Title, unitMetadata.Lines);
 
-            var zonePivotGroups = !string.IsNullOrEmpty(unitMetadata.Metadata.Metadata.ZonePivotGroups)
+            var zonePivotGroups = !string.IsNullOrEmpty(unitMetadata.Metadata.Metadata?.ZonePivotGroups)
                 ? "  zone_pivot_groups: " + unitMetadata.Metadata.Metadata.ZonePivotGroups
                 : null;
 
@@ -171,14 +169,14 @@ public class ModuleBuilder
                 { "module-uid", moduleUid },
                 { "unit-uid", unitMetadata.Metadata.Uid },
                 { "title", EscapeReservedYamlChars(unitMetadata.Title) },
-                { "seotitle", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Title ?? unitMetadata.Title) },
-                { "seodescription", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata.Description ?? "TBD") },
+                { "seotitle", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata?.Title ?? unitMetadata.Title) },
+                { "seodescription", EscapeReservedYamlChars(unitMetadata.Metadata.Metadata?.Description ?? "TBD") },
                 { "duration", EstimateDuration(unitMetadata.Metadata.DurationInMinutes ?? 0, unitMetadata.Lines, quizText).ToString() },
-                { "saveDate", unitMetadata.Metadata.Metadata.MsDate }, // 09/24/2018
-                { "mstopic", unitMetadata.Metadata.Metadata.MsTopic ?? "interactive-tutorial" },
-                { "msproduct", unitMetadata.Metadata.Metadata.MsProduct ?? "learning-azure" },
-                { "msauthor", unitMetadata.Metadata.Metadata.MsAuthor ?? "TBD" },
-                { "author", unitMetadata.Metadata.Metadata.Author ?? "TBD" },
+                { "saveDate", unitMetadata.Metadata.Metadata?.MsDate ?? DateTime.Now.ToString("MM/dd/yyyy") }, // 09/24/2018
+                { "mstopic", unitMetadata.Metadata.Metadata?.MsTopic ?? "interactive-tutorial" },
+                { "msproduct", unitMetadata.Metadata.Metadata?.MsProduct ?? "learning-azure" },
+                { "msauthor", unitMetadata.Metadata.Metadata?.MsAuthor ?? "TBD" },
+                { "author", unitMetadata.Metadata.Metadata?.Author ?? "TBD" },
                 { "interactivity", unitMetadata.BuildInteractivityOptions() },
                 { "unit-content", CreateContentLine(unitMetadata, unitFileName) },
                 { "zonePivots", zonePivotGroups },
@@ -694,13 +692,13 @@ public class ModuleBuilder
         return content;
     }
 
-    private static async Task<MSLearnRepos.Module> GetModuleFromUidAsync(string uid)
+    private static async Task<Module> GetModuleFromUidAsync(string uid)
     {
         var catalog = await MSLearnCatalogAPI.CatalogApi.GetCatalogAsync();
         var catalogModule = catalog.Modules.SingleOrDefault(m => m.Uid == uid);
         if (catalogModule == null) return null;
 
-        var module = new MSLearnRepos.Module
+        var module = new Module
         {
             Uid = catalogModule.Uid,
             Title = catalogModule.Title,

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-i C:\\Users\\Mark\\Downloads\\accessibility-build-foundation-inclusive-learning-he-il.docx -o C:\\Users\\mark\\Desktop\\test"
+      "commandLineArgs": "-d -i D:\\OneDrive\\Desktop\\test.docx -o D:\\OneDrive\\Desktop\\test"
     }
   }
 }

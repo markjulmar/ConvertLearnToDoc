@@ -30,7 +30,7 @@ public static class ModuleCombiner
         {
             // Get the unit text
             string unitFn = unit.GetContentFilename();
-            var mdText = !string.IsNullOrEmpty(unitFn)
+            var mdText = !string.IsNullOrEmpty(unitFn) && unitFn != unit.Content
                 ? await File.ReadAllTextAsync(Path.Combine(outputFolder, unitFn))
                 : unit.Content ?? "";
 

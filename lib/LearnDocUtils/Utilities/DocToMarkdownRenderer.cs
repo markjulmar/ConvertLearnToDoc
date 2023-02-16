@@ -5,16 +5,29 @@ namespace LearnDocUtils;
 internal static class DocToMarkdownRenderer
 {
     /// <summary>
+    /// This is the list of unicode space characters we see
+    /// in Word docs. This includes non-breaking spaces, narrow spaces,
+    /// and zero width spaces.
+    /// </summary>
+    static readonly (string find,string replace)[] Replacements =
+    {
+        ("\xa0", " "), 
+        ("\u200B", ""), 
+        ("\u202F", " "),
+        ("{tabgroup-end}", "---")
+    };
+
+    /// <summary>
     /// Do some post-conversion cleanup of markers, paths, and triple-colon placeholders.
     /// </summary>
     /// <param name="text"></param>
     /// <returns></returns>
     internal static string PostProcessMarkdown(string text)
     {
-        text = text.Trim('\r').Trim('\n');
-        text = text.Replace("\xa0", " "); // TODO: should this be &nbsp;?
-        text = text.Replace("{tabgroup-end}", "---");
+        text = text.Trim('\r').Trim('\n'); //.Trim('\r');
+        text = Replacements.Aggregate(text, (current, ch) => current.Replace(ch.find, ch.replace));
 
+        // Do all the doc replacements we did from an original doc.
         text = Regex.Replace(text, @"{rgn (.*?)}", m => $"<rgn>{m.Groups[1].Value.Trim()}</rgn>");
         text = Regex.Replace(text, @"{zonePivot:(.*?)}", m => $":::zone pivot={m.Groups[1].Value.Trim()}");
         text = Regex.Replace(text, @"{end-zonePivot:(.*?)}", m => $":::zone-end");

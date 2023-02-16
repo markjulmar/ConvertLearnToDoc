@@ -39,6 +39,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.Client", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.Shared", "Blazor\ConvertLearnToDoc\Shared\ConvertLearnToDoc.Shared.csproj", "{60CCA012-A46A-4CB3-8F6C-BEDB87712A00}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertLearnToDoc.UnitTests", "Tests\ConvertLearnToDoc.UnitTests\ConvertLearnToDoc.UnitTests.csproj", "{9C2EEF7C-B1F6-459C-AE09-180923179F68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,10 @@ Global
 		{60CCA012-A46A-4CB3-8F6C-BEDB87712A00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60CCA012-A46A-4CB3-8F6C-BEDB87712A00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60CCA012-A46A-4CB3-8F6C-BEDB87712A00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C2EEF7C-B1F6-459C-AE09-180923179F68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C2EEF7C-B1F6-459C-AE09-180923179F68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C2EEF7C-B1F6-459C-AE09-180923179F68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C2EEF7C-B1F6-459C-AE09-180923179F68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -120,6 +126,7 @@ Global
 		{23CC2FD6-C234-41FC-B952-47C5F8AEE34B} = {03D4137E-D75B-498F-9BAC-F888AB8FC710}
 		{6A289634-7DFA-4C43-B599-E837720F912D} = {03D4137E-D75B-498F-9BAC-F888AB8FC710}
 		{60CCA012-A46A-4CB3-8F6C-BEDB87712A00} = {03D4137E-D75B-498F-9BAC-F888AB8FC710}
+		{9C2EEF7C-B1F6-459C-AE09-180923179F68} = {764304F6-2D73-4E5F-B341-9A2B132F98A7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6BABCC68-20CA-4717-9E38-F209B49935BD}

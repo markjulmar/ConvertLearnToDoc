@@ -167,7 +167,11 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
     private static void CreateParagraph(IMarkdownRenderer renderer, MarkdownDocument document, 
         MarkdownBlock blockOwner, DXParagraph element, RenderBag tags)
     {
-        if (!element.Runs.Any()) return;
+        if (!element.Runs.Any())
+        {
+            document.Add(new Paragraph());
+            return;
+        }
 
         if (document.LastOrDefault() is Paragraph lastParagraph)
         {
@@ -257,14 +261,17 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 break;
             case NumberingFormat.None:
             {
-                if (document.LastOrDefault() is MarkdownList list 
-                    && list.Metadata.TryGetValue("hasListDetails", out var hasDetails)
-                    && (bool) hasDetails)
+                if (document.LastOrDefault() is MarkdownList list)
                 {
-                    var blocks = list[^1];
-                    var paragraph = new Paragraph();
-                    blocks.Add(paragraph);
-                    CreateParagraph(renderer, document, paragraph, element, tags);
+                    if (list is OrderedList 
+                        || (list.Metadata.TryGetValue("hasListDetails", out var hasDetails)
+                        && (bool)hasDetails))
+                    {
+                        var blocks = list[^1];
+                        var paragraph = new Paragraph();
+                        blocks.Add(paragraph);
+                        CreateParagraph(renderer, document, paragraph, element, tags);
+                    }
                 }
                 else
                 {
