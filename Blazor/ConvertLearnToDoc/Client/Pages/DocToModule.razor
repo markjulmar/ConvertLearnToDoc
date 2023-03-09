@@ -59,6 +59,25 @@
 
 <div class="pl-3 pt-3">
     <div class="card mt-4">
+        <h5 class="card-header">Document templates</h5>
+        <div class="card-body">
+            <p>
+                You can use the following training module templates to get started. Download one of the following Word documents and fill it in with the proper details and then upload it to this page to get a Learn training module.
+            </p>
+            <p>
+                <ul>
+                    @foreach (var template in templates)
+                    {
+                        <li>
+                            <a href="resources/training/@(template.filename).docx" download>@template.name</a> - @template.description
+                        </li>
+                    }
+                </ul>
+            </p>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
         <h5 class="card-header">Document Tips</h5>
         <div class="card-body">
             <ul>
@@ -70,19 +89,21 @@
                 <li>Embed a placeholder video from YouTube if you don't know the link and then replace the Markdown link before publishing.</li>
                 <li>For images, make sure to set Alt Text. In addition, you can add a caption to the image to add screen-reader descriptions.</li>
             </ul>
-            <p>
-                There are more options - a full list is in the document template which you can download below.
-            </p>
-            <p>
-                <a href="./resources/standard-module-template.docx" class="card-link">Document template</a>
-                <a href="https://review.docs.microsoft.com/en-us/help/learn/?branch=main" target="_blank" class="card-link">Learn contributor guide</a>
-            </p>
         </div>
     </div>
 </div>
 
 @code
 {
+    private List<(string name,string description,string filename)> templates = new()
+    {
+        ("Standard module","A standard-task-based is a Learn module pattern that teaches a real-world job-task. It includes a sequence of concept units mixed with exercises and knowledge checks.","standard-task-based-module-pattern-template"),
+        ("Introduction module","An introduction-to-product is a Learn module pattern that helps customers evaluate whether the product will meet their needs.","introduction-to-product-module-pattern-template"),
+        ("Choose module", "Choose-the-best-to-product is a Learn module pattern that helps customers select the best product for their needs from a group of product that offer similar functionality. These modules guide customers at the start of their projects, which means they can have a large effect on the success of those projects.", "choose-the-best-product-module-pattern-template"),
+        ("Build your first module", "Build-your-first is a Learn module pattern that teaches how to use a product. These modules give our customers a quick way to try a product as we guide them through their first use.", "build-your-first-module-pattern-template"),
+        ("Challenge project module", "Challenge project is a Learn module pattern that encourages the learner to solve a real-world problem with only a specification to guide them. These modules are analogous to homework exercises in academic environments.", "challenge-project-module-pattern-template"),
+    };
+
     private string? errorText;
     private readonly ModuleRef input = new();
     private IBrowserFile? selectedFile;
