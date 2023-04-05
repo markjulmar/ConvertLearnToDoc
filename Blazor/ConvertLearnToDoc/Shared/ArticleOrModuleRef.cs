@@ -4,7 +4,7 @@ namespace ConvertLearnToDoc.Shared;
 
 public class BrowserFile
 {
-    private const int MAX_FILE_SIZE = 5 * 1024 * 1024;
+    private const int MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1gb max size
 
     public string ContentType { get; set; } = null!;
     public DateTimeOffset LastModified { get; set; }
