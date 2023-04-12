@@ -5,39 +5,39 @@
 
 version: 2
 updates:
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/lib/GenMarkdown.DocFx.Extensions" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/lib/Docx.Renderer.Markdown" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/lib/FileComparisonLib" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/lib/Markdig.Renderer.Docx" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/lib/LearnDocUtils" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/src/ConvertLearnToDoc.AzureFunctions" # Location of package manifests
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/src/ConvertLearnToDocWeb" # Location of package manifests
-    schedule:
-      interval: "weekly"
-   - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/src/ConvertDocX" # Location of package manifests
-    schedule:
-      interval: "weekly"
-   - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/src/ConvertAll" # Location of package manifests
-    schedule:
-      interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/lib/GenMarkdown.DocFx.Extensions" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/lib/Docx.Renderer.Markdown" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/lib/FileComparisonLib" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/lib/Markdig.Renderer.Docx" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/lib/LearnDocUtils" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/src/ConvertLearnToDoc.AzureFunctions" # Location of package manifests
+  schedule:
+    interval: "weekly"
+- package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/src/ConvertLearnToDocWeb" # Location of package manifests
+  schedule:
+    interval: "weekly"
+ - package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/src/ConvertDocX" # Location of package manifests
+  schedule:
+    interval: "weekly"
+ - package-ecosystem: "nuget" # See documentation for possible values
+  directory: "/src/ConvertAll" # Location of package manifests
+  schedule:
+    interval: "weekly"
