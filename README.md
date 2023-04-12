@@ -70,3 +70,30 @@ To try out the tools locally, clone the repository and navigate to the `src\Conv
 | `-p` | Zone pivot to render when going from Learn to a .docx. If not supplied, all pivots are rendered. |
 | `-n` | If supplied, any notebooks in the module will be rendered in place. |
 | `-s` | Indicates to render to a single page. This is only necessary if the input is a Word doc and the output filename does not indicate it should be a Markdown file. |
+
+## Running the Blazor web client version
+
+The Blazor version of the app consists of a Blazor Web Assembly client with a ASP.NET Web API backend host. You can run the host + client by starting the server project - `ConvertLearnToDoc\Blazor\ConvertLearnToDoc\Server` and then launching a web client pointed at <https://localhost:7069/>.
+
+```bash
+cd Blazor/ConvertLearnToDoc/Server
+dotnet run .
+```
+
+There are three options to the Blazor app:
+
+1. **Learn to Word** - convert a Learn article or module to a Word `.docx` file.
+1. **Word to Module** - convert a Word `.docx` file to a Learn module.
+1. **Word to Article** - convert a Word `.docx` file to a Learn conceptual article.
+
+In the case of 2 & 3, you have the option to edit the metadata - this is a feature not exposed by the console app (but could be). In this case, the Blazor client pulls out the metadata from the Word document and allows editing. It passes the edited metadata back when the document is converted.
+
+### Restrictions
+
+The Blazor app has a file size limit of 1Gb for the Word .docx file. This is captured in a variable in the [ArticleOrModuleRef.cs](https://github.com/markjulmar/ConvertLearnToDoc/blob/main/Blazor/ConvertLearnToDoc/Shared/ArticleOrModuleRef.cs):
+
+```csharp
+private const int MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1gb max size
+```
+
+You can change this to allow for larger file sizes.
