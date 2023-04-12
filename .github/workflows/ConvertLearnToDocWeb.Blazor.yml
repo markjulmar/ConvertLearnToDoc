@@ -5,10 +5,10 @@ on:
     - main
 env:
   AZURE_WEBAPP_NAME: ConvertLearnToDocWeb
-  AZURE_WEBAPP_PACKAGE_PATH: Blazor\ConvertLearnToDoc\Server\published
+  AZURE_WEBAPP_PACKAGE_PATH: Blazor/ConvertLearnToDoc/Server/published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 6.0.x
-  WORKING_DIRECTORY: Blazor\ConvertLearnToDoc\Server
+  WORKING_DIRECTORY: Blazor/ConvertLearnToDoc/Server
 jobs:
   build:
     runs-on: ubuntu-latest
