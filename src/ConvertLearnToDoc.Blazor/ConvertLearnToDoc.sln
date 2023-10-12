@@ -9,6 +9,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LearnDocUtils", "..\..\lib\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertLearnToDoc.Shared", "..\..\Blazor\ConvertLearnToDoc\Shared\ConvertLearnToDoc.Shared.csproj", "{34782ECA-2775-46C2-8872-F03A8E862FB6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{B4D9033F-462E-431E-8689-2CFE05D2B7D2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Docx.Renderer.Markdown", "..\..\lib\Docx.Renderer.Markdown\Docx.Renderer.Markdown.csproj", "{6EBEE892-DA71-4382-9170-DB753ED0F15C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenMarkdown.DocFx.Extensions", "..\..\lib\GenMarkdown.DocFx.Extensions\GenMarkdown.DocFx.Extensions.csproj", "{B4495547-27D6-4D39-8C91-E1AAC53B9899}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Markdig.Renderer.Docx", "..\..\lib\Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj", "{3D7868C8-8814-4EE1-8A5B-A542D8596B47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,9 +35,26 @@ Global
 		{34782ECA-2775-46C2-8872-F03A8E862FB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34782ECA-2775-46C2-8872-F03A8E862FB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34782ECA-2775-46C2-8872-F03A8E862FB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EBEE892-DA71-4382-9170-DB753ED0F15C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EBEE892-DA71-4382-9170-DB753ED0F15C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EBEE892-DA71-4382-9170-DB753ED0F15C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EBEE892-DA71-4382-9170-DB753ED0F15C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4495547-27D6-4D39-8C91-E1AAC53B9899}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4495547-27D6-4D39-8C91-E1AAC53B9899}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4495547-27D6-4D39-8C91-E1AAC53B9899}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4495547-27D6-4D39-8C91-E1AAC53B9899}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D7868C8-8814-4EE1-8A5B-A542D8596B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D7868C8-8814-4EE1-8A5B-A542D8596B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D7868C8-8814-4EE1-8A5B-A542D8596B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D7868C8-8814-4EE1-8A5B-A542D8596B47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6EBEE892-DA71-4382-9170-DB753ED0F15C} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
+		{B4495547-27D6-4D39-8C91-E1AAC53B9899} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
+		{3D7868C8-8814-4EE1-8A5B-A542D8596B47} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A26BF863-A2E9-437E-86D6-BA6A21CD5A49}

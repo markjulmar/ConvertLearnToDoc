@@ -1,7 +1,5 @@
 # ConvertLearnToDoc
 
-[![Build and deploy .NET Core app to Windows WebApp ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.Blazor.yml/badge.svg)](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/ConvertLearnToDocWeb.Blazor.yml)
-
 Tools to convert Learn module to Word doc and back
 
 ## Project structure
@@ -10,11 +8,12 @@ The GitHub repo has several related projects:
 
 | Project | Description |
 |---------|-------------|
-| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/ConvertLearnToDoc) | A Blazor client/server version of the conversion tool.
-| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. This is no longer published and has been replaced with the Blazor version. |
-| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. This is no longer published and has been replaced with the Blazor version. |
+| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. **Deprecated**
+| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. **Deprecated** |
+| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. **Deprecated** |
 | [ConvertAll](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertAll) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
 | [ConvertDocx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. |
+| [ConvertLearnToDoc.Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.Blazor) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through MSAL. |
 
 In addition, there are four libraries used by the above projects.
 

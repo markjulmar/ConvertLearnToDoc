@@ -1,15 +1,13 @@
 ﻿using ConvertLearnToDoc.Shared;
 using ConvertLearnToDoc.Utility;
 using LearnDocUtils;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConvertLearnToDoc.Controllers;
 
 [Route("api/[Controller]")]
 [ApiController]
-[AuthorizeApiAttribute]
+[AuthorizeApi]
 public class DocConverterController : ControllerBase
 {
     private readonly ILogger<DocConverterController> logger;
@@ -31,7 +29,7 @@ public class DocConverterController : ControllerBase
     public async Task<IActionResult> GetModuleInfoFromDocumentAsync([FromBody] BrowserFile document)
     {
         var user = ControllerExtensions.GetUsername(this.HttpContext);
-        logger.LogInformation("GetModuleInfoFromDocumentAsync({FileName}) by {User}", document.FileName ?? "<unknown>", user);
+        logger.LogInformation("GetModuleInfoFromDocumentAsync({FileName}) by {User}", document.FileName, user);
 
         if (!IsValidDocument(document))
             return BadRequest("Document is not valid");

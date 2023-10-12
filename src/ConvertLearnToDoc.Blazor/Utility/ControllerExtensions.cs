@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.IO.Pipes;
 using System.Security.Claims;
 
 namespace ConvertLearnToDoc.Utility;
@@ -10,10 +9,10 @@ public static class ControllerExtensions
 
     public static string GetUsername(HttpContext context)
     {
-        var user = context?.User;
+        var user = context.User;
         return user?.Identity?.IsAuthenticated != true
             ? AnonymousIdentity
-            : user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? AnonymousIdentity;
+            : user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? AnonymousIdentity;
     }
 
     public static bool ValidateUser(string? email)
@@ -28,7 +27,7 @@ public static class ControllerExtensions
         try
         {
             var addr = new System.Net.Mail.MailAddress(email ?? "");
-            return addr.Host == "microsoft.com";
+            return addr.Host is "microsoft.com" or "julmar.com";
         }
         catch
         {

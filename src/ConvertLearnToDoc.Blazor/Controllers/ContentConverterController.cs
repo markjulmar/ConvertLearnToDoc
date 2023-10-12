@@ -1,18 +1,13 @@
 ﻿using ConvertLearnToDoc.Shared;
 using ConvertLearnToDoc.Utility;
 using LearnDocUtils;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Runtime.CompilerServices;
 
 namespace ConvertLearnToDoc.Controllers;
 
 [Route("api/[Controller]")]
 [ApiController]
-[AuthorizeApiAttribute]
+[AuthorizeApi]
 public class ContentConverterController : ControllerBase
 {
     private readonly ILogger<ContentConverterController> logger;
@@ -100,7 +95,7 @@ public class ContentConverterController : ControllerBase
         {
             logger.LogDebug("ConvertFromRepoAsync({ContentRef}) => {OutputFile}", contentRef, outputFile);
 
-            List<string>? errors = null;
+            List<string>? errors;
             if (pageType == PageType.Article)
             {
                 errors = await SinglePageToDocx.ConvertFromRepoAsync(contentRef.Organization,
