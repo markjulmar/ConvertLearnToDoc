@@ -1,0 +1,497 @@
+﻿@using ConvertLearnToDoc.Shared
+@using System.Collections
+@using System.Diagnostics
+@using System.Security.Cryptography
+
+@inject IJSRuntime JS;
+
+<div class="modal-container modal fade show" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Title</h5>
+                <button type="button" class="btn-close" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body dialog">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-4">
+                            
+                            @if (visibleValues.Count > 0)
+                            {
+                            <div class="list-group scrolling-list" role="tablist">
+                                @for (var index = 0; index < visibleValues.Count; index++)
+                                {
+                                    var value = index;
+                                    var (text, dictionary, _) = visibleValues[value];
+                                    var isMetadata = dictionary != yamlKeyValues;
+                                    <button type="button" @onclick="@(() => OnSelectKey(value))"
+                                            class="list-group-item list-group-item-action @(value == selectedIndex ? " active" : "")">
+                                        @if (isMetadata)
+                                        {
+                                            <span class="badge bg-warning text-dark me-2">metadata</span>
+                                        }
+                                        @text
+                                    </button>
+                                }
+                            </div>
+                            }
+                            <div class="dropdown d-flex flex-row">
+                                <button class="btn btn-secondary dropdown-toggle" 
+                                        type="button" id="addNewMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Add New
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                    <li>
+                                        <a class="dropdown-item" @onclick="OnAddTextValue">Text value</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" @onclick="OnAddListValue">List value</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" @onclick="OnAddBoolValue">True/False value</a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                        <div class="col-8">
+                            @{
+                                var selected = SelectedValue;
+
+                                if (selected == deletedValue)
+                                {
+                                    if (visibleValues.Count == 0)
+                                    {
+                                        <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 500px;">
+                                            <p>Please add a value.</p>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 500px;">
+                                            <p>Please select a value.</p>
+                                        </div>
+                                    }
+                                }
+
+                                else if (IsBoolean(selected, out var booleanValue))
+                                {
+                                    var theKey = visibleValues[selectedIndex].key;
+
+                                    <div class="row">
+                                        <div class="col-sm-1 col-form-label">
+                                            <label for="theKey" class="form-label">Key:</label>
+                                        </div>
+                                        <div class="col-sm-8">
+                                            <input id="theKey" class="form-control mb-3" value="@theKey" @onchange="OnChangeKey">
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <button type="button" class="btn btn-danger" @onclick="OnDeleteValue">Delete Entry</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-sm-1 col-form-label">
+                                            <label for="theValue" class="form-check-label">Value:</label>
+                                        </div>
+                                        <div class="col-sm-11">
+                                            <div class="form-switch">
+                                                <input type="checkbox" class="form-check-input left-label" id="theValue"
+                                                       checked="@booleanValue" @onchange="OnChangeValue"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else if (selected is string textValue)
+                                {
+                                    var theKey = visibleValues[selectedIndex].key;
+
+                                    <div class="row">
+                                        <div class="col-sm-1 col-form-label">
+                                            <label for="theKey" class="form-label">Key:</label>
+                                        </div>
+                                        <div class="col-sm-8">
+                                            <input id="theKey" class="form-control mb-3" value="@theKey" @onchange="OnChangeKey">
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <button type="button" class="btn btn-danger" @onclick="OnDeleteValue">Delete Entry</button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-1 col-form-label">
+                                            <label for="theValue" class="form-label">Value:</label>
+                                        </div>
+                                        <div class="col-sm-11">
+                                            @if (IsMultiLine(visibleValues[selectedIndex].key, textValue))
+                                            {
+                                                <textarea id="theValue" class="form-control" rows="10" @onchange="OnChangeValue">
+                                                @textValue
+                                            </textarea>
+                                            }
+                                            else
+                                            {
+                                                <input id="theValue" type="text" class="form-control"
+                                                       value="@textValue" @onchange="OnChangeValue"/>
+                                            }
+
+                                        </div>
+                                    </div>
+                                }
+                                else if (selected is List<object> theList)
+                                {
+                                    var theKey = visibleValues[selectedIndex].key;
+
+                                    <div class="row">
+                                        <div class="col-sm-1 col-form-label">
+                                            <label for="theKey" class="form-label">Key:</label>
+                                        </div>
+                                        <div class="col-sm-8">
+                                            <input id="theKey" class="form-control mb-3" value="@theKey" @onchange="OnChangeKey">
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <button type="button" class="btn btn-danger" @onclick="OnDeleteValue">Delete Entry</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col">
+                                            <ListEditor Items="theList"/>
+                                        </div>
+                                    </div>
+                                }
+
+                                if (SelectedValue != deletedValue)
+                                {
+                                    <div class="mt-2 d-flex flex-row-reverse ">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input left-label" id="theSection"
+                                                   @bind="SelectedItemIsMetadata" />
+                                            <label for="theSection" class="form-check-label">Place in Metadata section</label>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
+                <button type="button" class="btn btn-success" @onclick="OnOK">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    const string MetadataPrefix = "metadata";
+    const string NewKey = "new-key";
+    const string NewValue = "new-value";
+    readonly object deletedValue = new();
+
+    bool isShowing;
+
+    bool SelectedItemIsMetadata
+    {
+        get => visibleValues[selectedIndex].dictionary != yamlKeyValues;
+        set
+        {
+            bool currentValue = SelectedItemIsMetadata;
+            if (currentValue != value)
+            {
+                _ = OnChangeLocation();
+            }
+        }
+    }
+    Dictionary<object, object> yamlKeyValues = null!;
+    List<(string text, Dictionary<object,object> dictionary, string key)> visibleValues = null!;
+    int selectedIndex = 0;
+
+    object SelectedValue
+    {
+        get
+        {
+            if (selectedIndex < 0)
+            {
+                return deletedValue;
+            }
+
+            var value = visibleValues[selectedIndex];
+            return value.dictionary[value.key];
+        }
+    }
+
+    [Parameter]
+    public string Title { get; set; } = MetadataPrefix;
+
+    [Parameter]
+    public bool IsShowing
+    {
+        get => isShowing;
+        set
+        {
+            isShowing = value;
+            if (isShowing)
+            {
+                try
+                {
+                    yamlKeyValues = PersistenceUtilities.YamlStringToDictionary(Metadata)
+                                   ?? new Dictionary<object, object> { { NewKey, NewValue } };
+                    visibleValues = UnrollKeyValues();
+                }
+                catch
+                {
+                    // Ignore
+                    isShowing = false;
+                    _ = IsShowingChanged.InvokeAsync(IsShowing);
+                }
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<bool> IsShowingChanged { get; set; }
+
+    [Parameter]
+    public string Metadata { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<string> MetadataChanged { get; set; }
+
+    private async Task OnClose()
+    {
+        IsShowing = false;
+        await IsShowingChanged.InvokeAsync(IsShowing);
+    }
+
+    private async Task OnOK()
+    {
+        var mdDictionary = FindMetadataBlock(false);
+        if (mdDictionary?.Count == 0)
+        {
+            yamlKeyValues.Remove(MetadataPrefix);
+        }
+        else if (mdDictionary != null)
+        {
+            CleanValues(mdDictionary);
+        }
+
+        CleanValues(yamlKeyValues);
+
+        Metadata = PersistenceUtilities.DictionaryToYamlString(yamlKeyValues);
+        yamlKeyValues = new Dictionary<object, object>();
+        await MetadataChanged.InvokeAsync(Metadata);
+
+        await OnClose();
+    }
+
+    private void CleanValues(Dictionary<object, object> dictionary)
+    {
+        foreach (var item in dictionary.ToList())
+        {
+            if (item.Value == deletedValue || (item.Value is string theText && string.IsNullOrWhiteSpace(theText)))
+                dictionary.Remove(item.Key);
+            else if (item.Value is List<object> theList)
+            {
+                for (var i = theList.Count - 1; i >= 0; i--)
+                {
+                    if (string.IsNullOrWhiteSpace(theList[i].ToString()))
+                        theList.RemoveAt(i);
+                }
+                if (theList.Count == 0)
+                    dictionary.Remove(item.Key);
+            }
+        }
+    }
+
+    private bool IsMultiLine(string key, string value)
+    {
+        string[] multilineInput = { "abstract", "prerequisites", MetadataPrefix + ".description", "summary" };
+
+        return multilineInput.Contains(key, StringComparer.InvariantCultureIgnoreCase)
+               || value.Contains('\r') || value.Contains('\n');
+    }
+
+    private bool IsBoolean(object value, out bool result)
+    {
+        switch (value)
+        {
+            case bool b:
+                result = b;
+                return true;
+            case string s when string.Compare(s, "true", StringComparison.InvariantCultureIgnoreCase) == 0:
+                result = true;
+                return true;
+            case string s when string.Compare(s, "false", StringComparison.InvariantCultureIgnoreCase) == 0:
+                result = false;
+                return true;
+            default:
+                result = false;
+                return false;
+        }
+    }
+
+    private List<(string text, Dictionary<object, object> dictionary, string key)> UnrollKeyValues()
+    {
+        var allKeys = yamlKeyValues.Keys
+            .Select(k => k.ToString())
+            .Where(str => !string.IsNullOrWhiteSpace(str))
+            .Cast<string>()
+            .ToList();
+
+        string? IndexOf(string lookFor) {
+            var pos = allKeys.FindIndex(str => string.Compare(str, lookFor, StringComparison.InvariantCultureIgnoreCase) == 0);
+            if (pos < 0) return null;
+            var key = allKeys[pos];
+            allKeys.RemoveAt(pos);
+            return key;
+        }
+
+        string[] significantKeys = { "uid", "title", "summary", "abstract", "description" };
+        string[] ignoreKeys = { "units" };
+
+        var results = significantKeys.Select(IndexOf)
+            .Where(key => key != null)
+            .Cast<string>()
+            .Select(key => (ToTitleCase(key), yamlKeyValues, key))
+            .ToList();
+
+        results.AddRange(
+            (from item in allKeys
+                where !ignoreKeys.Contains(item, StringComparer.InvariantCultureIgnoreCase)
+                      && yamlKeyValues[item] is not Dictionary<object, object>
+             select (ToTitleCase(item), yamlKeyValues, item))
+                .OrderBy(k => k));
+
+        var mdd = FindMetadataBlock(false);
+        if (mdd != null)
+            results.AddRange(mdd.Select(kvp => (ToTitleCase(kvp.Key.ToString()!), mdd, kvp.Key.ToString()!)));
+
+        return results;
+    }
+
+    private string ToTitleCase(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+        return char.ToUpper(text[0]) + text[1..];
+    }
+
+    private void OnSelectKey(int index)
+    {
+        selectedIndex = index;
+        SelectedItemIsMetadata = visibleValues[selectedIndex].dictionary != yamlKeyValues;
+    }
+
+    private async Task OnChangeLocation()
+    {
+        var (text, theDictionary, key) = visibleValues[selectedIndex];
+        var willBeInMetadata = theDictionary == yamlKeyValues;
+        var newDictionary = willBeInMetadata
+            ? FindMetadataBlock(true)! : yamlKeyValues;
+
+        if (newDictionary.ContainsKey(key))
+        {
+            await JS.InvokeVoidAsync("alert", "The key '" + key + "' already exists in the " + (willBeInMetadata ? "metadata" : "top-level") + " area.");
+            return;
+        }
+
+        var value = theDictionary[key];
+        theDictionary.Remove(key);
+        newDictionary[key] = value;
+
+        visibleValues[selectedIndex] = (text, newDictionary, key);
+    }
+
+    private void OnChangeKey(ChangeEventArgs e)
+    {
+        var newKey = SanitizeYamlKey(e.Value?.ToString() ?? "");
+        var (_, theDictionary, oldKey) = visibleValues[selectedIndex];
+        var value = theDictionary[oldKey];
+
+        theDictionary.Remove(oldKey);
+        visibleValues.RemoveAt(selectedIndex);
+
+        newKey = CreateUniqueKey(theDictionary, newKey);
+
+        theDictionary[newKey] = value;
+        visibleValues.Insert(selectedIndex, (ToTitleCase(newKey), theDictionary, newKey));
+    }
+
+    private string SanitizeYamlKey(string key)
+    {
+        var input = key.Where(ch => char.IsLetterOrDigit(ch) || ch is '-' or '.').ToArray();
+        var result = new string(input);
+        return string.IsNullOrWhiteSpace(result) ? NewKey : result;
+    }
+
+    private Dictionary<object, object>? FindMetadataBlock(bool createIfNotExist)
+    {
+        if (yamlKeyValues.TryGetValue(MetadataPrefix, out var value))
+        {
+            if (value is Dictionary<object, object> dct)
+                return dct;
+        }
+
+        if (createIfNotExist)
+        {
+            var md = new Dictionary<object, object>();
+            yamlKeyValues[MetadataPrefix] = md;
+            return md;
+        }
+
+        return null;
+    }
+
+    private string CreateUniqueKey(Dictionary<object, object> dct, string startKey)
+    {
+        if (dct.ContainsKey(startKey))
+        {
+            int suffix = 2;
+            var testKey = startKey + suffix;
+            while (dct.ContainsKey(testKey))
+            {
+                suffix++;
+                testKey = startKey + suffix;
+            }
+            startKey = testKey;
+        }
+
+        return startKey;
+    }
+
+    private void OnChangeValue(ChangeEventArgs e)
+    {
+        var (_, theDictionary, key) = visibleValues[selectedIndex];
+        theDictionary[key] = e.Value ?? deletedValue;
+    }
+
+    private void OnAddTextValue() => AddValue(NewValue);
+    private void OnAddBoolValue() => AddValue(false);
+    private void OnAddListValue() => AddValue(new List<object> {NewValue});
+
+    private void AddValue(object value)
+    {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+        
+        var key = CreateUniqueKey(yamlKeyValues, NewKey);
+        yamlKeyValues[key] = value;
+        visibleValues.Add((key, yamlKeyValues, key));
+        selectedIndex = visibleValues.Count - 1;
+    }
+
+    private async Task OnDeleteValue()
+    {
+        var (text, dictionary, key) = visibleValues[selectedIndex];
+        if (await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {text}?"))
+        {
+            dictionary.Remove(key);
+            visibleValues.RemoveAt(selectedIndex);
+            yamlKeyValues.Remove(key);
+
+            if (selectedIndex > visibleValues.Count - 1)
+                selectedIndex--;
+        }
+    }
+
+}

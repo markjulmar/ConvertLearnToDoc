@@ -1,8 +1,8 @@
-﻿using ConvertLearnToDoc.Shared;
-using MSLearnRepos;
+﻿using MSLearnRepos;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using Document = DXPlus.Document;
+using ConvertLearnToDoc.Shared;
 
 namespace LearnDocUtils
 {
@@ -35,7 +35,7 @@ namespace LearnDocUtils
                     {
                         var moduleData = PersistenceUtilities
                             .JsonStringToObject<Module>(text);
-                        if (moduleData != null)
+                        if (moduleData is { Uid: not null })
                         {
                             metadata = new();
                             if (!string.IsNullOrWhiteSpace(moduleData.Uid))

@@ -323,6 +323,14 @@ public static class MarkdownToDocConverter
             x++;
             var text = s.ToString();
             int index = text.IndexOf(':');
+            while (text.Length > index && text[index+1] != ' ') // must have a space.
+            {
+                int nextIndex = text.IndexOf(':', index+1);
+                if (nextIndex == -1)
+                    break;
+                index = nextIndex;
+            }
+
             return index > 0 ? (text[..index].Trim().ToLower(), text[(index+1)..].Trim()) : ($"key{x}", text);
         }).ToDictionary(kvp => kvp.Item1, kvp => kvp.Item2);
 

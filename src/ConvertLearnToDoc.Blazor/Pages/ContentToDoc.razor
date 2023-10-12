@@ -1,0 +1,244 @@
+﻿@attribute [Authorize]
+
+@page "/"
+
+@using Microsoft.AspNetCore.Components
+@using ConvertLearnToDoc.Shared
+
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Learn to Word</PageTitle>
+<HeadContent>
+    <meta name="description" content="Convert Microsoft Learn articles or training modules into Word documents."/>
+    <meta name="author" content="markjulmar" />
+</HeadContent>
+
+<h3>Convert a Learn article or training module into a Word document</h3>
+
+<AlertBox ErrorText="@errorText" />
+
+<p>
+    Enter the GitHub details for the page or training module to convert to Word. 
+    You can also enter a URL from the <a href="https://learn.microsoft.com" target="_blank">Learn site</a> and use the <b>Get Repo Info</b> to populate the GitHub information directly from the URL.
+</p>
+
+<div class="row">
+    <div class="input-group mb-3">
+        <input id="url" @bind="Url" @bind:event="oninput" class="form-control"
+               placeholder="https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/" />
+    </div>
+    @if (!string.IsNullOrEmpty(urlError))
+    {
+        <div class="text-danger">
+            <p>@urlError</p>
+        </div>
+    }
+</div>
+
+<hr />
+
+<EditForm id="convertForm" EditContext="@editContext" OnValidSubmit="@HandleSubmit" class="row g-3">
+
+    <DataAnnotationsValidator />
+
+    <div class="col-md-4">
+        <label for="gitHubOrg">Organization</label>
+        <InputText @bind-Value="input.Organization" class="form-control" id="gitHubOrg" placeholder="MicrosoftDocs" list="orgListOptions" />
+        <ValidationMessage For="() => input.Organization"/>
+        <datalist id="orgListOptions">
+            <option value="MicrosoftDocs" />
+            <option value="Azure" />
+            <option value="DotNet" />
+            <option value="Microsoft" />
+            <option value="Xamarin" />
+        </datalist>
+    </div>
+    <div class="col-md-4">
+        <label for="githubRepo">Repository</label>
+        <InputText @bind-Value="input.Repository" class="form-control" id="githubRepo" />
+        <ValidationMessage For="() => input.Repository" />
+    </div>
+    <div class="col-md-4">
+        <label for="githubBranch">Branch</label>
+        <InputText @bind-Value="input.Branch" class="form-control" id="githubBranch" placeholder="live" />
+        <ValidationMessage For="() => input.Branch" />
+    </div>
+
+    <div class="col-12">
+        <label for="githubFolder">Module folder or path to conceptual Markdown page</label>
+        <InputText @bind-Value="input.Folder" class="form-control" id="githubFolder" aria-describedby="folderHelp" />
+        <ValidationMessage For="() => input.Folder" />
+        <small id="folderHelp" class="form-text text-muted">ex: learn-pr/wwl-azure/configure-storage-accounts <em>or</em> articles/aks/aks-migration.md</small>
+    </div>
+    
+    <div class="col-md-6 pb-4">
+        <label for="zonePivot">Zone Pivot (leave blank to render all pivots)</label>
+        <InputText @bind-Value="input.ZonePivot" class="form-control" id="zonePivot" 
+                   DisplayName="Zone Pivot" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <div>
+                    <InputCheckbox @bind-Value="input.EmbedNotebooks" class="form-check-input" id="EmbedNotebookData"/>
+                    <label class="form-check-label" for="EmbedNotebookData">
+                        Embed any associated Jupyter Notebook
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col">
+        <button type="submit" disabled="@(input.IsValid()==false)" class="btn btn-success">Convert</button>
+    </div>
+
+</EditForm>
+
+@code {
+    [CascadingParameter(Name = "AccessToken")] public string? AccessToken { get; set; }
+
+    private string? errorText;
+    private string? urlError;
+    private string? url;
+
+    private string? Url
+    {
+        get => url;
+        set
+        {
+            errorText = null;
+            urlError = null;
+
+            url = value;
+
+            _ = GetRepoInfoAsync()
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        errorText = t.Exception?.Message;
+                    }
+
+                    else if (!t.Result)
+                    {
+                        input.Organization =
+                            input.Repository =
+                                input.Branch =
+                                    input.Folder = string.Empty;
+                    }
+
+                    editContext!.MarkAsUnmodified();
+                    StateHasChanged();
+
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+        }
+    }
+
+    private readonly ContentRef input = new ();
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(input);
+        messageStore = new(editContext);
+        base.OnInitialized();
+    }
+
+    private async Task<bool> GetRepoInfoAsync()
+    {
+        using var client = ClientFactory.CreateClient();
+        client.BaseAddress = new Uri(NavigationManager.BaseUri);
+        if (AccessToken != null)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", ".AspNetCore.Cookies=" + AccessToken);
+        }
+
+        urlError = string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(Url))
+        {
+            if (Url.ToLower().StartsWith("http")
+                && Uri.IsWellFormedUriString(Url, UriKind.Absolute))
+            {
+                var urlDetails = await client.GetFromJsonAsync<ContentRef>($"api/ContentConverter?url={Url}");
+                if (urlDetails?.IsValid() == true)
+                {
+                    input.PageType = urlDetails.PageType;
+
+                    input.Organization = urlDetails.Organization;
+                    editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Organization)));
+
+                    input.Repository = urlDetails.Repository;
+                    editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Repository)));
+
+                    input.Folder = urlDetails.Folder;
+                    editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Folder)));
+
+                    input.Branch = urlDetails.Branch;
+                    editContext!.NotifyFieldChanged(editContext!.Field(nameof(input.Branch)));
+
+                    var pageType = urlDetails.PageType.ToLower();
+                    if (pageType == "conceptual" || pageType == "learn.module")
+                        return true;
+                }
+            }
+
+            urlError = "The URL does not correspond to an article or training module.";
+        }
+
+        return false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorText = null;
+        urlError = null;
+        messageStore!.Clear();
+
+        // Fill in the repo details.
+        if (!input.IsValid() && !string.IsNullOrWhiteSpace(Url))
+        {
+            if (!await GetRepoInfoAsync())
+                return;
+        }
+
+        await JS.InvokeVoidAsync("showWorkingDialog");
+        HttpResponseMessage response;
+
+        try
+        {
+            using var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(NavigationManager.BaseUri);
+            if (AccessToken != null)
+            {
+                client.DefaultRequestHeaders.Add("Cookie", ".AspNetCore.Cookies=" + AccessToken);
+            }
+            response = await client.PostAsJsonAsync("api/ContentConverter", input);
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("hideWorkingDialog");
+        }
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var filename = FileHelpers.GetFilenameFromResponse(response, "output.docx");
+            await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
+            Url = null;
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            errorText = $"{response.ReasonPhrase}: You must be logged in to use this feature.";
+        }
+        else
+        {
+            var text = await response.Content.ReadAsStringAsync();
+            errorText = $"{response.ReasonPhrase}: {text}";
+        }
+    }
+}
