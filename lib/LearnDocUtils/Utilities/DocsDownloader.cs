@@ -61,13 +61,7 @@ namespace LearnDocUtils
                     {
                         try
                         {
-                            metadata = JsonConvert.DeserializeObject<Dictionary<object, object>>(text,
-                                new JsonSerializerSettings
-                                {
-                                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                                    NullValueHandling = NullValueHandling.Ignore,
-                                    DateFormatString = "MM/dd/yyyy" // 06/21/2021
-                                });
+                            metadata = PersistenceUtilities.JsonStringToDictionary(text);
                         }
                         catch
                         {

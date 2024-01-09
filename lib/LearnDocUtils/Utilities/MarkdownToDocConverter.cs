@@ -13,6 +13,8 @@ using MSLearnRepos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Octokit;
+using YamlDotNet.Serialization;
+using static System.Net.Mime.MediaTypeNames;
 using Formatting = Newtonsoft.Json.Formatting;
 using Paragraph = DXPlus.Paragraph;
 
@@ -315,41 +317,31 @@ public static class MarkdownToDocConverter
 
     private static void AddMetadata(YamlFrontMatterBlock header, IDocument document)
     {
-        int x = 0;
-        var keys = header.Lines.Lines
-            .Where(s => s.ToString().Length > 0)
-            .Select(s =>
-        {
-            x++;
-            var text = s.ToString();
-            int index = text.IndexOf(':');
-            while (text.Length > index && text[index+1] != ' ') // must have a space.
-            {
-                int nextIndex = text.IndexOf(':', index+1);
-                if (nextIndex == -1)
-                    break;
-                index = nextIndex;
-            }
+        var yaml = string.Join("\r\n",
+            header.Lines.Lines.Where(s => s.ToString().Length > 0).Select(t => t.ToString()));
 
-            return index > 0 ? (text[..index].Trim().ToLower(), text[(index+1)..].Trim()) : ($"key{x}", text);
-        }).ToDictionary(kvp => kvp.Item1, kvp => kvp.Item2);
+        var deserializer = new DeserializerBuilder().Build();
+        var keys = (Dictionary<object,object>) deserializer.Deserialize<object>(yaml);
 
         foreach (var kvp in keys)
         {
-            if (kvp.Key == "title")
-                document.Properties.Title = kvp.Value;
-            else if (kvp.Key == "description")
-                document.Properties.Subject = kvp.Value;
-            else if (kvp.Key == "author")
+            switch (kvp.Key.ToString()!.ToLower())
             {
-                document.Properties.Creator = kvp.Value;
-                document.Properties.LastSavedBy = kvp.Value;
-            }
-            else if (kvp.Key == "ms.date"
-                && DateTime.TryParse(kvp.Value, out var dt))
-            {
-                document.Properties.CreatedDate = dt.ToUniversalTime();
-                document.Properties.SaveDate = dt.ToUniversalTime();
+                case "title":
+                    document.Properties.Title = kvp.Value.ToString()!;
+                    break;
+                case "description":
+                    document.Properties.Subject = kvp.Value.ToString()!;
+                    break;
+                case "author":
+                    document.Properties.Creator = kvp.Value.ToString()!;
+                    document.Properties.LastSavedBy = kvp.Value.ToString()!;
+                    break;
+                case "ms.date" 
+                when DateTime.TryParse(kvp.Value.ToString()!, out var dt):
+                    document.Properties.CreatedDate = dt.ToUniversalTime();
+                    document.Properties.SaveDate = dt.ToUniversalTime();
+                    break;
             }
         }
 

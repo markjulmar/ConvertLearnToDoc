@@ -101,7 +101,7 @@ public static class DocxToSinglePage
                 try
                 {
                     suppliedMetadata = PersistenceUtilities
-                        .JsonStringToObject<Dictionary<object,object>>(jsonText.Value);
+                        .JsonStringToDictionary(jsonText.Value);
                 }
                 catch
                 {

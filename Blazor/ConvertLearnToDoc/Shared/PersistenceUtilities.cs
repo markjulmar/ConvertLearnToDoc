@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
@@ -28,6 +30,30 @@ public static class PersistenceUtilities
                 NullValueHandling = NullValueHandling.Ignore,
                 DateFormatString = "MM/dd/yyyy" // 06/21/2021
             });
+    }
+
+    public static Dictionary<object, object>? JsonStringToDictionary(string jsonText)
+    {
+        var result = JsonStringToObject<Dictionary<object, object>>(jsonText);
+        if (result == null)
+            return null;
+
+        var converted = new Dictionary<object, object>();
+        foreach (var (key, value) in result)
+        {
+            if (value is JArray array)
+            {
+                // Convert JArray to List<string> - we assume simple text values only.
+                converted.Add(key, array.Select(t => t.ToString()).ToList());
+            }
+            else
+            {
+                converted.Add(key, value ?? "");
+            }
+
+        }
+
+        return converted;
     }
 
     public static string ObjectToYamlString(object input)
@@ -77,13 +103,23 @@ public static class PersistenceUtilities
                 var value = eventInfo.Source.Value as string;
                 if (!string.IsNullOrEmpty(value))
                 {
-                    var isMultiLine = value.IndexOfAny(new char[] { '\r', '\n', '\x85', '\x2028', '\x2029' }) >= 0;
+                    var isMultiLine = value.IndexOfAny(new[] { '\r', '\n', '\x85', '\x2028', '\x2029' }) >= 0;
                     if (isMultiLine)
                     {
-                        eventInfo = new ScalarEventInfo(eventInfo.Source)
+                        if (value.TrimStart().StartsWith('-')) // sequence
                         {
-                            Style = ScalarStyle.Literal
-                        };
+                            eventInfo = new ScalarEventInfo(eventInfo.Source)
+                            {
+                                Style = ScalarStyle.Folded
+                            };
+                        }
+                        else
+                        {
+                            eventInfo = new ScalarEventInfo(eventInfo.Source)
+                            {
+                                Style = ScalarStyle.Literal
+                            };
+                        }
                     }
                     else
                     {
