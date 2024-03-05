@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <UseRazorSourceGenerator>false</UseRazorSourceGenerator>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationInsightsResourceId>/subscriptions/5270e7ce-d3ce-4172-b096-d0e9bb9e93ed/resourceGroups/convert-learn-to-doc/providers/microsoft.insights/components/ConvertLearnToDocAzureFunctions</ApplicationInsightsResourceId>
     <UserSecretsId>38610ac4-1719-4a97-8e20-74b7a5d0b3c9</UserSecretsId>

@@ -6,6 +6,7 @@ namespace ConvertLearnToDoc.Utility;
 public static class ControllerExtensions
 {
     public static string AnonymousIdentity = "Anonymous";
+    public static List<string>? ValidUsers;
 
     public static string GetUsername(HttpContext context)
     {
@@ -20,14 +21,23 @@ public static class ControllerExtensions
         if (string.IsNullOrWhiteSpace(email))
             return false;
 
-        var trimmedEmail = email?.Trim() ?? "";
+        var trimmedEmail = email.Trim().ToLower();
         if (trimmedEmail.EndsWith('.'))
             return false;
 
+        if (ValidUsers == null)
+        {
+            var users = Environment.GetEnvironmentVariable("VALID_USERS");
+            ValidUsers = string.IsNullOrWhiteSpace(users) ? new() : users.Split(';').Select(s => s.Trim().ToLower()).ToList();
+        }
+
         try
         {
-            var addr = new System.Net.Mail.MailAddress(email ?? "");
-            return addr.Host is "microsoft.com" or "julmar.com";
+            if (ValidUsers.Contains(trimmedEmail))
+                return true;
+
+            var qualifiedAddress = new System.Net.Mail.MailAddress(email);
+            return qualifiedAddress.Host is "microsoft.com";
         }
         catch
         {
