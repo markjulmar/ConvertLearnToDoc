@@ -1,23 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ConvertLearnToDoc.Shared;
+﻿namespace ConvertLearnToDoc.Utility;
 
 public class ContentRef
 {
-    [MaxLength(200)]
     public string Organization { get; set; }
-    
-    [Required, MaxLength(200)]
     public string Repository { get; set; }
-    
-    [MaxLength(255)]
     public string Branch { get; set; }
-    
-    [Required, MaxLength(4096)]
     public string Folder { get; set; }
-    
-    public string? ZonePivot { get; set; }
-    public bool EmbedNotebooks { get; set; }
     public string PageType { get; set; }
 
     public ContentRef()
@@ -37,8 +25,6 @@ public class ContentRef
         Repository = Repository.Trim().ToLower();
         Branch = Branch.Trim();
         Folder = Folder.Trim();
-        ZonePivot = ZonePivot?.Trim();
-        if (ZonePivot == string.Empty) ZonePivot = null;
         if (string.IsNullOrEmpty(Branch)) Branch = "live";
 
         // Must be Learn module or conceptual article.

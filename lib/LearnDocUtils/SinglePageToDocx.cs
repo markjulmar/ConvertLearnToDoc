@@ -4,7 +4,7 @@ namespace LearnDocUtils
 {
     public static class SinglePageToDocx
     {
-        public static async Task<List<string>> ConvertFromRepoAsync(string organization, string repo, string branch, 
+        public static async Task<List<string>> ConvertFromRepoAsync(string url, string organization, string repo, string branch, 
             string inputFile, string outputFile, string accessToken = null, DocumentOptions options = null)
         {
             if (string.IsNullOrEmpty(organization))
@@ -14,10 +14,11 @@ namespace LearnDocUtils
             if (string.IsNullOrEmpty(inputFile))
                 throw new ArgumentException($"'{nameof(inputFile)}' cannot be null or empty.", nameof(inputFile));
 
-            return await Convert(LearnRepoService.Create(organization, repo, branch, accessToken),
+            return await Convert(LearnRepoService.Create(organization, repo, branch, accessToken), url,
                 inputFile, outputFile, options);
         }
 
+        /*
         public static async Task<List<string>> ConvertFromFileAsync(string inputFile, string outputFile, DocumentOptions options = null)
         {
             if (string.IsNullOrWhiteSpace(inputFile))
@@ -32,8 +33,9 @@ namespace LearnDocUtils
 
             return await Convert(LearnRepoService.Create(folder), inputFile, outputFile, options);
         }
+        */
 
-        private static async Task<List<string>> Convert(ILearnRepoService learnRepo,
+        private static async Task<List<string>> Convert(ILearnRepoService learnRepo, string url,
             string inputFile, string docxFile, DocumentOptions options)
         {
             var rootTemp = options?.Debug == true ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
@@ -51,7 +53,7 @@ namespace LearnDocUtils
             try
             {
                 // Convert the file.
-                return await MarkdownToDocConverter.ConvertMarkdownToDocx(learnRepo, Path.GetDirectoryName(inputFile),
+                return await MarkdownToDocConverter.ConvertMarkdownToDocx(learnRepo, url, Path.GetDirectoryName(inputFile),
                     null, markdownFile, docxFile, options?.ZonePivot, options?.Debug == true);
             }
             finally

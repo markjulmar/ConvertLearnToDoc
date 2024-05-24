@@ -1,6 +1,4 @@
 ﻿using MSLearnRepos;
-using Newtonsoft.Json.Serialization;
-using Newtonsoft.Json;
 using Document = DXPlus.Document;
 using ConvertLearnToDoc.Shared;
 

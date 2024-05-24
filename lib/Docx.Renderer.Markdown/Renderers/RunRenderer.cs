@@ -85,12 +85,12 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
                     if (element.Parent is Hyperlink hl)
                     {
+                        var url = renderer.ConvertAbsoluteUrl(hl.Uri?.OriginalString ?? "#");
+
                         // Sometimes Word will split a hyperlink up across a Run boundary, we see it twice in a row due to the way
                         // I'm handling the links. This will catch that edge case and ignore the second appearance.
-                        if (p.LastOrDefault() is InlineLink ll && (hl.Uri == null || ll.Url == hl.Uri.OriginalString) && ll.Text == hl.Text)
+                        if (p.LastOrDefault() is InlineLink ll && (hl.Uri == null || ll.Url == hl.Uri.OriginalString || ll.Url == url) && ll.Text == hl.Text)
                             continue;
-
-                        var url = renderer.ConvertAbsoluteUrl(hl.Uri?.OriginalString ?? "#");
 
                         // Remove any bold/italic spaces before this.
                         RenderHelpers.CollapseEmptyTags(p);

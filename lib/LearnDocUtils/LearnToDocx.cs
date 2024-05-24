@@ -4,7 +4,7 @@ namespace LearnDocUtils;
 
 public static class LearnToDocx
 {
-    public static async Task<List<string>> ConvertFromRepoAsync(string organization, string repo, string branch, string folder,
+    public static async Task<List<string>> ConvertFromRepoAsync(string url, string organization, string repo, string branch, string folder,
         string outputFile, string accessToken = null, DocumentOptions options = null)
     {
         if (string.IsNullOrEmpty(organization)) 
@@ -14,10 +14,11 @@ public static class LearnToDocx
         if (string.IsNullOrEmpty(folder))
             throw new ArgumentException($"'{nameof(folder)}' cannot be null or empty.", nameof(folder));
 
-        return await Convert(LearnRepoService.Create(organization, repo, branch, accessToken), 
+        return await Convert(LearnRepoService.Create(organization, repo, branch, accessToken), url, 
             folder, outputFile, options);
     }
 
+    /*
     public static async Task<List<string>> ConvertFromFolderAsync(string learnFolder, string outputFile, DocumentOptions options = null)
     {
         if (string.IsNullOrWhiteSpace(learnFolder))
@@ -28,8 +29,9 @@ public static class LearnToDocx
 
         return await Convert(LearnRepoService.Create(learnFolder), learnFolder, outputFile, options);
     }
+    */
 
-    private static async Task<List<string>> Convert(ILearnRepoService learnRepo,
+    private static async Task<List<string>> Convert(ILearnRepoService learnRepo, string url,
         string moduleFolder, string docxFile, DocumentOptions options)
     {
         var rootTemp = options?.Debug == true ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : Path.GetTempPath();
@@ -47,7 +49,7 @@ public static class LearnToDocx
         try
         {
             // Convert the file.
-            return await MarkdownToDocConverter.ConvertMarkdownToDocx(learnRepo, moduleFolder, module, markdownFile, docxFile, options?.ZonePivot, options?.Debug==true);
+            return await MarkdownToDocConverter.ConvertMarkdownToDocx(learnRepo, url, moduleFolder, module, markdownFile, docxFile, options?.ZonePivot, options?.Debug==true);
         }
         finally
         {

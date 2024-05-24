@@ -10,19 +10,15 @@ using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Microsoft.DocAsCode.MarkdigEngine.Extensions;
 using MSLearnRepos;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Octokit;
 using YamlDotNet.Serialization;
-using static System.Net.Mime.MediaTypeNames;
-using Formatting = Newtonsoft.Json.Formatting;
 using Paragraph = DXPlus.Paragraph;
 
 namespace LearnDocUtils;
 
 public static class MarkdownToDocConverter
 {
-    public static async Task<List<string>> ConvertMarkdownToDocx(ILearnRepoService learnRepo, string inputLocation,
+    public static async Task<List<string>> ConvertMarkdownToDocx(ILearnRepoService learnRepo, string learnSiteUrl, string inputLocation,
         Module moduleData, string markdownFile, string docxFile, string zonePivot, bool dumpMarkdownDocument)
     {
         var errors = new List<string>();
@@ -54,12 +50,6 @@ public static class MarkdownToDocConverter
             .UseTripleColon(context)
             .UseNoloc()
             .Build();
-
-        // Get the web location for this content
-        string webLocation = moduleData != null ? moduleData.Url : "https://learn.microsoft.com/";
-        if (!webLocation.EndsWith('/')) webLocation += '/';
-        webLocation += inputLocation.Replace('\\', '/');
-        if (!webLocation.EndsWith('/')) webLocation += '/';
 
         string markdownText = await File.ReadAllTextAsync(markdownFile);
 
@@ -108,14 +98,14 @@ public static class MarkdownToDocConverter
                                         .Count(b => b is ListBlock { BulletType: '-' });
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForBullets), useAsterisksForLists.ToString());
         SetCustomProperty(document, nameof(MarkdownFormatting.UseAsterisksForEmphasis), useAsterisksForEmphasis.ToString());
-        SetCustomProperty(document, nameof(Uri), webLocation);
+        document.Properties.Description = learnSiteUrl;
 
         // Render the markdown tree into the Word document.
         var docWriter = new DocxObjectRenderer(document, Path.GetDirectoryName(markdownFile), 
             new DocxRendererOptions {
                 Logger = text => errors.Add(text),
                 ReadFile = (_, path) => GetFile(learnRepo, inputLocation, moduleData, path, Path.GetDirectoryName(markdownFile)),
-                ConvertRelativeUrl = url => webLocation + url,
+                ConvertRelativeUrl = url => ConvertUrls.FromRelative(url, learnSiteUrl),
                 ZonePivot = zonePivot
             }
         );

@@ -31,9 +31,9 @@ public static class DocxToLearn
         };
 
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
-        string baseUrl = null;
         var markdownFile = Path.Combine(markdownFolder, baseFilename + "-temp.g.md");
         var mediaFolder = Path.Combine(outputFolder, Constants.MediaFolder);
+        string baseUrl = "";
 
         try
         {
@@ -55,12 +55,11 @@ public static class DocxToLearn
                     conversionOptions.UseAsterisksForBullets = yesNo?.Value == "True";
                 if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForEmphasis), out yesNo))
                     conversionOptions.UseAsterisksForEmphasis = yesNo?.Value == "True";
-                if (doc.CustomProperties.TryGetValue(nameof(Uri), out var baseUri))
-                    baseUrl = baseUri?.Value;
+                baseUrl = doc.Properties.Description;
             }
 
-            conversionOptions.ConvertAbsoluteUrls = url => 
-                !string.IsNullOrEmpty(baseUrl) && url.StartsWith(baseUrl) ? url[baseUrl.Length..] + ".md" : url;
+            // Logic to convert urls.
+            conversionOptions.ConvertAbsoluteUrls = url => ConvertUrls.FromAbsolute(url, baseUrl);
 
             // Convert the docx file to a single .md file
             new MarkdownRenderer(conversionOptions).Convert(docxFile, markdownFile, mediaFolder);

@@ -31,7 +31,7 @@ public static class DocxToSinglePage
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
         string outputFolder = Path.GetDirectoryName(markdownFile) ?? Directory.GetCurrentDirectory();
         string mediaFolder = Path.Combine(outputFolder, Constants.MediaFolder);
-        string baseUrl = null;
+        string baseUrl = "";
 
         // Grab some pre-conversion options.
         using (var doc = Document.Load(docxFile))
@@ -51,12 +51,11 @@ public static class DocxToSinglePage
                 conversionOptions.UseAsterisksForBullets = yesNo?.Value == "True";
             if (doc.CustomProperties.TryGetValue(nameof(MarkdownOptions.UseAsterisksForEmphasis), out yesNo))
                 conversionOptions.UseAsterisksForEmphasis = yesNo?.Value == "True";
-            if (doc.CustomProperties.TryGetValue(nameof(Uri), out var baseUri))
-                baseUrl = baseUri?.Value;
+            baseUrl = doc.Properties.Description;
         }
 
-        conversionOptions.ConvertAbsoluteUrls = url =>
-            !string.IsNullOrEmpty(baseUrl) && url.StartsWith(baseUrl) ? url[baseUrl.Length..] + ".md" : url;
+        // Logic to convert urls.
+        conversionOptions.ConvertAbsoluteUrls = url => ConvertUrls.FromAbsolute(url, baseUrl);
 
         // Convert the docx file to a single .md file
         new MarkdownRenderer(conversionOptions).Convert(docxFile, markdownFile, mediaFolder);
