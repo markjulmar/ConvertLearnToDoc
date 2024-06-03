@@ -24,38 +24,33 @@ public static class Program
             {
                 var metadata = await DocsMetadata.LoadFromUrlAsync(options.InputFile);
 
-                options.Organization = metadata.Organization;
+                options.Organization = metadata.Organization ?? Constants.DocsOrganization;
                 options.GitHubRepo = metadata.Repository;
                 options.GitHubBranch = metadata.Branch;
                 options.InputFile = metadata.PageType == "conceptual"
                     ? metadata.ContentPath
                     : Path.GetDirectoryName(metadata.ContentPath);
-            }
-
-            // Input is a repo + branch + file -> DOCX
-            if (!string.IsNullOrEmpty(options.GitHubRepo))
-            {
-                if (string.IsNullOrEmpty(options.Organization))
-                    options.Organization = Constants.DocsOrganization;
 
                 if (!Path.HasExtension(options.OutputFile))
                     options.OutputFile = Path.ChangeExtension(options.OutputFile, ".docx");
 
                 if (options.InputFile!.EndsWith(".md", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    Console.WriteLine($"ConvertDocx: converting Docs Markdown {options.InputFile} to {options.OutputFile}");
-                    errors = await SinglePageToDocx.ConvertFromRepoAsync(
+                    Console.WriteLine(
+                        $"ConvertDocx: converting Docs Markdown {options.InputFile} to {options.OutputFile}");
+                    errors = await SinglePageToDocx.ConvertFromRepoAsync(options.InputFile,
                         options.Organization, options.GitHubRepo, options.GitHubBranch,
                         options.InputFile, options.OutputFile, options.AccessToken,
-                        new DocumentOptions {Debug = options.Debug, ZonePivot = options.ZonePivot});
+                        new DocumentOptions { Debug = options.Debug, ZonePivot = options.ZonePivot });
                 }
                 else
                 {
                     if (Path.HasExtension(options.InputFile))
                         options.InputFile = Path.GetDirectoryName(options.InputFile);
 
-                    Console.WriteLine($"ConvertDocx: converting Learn module {options.InputFile} to {options.OutputFile}");
-                    errors = await LearnToDocx.ConvertFromRepoAsync(
+                    Console.WriteLine(
+                        $"ConvertDocx: converting Learn module {options.InputFile} to {options.OutputFile}");
+                    errors = await LearnToDocx.ConvertFromRepoAsync(options.InputFile,
                         options.Organization, options.GitHubRepo, options.GitHubBranch,
                         options.InputFile, options.OutputFile, options.AccessToken,
                         new DocumentOptions
@@ -66,70 +61,28 @@ public static class Program
                 }
             }
 
-            // Input is a local file for a docs page or .docx file
-            else if (File.Exists(options.InputFile))
+            // Input is a Word document to Markdown
+            else if (options.InputFile!.EndsWith(".docx", StringComparison.CurrentCultureIgnoreCase))
             {
-                string fileExtension = Path.GetExtension(options.InputFile)?.ToLower();
-                if (fileExtension == ".md")
+                if (options.SinglePageOutput)
                 {
-                    if (!Path.HasExtension(options.OutputFile))
-                        options.OutputFile = Path.ChangeExtension(options.OutputFile, ".docx");
-
-                    Console.WriteLine($"ConvertDocx: converting Docs Markdown {options.InputFile} to {options.OutputFile}");
-                    errors = await SinglePageToDocx.ConvertFromFileAsync(options.InputFile, options.OutputFile,
-                        new DocumentOptions {Debug = options.Debug, ZonePivot = options.ZonePivot});
+                    Console.WriteLine(
+                        $"DocxToSinglePage: converting {options.InputFile} to {options.OutputFile}");
+                    await DocxToSinglePage.ConvertAsync(options.InputFile, options.OutputFile,
+                        new MarkdownOptions { Debug = options.Debug, UsePlainMarkdown = options.PreferPlainMarkdown });
                 }
-                // Input is a docx file
-                else if (fileExtension == ".docx")
-                {
-                    if (options.OutputFile.EndsWith(".md", StringComparison.InvariantCultureIgnoreCase))
-                        options.SinglePageOutput = true;
-                    else if (options.SinglePageOutput && !Path.HasExtension(options.OutputFile))
-                        options.OutputFile = Path.ChangeExtension(options.OutputFile, ".md");
-
-                    Console.WriteLine($"ConvertDocx: converting Word document {options.InputFile} to {options.OutputFile}");
-                    if (options.SinglePageOutput)
-                    {
-                        await DocxToSinglePage.ConvertAsync(options.InputFile, options.OutputFile,
-                            new MarkdownOptions {Debug = options.Debug}, options.PreferPlainMarkdown);
-                    }
-                    else
-                    {
-                        await DocxToLearn.ConvertAsync(options.InputFile, options.OutputFile,
-                            new MarkdownOptions
-                            {
-                                Debug = options.Debug, 
-                                IgnoreEmbeddedMetadata = options.IgnoreMetadata, 
-                                UseGenericIds = options.UseGenericIds
-                            });
-                    }
-                }
-
                 else
                 {
-                    await Console.Error.WriteLineAsync(
-                        $"Unknown input file type: {options.InputFile}. Must be URL, Markdown file, Word (.docx), or Learn folder.");
-                    return;
+                    Console.WriteLine(
+                        $"DocxToLearn: converting {options.InputFile} to {options.OutputFile}");
+                    await DocxToLearn.ConvertAsync(options.InputFile, options.OutputFile,
+                        new MarkdownOptions { Debug = options.Debug, UsePlainMarkdown = options.PreferPlainMarkdown });
                 }
-            }
 
-            // Input is a local folder (Learn module)
-            else if (Directory.Exists(options.InputFile))
-            {
-                Console.WriteLine($"ConvertDocx: converting Learn module {options.InputFile} to {options.OutputFile}");
-                await LearnToDocx.ConvertFromFolderAsync(options.InputFile, options.OutputFile,
-                    new DocumentOptions
-                    {
-                        Debug = options.Debug,
-                        EmbedNotebookContent = options.ConvertNotebooks,
-                        ZonePivot = options.ZonePivot
-                    });
             }
             else
             {
-                await Console.Error.WriteLineAsync(
-                    $"Unknown input file/folder: {options.InputFile} does not exist.");
-                return;
+                Console.WriteLine("ConvertDocx: unknown input file type.");
             }
         }
         catch (AggregateException aex)

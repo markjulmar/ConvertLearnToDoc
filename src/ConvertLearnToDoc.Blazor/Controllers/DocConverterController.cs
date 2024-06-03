@@ -236,8 +236,9 @@ public class DocConverterController : ControllerBase
                 UseAsterisksForEmphasis = articleRef.UseAsterisksForEmphasis,
                 OrderedListUsesSequence = articleRef.OrderedListUsesSequence,
                 UseIndentsForCodeBlocks = articleRef.UseIndentsForCodeBlocks,
+                UsePlainMarkdown = articleRef.UsePlainMarkdown,
                 Metadata = articleRef.Metadata,
-            }, articleRef.UsePlainMarkdown);
+            });
 
             // If we only produced a Markdown file, then return that.
             if (Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories).Length == 1)

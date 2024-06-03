@@ -307,14 +307,17 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
                 }
                 else
                 {
-                    var list = new TList();
+                    MarkdownList list = new TList();
                     if (list is OrderedList ol)
                     {
-                        ol.StartingNumber = index.Value;
+                        ol.StartingNumber = nd?.GetStartingNumber(level.Value) ?? index.Value;
                         var style = nd?.Style;
                         var levelDefinition = style?.Levels[level.Value!];
                         if (levelDefinition?.Format is NumberingFormat.LowerLetter or NumberingFormat.UpperLetter)
-                            ol.Lettered = true;
+                        {
+                            // Don't allow lettered lists.
+                            list = new List();
+                        }
                     }
 
                     theList[^1].Add(list);
@@ -330,11 +333,14 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
             theList = new TList();
             if (theList is OrderedList ol)
             {
-                ol.StartingNumber = index.Value;
+                ol.StartingNumber = nd?.GetStartingNumber(level.Value) ?? index.Value;
                 var style = nd?.Style;
                 var levelDefinition = style?.Levels[level.Value!];
                 if (levelDefinition?.Format is NumberingFormat.LowerLetter or NumberingFormat.UpperLetter)
-                    ol.Lettered = true;
+                {
+                    // Don't allow lettered lists.
+                    theList = new List();
+                }
             }
 
             // Default bullet list?

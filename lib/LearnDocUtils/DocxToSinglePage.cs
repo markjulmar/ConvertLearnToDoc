@@ -7,7 +7,7 @@ namespace LearnDocUtils;
 
 public static class DocxToSinglePage
 {
-    public static async Task ConvertAsync(string docxFile, string markdownFile, MarkdownOptions options, bool preferPlainMarkdown)
+    public static async Task ConvertAsync(string docxFile, string markdownFile, MarkdownOptions options)
     {
         if (string.IsNullOrWhiteSpace(docxFile))
             throw new ArgumentException($"'{nameof(docxFile)}' cannot be null or whitespace.", nameof(docxFile));
@@ -15,6 +15,8 @@ public static class DocxToSinglePage
             throw new ArgumentException($"Error: {docxFile} does not exist.", nameof(docxFile));
         if (string.IsNullOrWhiteSpace(markdownFile))
             throw new ArgumentException($"'{nameof(markdownFile)}' cannot be null or whitespace.", nameof(markdownFile));
+
+        bool preferPlainMarkdown = options?.UsePlainMarkdown ?? false;
 
         var conversionOptions = new DocxMarkdownFormatting
         {
@@ -31,7 +33,10 @@ public static class DocxToSinglePage
         string baseFilename = Path.GetFileNameWithoutExtension(docxFile);
         string outputFolder = Path.GetDirectoryName(markdownFile) ?? Directory.GetCurrentDirectory();
         string mediaFolder = Path.Combine(outputFolder, Constants.MediaFolder);
-        string baseUrl = "";
+        string baseUrl;
+
+        if (!Path.HasExtension(markdownFile))
+            markdownFile = Path.ChangeExtension(markdownFile, ".md");
 
         // Grab some pre-conversion options.
         using (var doc = Document.Load(docxFile))

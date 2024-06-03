@@ -1,4 +1,5 @@
-﻿using GenMarkdown.DocFx.Extensions;
+﻿using System.Text;
+using GenMarkdown.DocFx.Extensions;
 using Image = Julmar.GenMarkdown.Image;
 
 namespace Docx.Renderer.Markdown.Renderers;
@@ -104,7 +105,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                     else if (t.Value.Length > 0)
                     {
                         if (tf.KbdTag) AppendText(p, t.Value, "<kbd>", "</kbd>");
-                        else if (tf.Bold && tf.Italic) AppendText<BoldItalicText>(p, t.Value);
+                        else if (tf is { Bold: true, Italic: true }) AppendText<BoldItalicText>(p, t.Value);
                         else if (tf.Bold) AppendText<BoldText>(p, t.Value);
                         else if (tf.Italic) AppendText<ItalicText>(p, t.Value);
                         else if (tf.Monospace) AppendText<InlineCode>(p, t.Value);
@@ -190,10 +191,28 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
 
     private static string ConvertSpecialCharacters(string text)
     {
-        // TODO: if this gets larger, move to a dictionary.
-        return text.Replace("❎", "[x]")
-            .Replace("⬜", "[ ]")
-            .Replace((char)0xa0, ' ');
+        var replacements = new Dictionary<char, string>
+        {
+            { '❎', "[x]" },
+            { '⬜', "[ ]" },
+            { '‛', "'" },
+            { '’', "'" },
+            { '“', "\"" },
+            { '”', "\"" },
+            { '–', "-" },
+            { (char)0xa0, " " }
+        };
+
+        var sb = new StringBuilder(text.Length);
+        for (var index = 0; index < text.Length; index++)
+        {
+            var c = text[index];
+            sb.Append(replacements.TryGetValue(c, out var replacement)
+                ? replacement
+                : c);
+        }
+
+        return sb.ToString();
     }
 
     private static void AppendText<T>(Paragraph paragraph, string text) where T : Text
@@ -224,7 +243,7 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
     private static void AppendText(Paragraph paragraph, string text, string prefix, string suffix)
     {
         text = ConvertSpecialCharacters(text);
-
+        
         // Check to see if the _previous_ text has the same emphasis. If so, we'll add this.
         if (paragraph.LastOrDefault()?.Text.EndsWith(suffix) == true)
         {
