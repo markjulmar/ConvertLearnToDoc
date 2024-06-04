@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -s -i \"C:\\Users\\mark\\OneDrive\\Save\\Migrating docs content guide copilot.docx\" -o C:\\Users\\mark\\Desktop\\test.md"
+      "commandLineArgs": "-d -s -i \"C:\\Users\\mark\\Desktop\\convert-to-markdown.docx\" -o C:\\Users\\mark\\Desktop\\test.md"
     }
   }
 }

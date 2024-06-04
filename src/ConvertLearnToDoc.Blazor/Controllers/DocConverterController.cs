@@ -64,6 +64,20 @@ public class DocConverterController : ControllerBase
 
             return NotFound();
         }
+        catch (FileFormatException)
+        {
+            return BadRequest(
+                $"Unable to read metadata from {document.FileName}, Invalid format or document is protected.");
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = ex.InnerException != null
+                ? $"{ex.GetType()}: {ex.Message} ({ex.InnerException.GetType()}: {ex.InnerException.Message})"
+                : $"{ex.GetType()}: {ex.Message}";
+
+            return BadRequest(
+                $"Unable to read metadata from {document.FileName}. {errorMessage}.");
+        }
         finally
         {
             System.IO.File.Delete(tempFile);
@@ -90,6 +104,11 @@ public class DocConverterController : ControllerBase
             var ex = aex.Flatten();
             return BadRequest(
                 $"Unable to convert {article.Document?.FileName}. {ex.GetType()}: {ex.Message}.");
+        }
+        catch (FileFormatException)
+        {
+            return BadRequest(
+                $"Unable to convert {article.Document?.FileName}, Invalid format or document is protected.");
         }
         catch (Exception ex)
         {
@@ -121,6 +140,11 @@ public class DocConverterController : ControllerBase
             var ex = aex.Flatten();
             return BadRequest(
                 $"Unable to convert {module.Document?.FileName}. {ex.GetType()}: {ex.Message}.");
+        }
+        catch (FileFormatException)
+        {
+            return BadRequest(
+                $"Unable to convert {module.Document?.FileName}, Invalid format or document is protected.");
         }
         catch (Exception ex)
         {
