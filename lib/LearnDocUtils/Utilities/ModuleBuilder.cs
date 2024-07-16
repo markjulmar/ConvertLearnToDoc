@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using ConvertLearnToDoc.Shared;
+using Markdig;
 using MSLearnRepos;
 using MSLearnRepos.Parser;
 using Document = DXPlus.Document;
@@ -74,6 +75,9 @@ public class ModuleBuilder
                     }
 
                     var title = line[2..];
+
+                    // Remove any bold/italic/underline markers.
+                    title = Markdown.ToPlainText(title).TrimEnd('\n', '\r', '\t');
 
                     // See if we can identify the unit metadata.
                     ModuleUnit unitMetadata = null;
