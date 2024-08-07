@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -228,10 +229,15 @@ public class ModuleBuilder
     private static string BuildDynamicMetadata(Metadata metadata)
     {
         var sb = new StringBuilder().AppendLine("metadata:");
+
+        metadata.TryAdd("ms.topic", "module");
+        metadata.TryAdd("moduleType", "standard");
+
         foreach (var kvp in metadata)
         {
             sb.AppendLine($"  {kvp.Key}: {kvp.Value}");
         }
+
         return sb.ToString();
     }
 
@@ -652,8 +658,16 @@ public class ModuleBuilder
             else
             {
                 // Get rid of all spaces, dashes, and asterisks (Markdown list elements) in front of the text.
-                var text = line.Trim().TrimStart('-').TrimStart('*').TrimStart();
-                Debug.Assert(text.Length>0);
+                var text = line.Trim()
+                    .TrimStart('-')
+                    .TrimStart('*')
+                    .TrimStart()
+                    .Replace("**[", "[")
+                    .Replace("*[", "[")
+                    .Replace("]**", "]")
+                    .Replace("]*", "]");
+
+                if (text.Length == 0) continue; // Skip empty lines.
 
                 if (text.Length > 3 && text[0] == '[') // choice?
                 {
