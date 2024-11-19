@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i \"C:\\Users\\mark\\Desktop\\Module4-sample.docx\" -o C:\\Users\\mark\\Desktop\\test"
+      "commandLineArgs": "-d -i \"https://learn.microsoft.com/en-us/microsoft-cloud/dev/copilot/overview\" -o \"C:\\Users\\mark\\OneDrive\\Desktop\\overview.docx\""
     }
   }
 }

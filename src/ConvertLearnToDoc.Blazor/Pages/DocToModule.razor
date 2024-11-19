@@ -1,6 +1,8 @@
 ﻿@attribute [Authorize]
 
 @page "/docToModule"
+@page "/"
+
 @using Constants = ConvertLearnToDoc.Shared.Constants
 
 @inject IHttpClientFactory ClientFactory
@@ -13,7 +15,7 @@
     <meta name="author" content="markjulmar" />
 </HeadContent>
 
-<h3>Convert a Word document into a Learn training module</h3>
+<h3>Convert a Word document into a Microsoft Learn training module</h3>
 
 <AlertBox ErrorText="@errorText" />
 

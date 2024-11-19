@@ -1,0 +1,112 @@
+﻿@attribute [Authorize]
+
+@page "/"
+
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Learn to Word</PageTitle>
+<HeadContent>
+    <meta name="description" content="Convert Microsoft Learn articles or training modules into Word documents."/>
+    <meta name="author" content="markjulmar" />
+</HeadContent>
+
+<h3>Convert a Learn article or training module into a Word document</h3>
+
+<AlertBox ErrorText="@errorText" />
+
+<p>
+    Enter the URL from the <a href="https://learn.microsoft.com" target="_blank">Learn site</a> that you want to convert to a Word document.
+</p>
+
+
+<EditForm id="convertForm" EditContext="@editContext" OnValidSubmit="@HandleSubmit" class="row g-3">
+
+    <DataAnnotationsValidator />
+
+    <div class="col-md-8">
+        <InputText @bind-Value="request.Url" class="form-control" id="url" placeholder="https://learn.microsoft.com/dotnet/csharp/fundamentals/object-oriented/" />
+        <ValidationMessage For="() => request.Url"/>
+    </div>
+
+    <div class="col-md-6 pb-4">
+        <label for="zonePivot">Zone Pivot (leave blank to render all pivots)</label>
+        <InputText @bind-Value="request.ZonePivot" class="form-control" id="zonePivot" 
+                   DisplayName="Zone Pivot" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <div>
+                    <InputCheckbox @bind-Value="request.EmbedNotebooks" class="form-check-input" id="EmbedNotebookData"/>
+                    <label class="form-check-label" for="EmbedNotebookData">
+                        Embed any associated Jupyter Notebook
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col">
+        <button type="submit" disabled="@(request.IsValid()==false)" class="btn btn-success">Convert</button>
+    </div>
+
+</EditForm>
+
+@code {
+    [CascadingParameter(Name = "AccessToken")] public string? AccessToken { get; set; }
+
+    private LearnUrlConversionRequest request = new();
+    private string? errorText;
+
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(request);
+        messageStore = new(editContext);
+        base.OnInitialized();
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorText = null;
+        messageStore!.Clear();
+
+        await JS.InvokeVoidAsync("showWorkingDialog");
+        HttpResponseMessage response;
+
+        try
+        {
+            using var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(NavigationManager.BaseUri);
+            if (AccessToken != null)
+            {
+                client.DefaultRequestHeaders.Add("Cookie", ".AspNetCore.Cookies=" + AccessToken);
+            }
+            response = await client.PostAsJsonAsync("api/ContentConverter", request);
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("hideWorkingDialog");
+        }
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var filename = FileHelpers.GetFilenameFromResponse(response, "output.docx");
+            await FileHelpers.DownloadFileFromResponseAsync(response, JS, filename);
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            errorText = $"{response.ReasonPhrase}: You must be logged in to use this feature.";
+        }
+        else
+        {
+            var text = await response.Content.ReadAsStringAsync();
+            errorText = $"{response.ReasonPhrase}: {text}";
+        }
+    }
+}

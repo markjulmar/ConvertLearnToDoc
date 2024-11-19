@@ -103,7 +103,7 @@ public static class MarkdownToDocConverter
         // Render the markdown tree into the Word document.
         var docWriter = new DocxObjectRenderer(document, Path.GetDirectoryName(markdownFile), 
             new DocxRendererOptions {
-                Logger = text => errors.Add(text),
+                Logger = errors.Add,
                 ReadFile = (_, path) => GetFile(learnRepo, inputLocation, moduleData, path, Path.GetDirectoryName(markdownFile)),
                 ConvertRelativeUrl = url => ConvertUrls.FromRelative(url, learnSiteUrl),
                 ZonePivot = zonePivot

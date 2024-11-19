@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Julmar.DocsToMarkdown</RootNamespace>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <Version>1.0.0-pre</Version>
+        <Title>DocsToMarkdown</Title>
+        <Authors>julmar.com</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+      <PackageReference Include="Julmar.MSLearnCatalogAPI" Version="2.5.0" />
+    </ItemGroup>
+
+</Project>

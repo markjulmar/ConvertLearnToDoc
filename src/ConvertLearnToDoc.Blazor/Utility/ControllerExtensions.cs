@@ -6,7 +6,6 @@ namespace ConvertLearnToDoc.Utility;
 public static class ControllerExtensions
 {
     public static string AnonymousIdentity = "Anonymous";
-    public static List<string>? ValidUsers;
 
     public static string GetUsername(HttpContext context)
     {
@@ -25,6 +24,7 @@ public static class ControllerExtensions
         if (trimmedEmail.EndsWith('.'))
             return false;
 
+        /*
         if (ValidUsers == null)
         {
             var users = Environment.GetEnvironmentVariable("VALID_USERS");
@@ -45,6 +45,11 @@ public static class ControllerExtensions
         }
 
         return false;
+        */
+
+        // All are allowed.
+        return true;
+
     }
 
     public static async Task<IActionResult> FileAttachment(this ControllerBase controller, string filename, string contentType, bool deleteFile = true)
@@ -53,7 +58,7 @@ public static class ControllerExtensions
         {
             var content = await File.ReadAllBytesAsync(filename);
             controller.Response.Headers
-                .Add("Content-Disposition",
+                .Append("Content-Disposition",
                     $"attachment;filename={Path.GetFileName(filename).Replace(' ', '-')}");
             return controller.File(content, contentType);
         }

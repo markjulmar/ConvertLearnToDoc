@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using LearnDocUtils;
 using MSLearnRepos;
+using System.Diagnostics;
 
 namespace ConvertDocx;
 
@@ -16,6 +17,10 @@ public static class Program
             return; // bad arguments or help.
 
         List<string> errors = null;
+
+        // Try to get a token from 1Password.
+        options.AccessToken ??= await ReadOpenAIToken();
+        if (options.AccessToken == "") options.AccessToken = null;
 
         try
         {
@@ -102,6 +107,26 @@ public static class Program
         }
 
         errors?.ForEach(Console.Error.WriteLine);
+    }
+
+    static async Task<string> ReadOpenAIToken()
+    {
+        var psi = new ProcessStartInfo("op")
+        {
+            Arguments = "read \"op://personal/github.com/token\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        using var process = Process.Start(psi);
+        if (process == null)
+            return null;
+
+        var token = await process.StandardOutput.ReadToEndAsync();
+        await process.WaitForExitAsync();
+
+        return token?.TrimEnd();
     }
 }
 

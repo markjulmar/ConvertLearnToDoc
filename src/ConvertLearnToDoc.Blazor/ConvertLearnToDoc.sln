@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{FFACD0C8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertDocx", "..\ConvertDocx\ConvertDocx.csproj", "{D70DB996-7BF6-4AD2-A1F7-970648FA72CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocsToMarkdown", "..\..\lib\DocsToMarkdown\DocsToMarkdown.csproj", "{0A28E87F-16CF-43DB-942D-39386FA0D83B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{D70DB996-7BF6-4AD2-A1F7-970648FA72CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D70DB996-7BF6-4AD2-A1F7-970648FA72CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D70DB996-7BF6-4AD2-A1F7-970648FA72CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -64,6 +70,7 @@ Global
 		{B4495547-27D6-4D39-8C91-E1AAC53B9899} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
 		{3D7868C8-8814-4EE1-8A5B-A542D8596B47} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
 		{D70DB996-7BF6-4AD2-A1F7-970648FA72CD} = {FFACD0C8-6379-40BD-AE9D-4FF7F31950F1}
+		{0A28E87F-16CF-43DB-942D-39386FA0D83B} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A26BF863-A2E9-437E-86D6-BA6A21CD5A49}

@@ -18,7 +18,6 @@ public static class LearnToDocx
             folder, outputFile, options);
     }
 
-    /*
     public static async Task<List<string>> ConvertFromFolderAsync(string learnFolder, string outputFile, DocumentOptions options = null)
     {
         if (string.IsNullOrWhiteSpace(learnFolder))
@@ -27,9 +26,8 @@ public static class LearnToDocx
         if (!Directory.Exists(learnFolder))
             throw new DirectoryNotFoundException($"{learnFolder} does not exist.");
 
-        return await Convert(LearnRepoService.Create(learnFolder), learnFolder, outputFile, options);
+        return await Convert(LearnRepoService.Create(learnFolder), url:string.Empty, moduleFolder:learnFolder, docxFile:outputFile, options);
     }
-    */
 
     private static async Task<List<string>> Convert(ILearnRepoService learnRepo, string url,
         string moduleFolder, string docxFile, DocumentOptions options)

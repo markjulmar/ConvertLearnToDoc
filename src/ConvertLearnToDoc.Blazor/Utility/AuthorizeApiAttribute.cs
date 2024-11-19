@@ -10,7 +10,7 @@ namespace ConvertLearnToDoc.Utility
         {
             var user = context.HttpContext.User;
 
-            if (!user.Identity?.IsAuthenticated == true)
+            if (user.Identity == null || !user.Identity.IsAuthenticated)
             {
                 context.Result = new UnauthorizedResult();
                 return;

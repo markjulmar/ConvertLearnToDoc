@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
 	<ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -10,7 +10,7 @@
     <None Remove="Renderers\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Julmar.DxPlus" Version="1.3.5-preview" />
+    <PackageReference Include="Julmar.DxPlus" Version="1.4.0-preview" />
     <PackageReference Include="Julmar.GenMarkdown" Version="1.0.7" />
   </ItemGroup>
   <ItemGroup>

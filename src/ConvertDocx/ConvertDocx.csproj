@@ -2,8 +2,8 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net6.0</TargetFramework>
-		<Copyright>(c) 2021-2022, julmar.com</Copyright>
+		<TargetFramework>net8.0</TargetFramework>
+		<Copyright>(c) 2021-2024, julmar.com</Copyright>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
