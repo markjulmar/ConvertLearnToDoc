@@ -1,5 +1,7 @@
 # ConvertLearnToDoc
 
+[![.NET](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/dotnet.yml/badge.svg)](https://github.com/markjulmar/ConvertLearnToDoc/actions/workflows/dotnet.yml)
+
 **ConvertLearnToDoc** is a set of tools that can convert Microsoft Word documents into [Microsoft Learn](https://learn.microsoft.com) articles or training modules that can be published on the Microsoft Learn site. This is a tool primarily intended for contributors to the platform who don't want to work in Markdown or YAML, but would prefer to leverage a document. The tool has an experimental capability to load an article or training module from the <https://learn.microsoft.com> and convert it into a Microsoft Word document.
 
 > **Important:**
@@ -67,16 +69,17 @@ Output FIle           Required. Output file or folder.
 |--------|-------------|
 | First parameter | Specifies a local Learn module folder or docs Markdown page, URL to a Learn module/docs conceptual page, or a local .docx file. |
 | Second parameter | Specifies a local folder or file to output a Learn module/docs page to, or a .docx filename. |
-| `-z` | If supplied and converting from Learn to .docx, this will zip the generated folder. |
-| `-g` | GitHub organization to get content from. This allows a fork of MicrosoftDocs to be used. |
-| `-r` | Repository to pull content from. If provided, the input parameter should a folder in this repo. |
-| `-b` | Optional branch if content is not public. If provided, the input parameter should a folder in this repo. |
-| `-t` | GitHub token if using a URL or GitHub folder. |
+| `-g` | GitHub organization to get content from. This allows a fork of MicrosoftDocs to be used and requires a token. |
+| `-r` | Repository to pull content from. If provided, the input parameter should a folder in this repo. This requires a token. |
+| `-b` | Optional branch if content is not public. If provided, the input parameter should a folder in this repo. This requires a token. |
+| `-t` | GitHub token - if supplied, the token must have access to the specified repository and the tool will fetch the Markdown from there. |
 | `-d` | Debug - keeps all intermediary files. |
 | `-p` | Zone pivot to render when going from Learn to a .docx. If not supplied, all pivots are rendered. |
 | `-n` | If supplied, any notebooks in the module will be rendered in place. |
 | `-f` | Output format when the input is a URL. Valid values are [Markdown, Docx], defaults to Docx.
-| `-s` | Indicates to render to a single page. This is only necessary if the input is a Word doc and the output filename does not indicate it should be a Markdown file. |
+| `-s` | Indicates to render to a single page. This is only necessary if the input is a Word doc and the output filename does not indicate it |
+| `-z` | If supplied and converting from Learn to .docx, this will zip the generated folder. |
+should be a Markdown file. |
 
 ## Running the web version
 
