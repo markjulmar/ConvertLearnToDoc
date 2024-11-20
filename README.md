@@ -1,6 +1,11 @@
 # ConvertLearnToDoc
 
-Tools to convert Learn module to Word doc and back
+**ConvertLearnToDoc** is a set of tools that can convert Microsoft Word documents into [Microsoft Learn](https://learn.microsoft.com) articles or training modules that can be published on the Microsoft Learn site. This is a tool primarily intended for contributors to the platform who don't want to work in Markdown or YAML, but would prefer to leverage a document. The tool has an experimental capability to load an article or training module from the <https://learn.microsoft.com> and convert it into a Microsoft Word document.
+
+> **Important:**
+> This tool does not push content into GitHub. The step to _actually_ publish content requires a GitHub account
+> connected to the <https://github.com/MicrosoftDocs> organization. This tool only converts documents into the Markdown and
+> YAML files necessary for publishing.
 
 ## Project structure
 
@@ -8,8 +13,8 @@ The GitHub repo has several related projects:
 
 | Project | Description | Status |
 |---------|-------------|--------|
-| [ConvertLearnToDoc](src/ConvertLearnToDoc) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub. | **Active** |
-| [ConvertAll](src/ConvertAll) | A CLI tool to walk a local clone of a MicrosoftDocs GitHub repository and create Word docs from each located module. | **Active** |
+| [ConvertLearnToDoc](src/ConvertLearnToDoc) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub and logging through Azure LogAnalytics. | **Active** |
+| [ConvertAll](src/ConvertAll) | A CLI tool to walk a local clone of a MicrosoftDocs GitHub repository and create Word docs from each located training module. | **Active** |
 | [ConvertDocx](src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. | **Active** |
 | [Blazor](archive/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. | **Deprecated** |
 | [ConvertLearnToDocWeb](archive/ConvertLearnToDocWeb) | A web portal version of the conversion tool. | **Deprecated** |
