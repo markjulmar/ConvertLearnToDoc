@@ -6,24 +6,24 @@ Tools to convert Learn module to Word doc and back
 
 The GitHub repo has several related projects:
 
-| Project | Description |
-|---------|-------------|
-| [Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/Blazor/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. **Deprecated**
-| [ConvertLearnToDocWeb](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDocWeb) | A web portal version of the conversion tool. **Deprecated** |
-| [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. **Deprecated** |
-| [ConvertAll](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertAll) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
-| [ConvertDocx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. |
-| [ConvertLearnToDoc.Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.Blazor) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub. |
+| Project | Description | Status |
+|---------|-------------|--------|
+| [ConvertLearnToDoc](src/ConvertLearnToDoc) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub. | **Active** |
+| [ConvertAll](src/ConvertAll) | A CLI tool to walk a local clone of a MicrosoftDocs GitHub repository and create Word docs from each located module. | **Active** |
+| [ConvertDocx](src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. | **Active** |
+| [Blazor](archive/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. | **Deprecated** |
+| [ConvertLearnToDocWeb](archive/ConvertLearnToDocWeb) | A web portal version of the conversion tool. | **Deprecated** |
+| [ConvertToDocAzureFunctions](archive/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. | **Deprecated** |
 
 In addition, there are four libraries used by the above projects.
 
 | Library project | Description |
 |-----------------|-------------|
-| [Docx.Renderer.Markdown](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/Docx.Renderer.Markdown) | A library to convert a .docx file to Markdown |
-| [GenMarkdown.DocFX.Extensions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/GenMarkdown.DocFx.Extensions) | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
-| [LearnDocUtils](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/LearnDocUtils) | The main conversion library. |
-| [Markdig.Renderer.Docx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/Markdig.Renderer.Docx) | A Markdig library to read a Markdig document and turn it into a .docx file. |
-| [DocsToMarkdown](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/DocsToMarkdown) | A library that converts a Learn URL into Markdown. This is used to convert from Learn to Word or Markdown in the web tool. |
+| [Docx.Renderer.Markdown](lib/Docx.Renderer.Markdown) | A library to convert a .docx file to Markdown |
+| [GenMarkdown.DocFX.Extensions](lib/GenMarkdown.DocFx.Extensions) | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
+| [LearnDocUtils](lib/LearnDocUtils) | The main conversion library. |
+| [Markdig.Renderer.Docx](lib/Markdig.Renderer.Docx) | A Markdig library to read a Markdig document and turn it into a .docx file. |
+| [DocsToMarkdown](lib/DocsToMarkdown) | A library that converts a Learn URL into Markdown. This is used to convert from Learn to Word or Markdown in the web tool. |
 
 ## Project dependencies
 
@@ -33,8 +33,8 @@ The project also depends on several NuGet packages:
 |---------|-------------|
 | [DxPlus](https://github.com/markjulmar/dxplus) | A library to read/write .docx files. |
 | [GenMarkdown](https://github.com/markjulmar/genmarkdown) | A library to generate Markdown content. |
-| [Markdig](https://github.com/xoofx/markdig) | A markdown parsing library |
 | [MSLearnRepos](https://www.nuget.org/packages/julmar.mslearnrepos) | A .NET library to work with GitHub and the Learn repo structure |
+| [Markdig](https://github.com/xoofx/markdig) | A CommonMark Markdown parsing library for .NET |
 | [Microsoft.DocAsCode.MarkdigEngine.Extensions](https://www.nuget.org/packages/Microsoft.DocAsCode.MarkdigEngine.Extensions) | Extensions for Markdig and DocFX. |
 
 ## Converting a Learn module to a Word document
@@ -53,6 +53,7 @@ Output FIle           Required. Output file or folder.
 -p, --Pivot           Zone pivot to render to doc, defaults to all
 -z, --zipOutput       Zip output folder, defaults to false
 -n, --Notebook        Convert notebooks into document, only used on MS Learn content
+-f, --OutputFormat    The output format when the input is a URL. Valid values are [Markdown, Docx], defaults to Docx.
 --help                Display help.
 --version             Display version information.
 ```
@@ -69,24 +70,28 @@ Output FIle           Required. Output file or folder.
 | `-d` | Debug - keeps all intermediary files. |
 | `-p` | Zone pivot to render when going from Learn to a .docx. If not supplied, all pivots are rendered. |
 | `-n` | If supplied, any notebooks in the module will be rendered in place. |
+| `-f` | Output format when the input is a URL. Valid values are [Markdown, Docx], defaults to Docx.
 | `-s` | Indicates to render to a single page. This is only necessary if the input is a Word doc and the output filename does not indicate it should be a Markdown file. |
 
-## Running the Blazor web client version
+## Running the web version
 
-The Blazor version of the app consists of a Blazor Web Assembly client with a ASP.NET Web API backend host. You can run the host + client by starting the server project - `ConvertLearnToDoc\Blazor\ConvertLearnToDoc\Server` and then launching a web client pointed at <https://localhost:7069/>.
+The Blazor server version of the app consists of a Blazor Web Assembly client with a ASP.NET Web API backend host. You can run the host + client by starting the [server application](src/ConvertLearnToDoc) and then launching a web client pointed at <https://localhost:5001/>.
 
 ```bash
-cd Blazor/ConvertLearnToDoc/Server
+cd src/ConvertLearnToDoc
 dotnet run .
 ```
 
-There are three options to the Blazor app:
+![Main page of web app](docs/main-page.png)
 
-1. **Learn to Word** - convert a Learn article or module to a Word `.docx` file.
-1. **Word to Module** - convert a Word `.docx` file to a Learn module.
-1. **Word to Article** - convert a Word `.docx` file to a Learn conceptual article.
+There are four options to the Blazor app:
 
-In the case of 2 & 3, you have the option to edit the metadata - this is a feature not exposed by the console app (but could be). In this case, the Blazor client pulls out the metadata from the Word document and allows editing. It passes the edited metadata back when the document is converted.
+1. **Word to Training** - convert a Word `.docx` file to a Microsoft Learn training module (YAML and Markdown).
+1. **Word to Article** - convert a Word `.docx` file to a Microsoft Learn single-page conceptual article (Markdown).
+1. **Learn to Word** - convert a Microsoft Learn article or training module to a Word `.docx` file.
+1. **Learn to Markdown** - convert a Microsoft Learn article or training module to Markdown/YAML.
+
+In the case of 1 & 2, you have the option to edit the metadata. The app pulls out the metadata from the Word document and allows editing. It passes the edited metadata back when the document is converted.
 
 ### Restrictions
 
@@ -97,3 +102,5 @@ private const int MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1gb max size
 ```
 
 You can change this to allow for larger file sizes.
+
+<small>Copyright (C) 2024 julmar.com</small>
