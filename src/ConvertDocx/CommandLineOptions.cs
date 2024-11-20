@@ -4,32 +4,36 @@ namespace ConvertDocx;
 
 internal sealed class CommandLineOptions
 {
-    [Option('i', "input", Required = true, HelpText = "Input file or folder.")]
-    public string InputFile { get; set; }
+    //[Option('i', "input", Required = true, HelpText = "Input file or folder.")]
+    [Value(0, MetaName = "input file",
+            Required = true, HelpText = "Input file or folder.")]
+    public required string InputFile { get; set; }
         
-    [Option('o', "output", Required = true, HelpText = "Output file or folder.")]
-    public string OutputFile { get; set; }
+    //[Option('o', "output", Required = true, HelpText = "Output file or folder.")]
+    [Value(1, MetaName = "output file",
+        Required = false, HelpText = "Output file or folder.")]
+    public string? OutputFile { get; set; }
 
     [Option('s', "singlePage", HelpText = "Output should be a single page (Markdown file).")]
     public bool SinglePageOutput { get; set; }
         
     [Option('g', "Organization", HelpText = "GitHub organization")]
-    public string Organization { get; set; }
+    public string? Organization { get; set; }
 
     [Option('r', "Repo", HelpText = "GitHub repo")]
-    public string GitHubRepo { get; set; }
+    public string? GitHubRepo { get; set; }
 
     [Option('b', "Branch", HelpText = "GitHub branch, defaults to 'live'")]
-    public string GitHubBranch { get; set; }
+    public string? GitHubBranch { get; set; }
 
     [Option('t', "Token", HelpText = "GitHub access token")]
-    public string AccessToken { get; set; }
+    public string? AccessToken { get; set; }
 
     [Option('d', "Debug", HelpText = "Debug output, save temp files")]
     public bool Debug { get; set; }
         
     [Option('z', "ZonePivot", HelpText = "Zone pivot to render to doc, defaults to all")]
-    public string ZonePivot { get; set; }
+    public string? ZonePivot { get; set; }
 
     [Option('n', "Notebook", HelpText = "Convert notebooks into document, only used on MS Learn content")]
     public bool ConvertNotebooks { get; set; }
@@ -42,4 +46,7 @@ internal sealed class CommandLineOptions
 
     [Option('u', "UseGenericIds", HelpText = "Generate filenames and UIDs based on generic pattern ('unit-xy')")]
     public bool UseGenericIds { get; set; }
+    
+    [Option('f', "OutputFormat", HelpText = "Output format for the conversion. Default is 'docx'.")]
+    public OutputFormat OutputFormat { get;set; }
 }

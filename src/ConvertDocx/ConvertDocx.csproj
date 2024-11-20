@@ -5,6 +5,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<Copyright>(c) 2021-2024, julmar.com</Copyright>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

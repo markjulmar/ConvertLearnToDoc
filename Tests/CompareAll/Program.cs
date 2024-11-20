@@ -129,7 +129,7 @@ static async Task ProcessOneModuleAsync(string inputFolder, string outputDoc)
     if (File.Exists(outputDoc))
         File.Delete(outputDoc);
 
-    await LearnToDocx.ConvertFromFolderAsync(inputFolder, outputDoc);
+    await LearnToDocx.ConvertFromFolderAsync("", inputFolder, outputDoc);
 }
 
 static string GetDownloadFolderPath()

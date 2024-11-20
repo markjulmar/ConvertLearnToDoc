@@ -33,6 +33,6 @@ foreach (var index in Directory.GetFiles(options.InputFolder, "index.yml", Searc
     if (File.Exists(fullDocPath))
         File.Delete(fullDocPath);
 
-    var results = await LearnToDocx.ConvertFromFolderAsync(folder, fullDocPath, new DocumentOptions { Debug = options.Debug });
+    var results = await LearnToDocx.ConvertFromFolderAsync("", folder, fullDocPath, new DocumentOptions { Debug = options.Debug });
     File.WriteAllText(Path.ChangeExtension(fullDocPath, ".txt"), string.Join(Environment.NewLine, results));
 }

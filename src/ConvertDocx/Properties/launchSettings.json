@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -i \"https://learn.microsoft.com/en-us/training/modules/describe-cloud-service-types/\" -o \"C:\\Users\\mark\\OneDrive\\Desktop\\output.docx\""
+      "commandLineArgs": "-d \"https://learn.microsoft.com/en-us/azure/app-service/overview\" \"C:\\Users\\Mark\\OneDrive\\Desktop\\overview.docx\""
     }
   }
 }

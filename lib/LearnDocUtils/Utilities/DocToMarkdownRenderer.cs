@@ -2,7 +2,7 @@
 
 namespace LearnDocUtils;
 
-internal static class DocToMarkdownRenderer
+internal static partial class DocToMarkdownRenderer
 {
     /// <summary>
     /// This is the list of unicode space characters we see
@@ -24,15 +24,15 @@ internal static class DocToMarkdownRenderer
     /// <returns></returns>
     internal static string PostProcessMarkdown(string text)
     {
-        text = text.Trim('\r').Trim('\n'); //.Trim('\r');
+        text = text.Trim('\r', '\n').Trim('\n', '\r');
         text = Replacements.Aggregate(text, (current, ch) => current.Replace(ch.find, ch.replace));
 
         // Do all the doc replacements we did from an original doc.
-        text = Regex.Replace(text, @"{rgn (.*?)}", m => $"<rgn>{m.Groups[1].Value.Trim()}</rgn>");
-        text = Regex.Replace(text, @"{zonePivot:(.*?)}", m => $":::zone pivot={m.Groups[1].Value.Trim()}");
-        text = Regex.Replace(text, @"{end-zonePivot:(.*?)}", m => $":::zone-end");
-        text = Regex.Replace(text, @"{include ""(.*?)"".*}", m => $"[!include[]({m.Groups[1].Value.Trim()})]");
-        text = Regex.Replace(text, @"{tabgroup ""(.*?)"" (.*?)}", m => $"# [{m.Groups[1].Value.Trim()}](#tab/{m.Groups[2].Value.Trim()})]");
+        text = RegionRegex().Replace(text, m => $"<rgn>{m.Groups[1].Value.Trim()}</rgn>");
+        text = BeginZonePivotRegex().Replace(text, m => $":::zone pivot={m.Groups[1].Value.Trim()}");
+        text = EndZonePivotRegex().Replace(text, m => $":::zone-end");
+        text = IncludeRegex().Replace(text, m => $"[!include[]({m.Groups[1].Value.Trim()})]");
+        text = TabGroupRegex().Replace(text, m => $"# [{m.Groups[1].Value.Trim()}](#tab/{m.Groups[2].Value.Trim()})]");
 
         // WWL templates use prefixes, convert these to our quote block note types.
         text = ProcessNotes(text, "note: ", "NOTE");
@@ -63,4 +63,19 @@ internal static class DocToMarkdownRenderer
 
         return text;
     }
+
+    [GeneratedRegex(@"{rgn (.*?)}")]
+    private static partial Regex RegionRegex();
+
+    [GeneratedRegex(@"{zonePivot:(.*?)}")]
+    private static partial Regex BeginZonePivotRegex();
+
+    [GeneratedRegex(@"{end-zonePivot:(.*?)}")]
+    private static partial Regex EndZonePivotRegex();
+    
+    [GeneratedRegex(@"{include ""(.*?)"".*}")]
+    private static partial Regex IncludeRegex();
+    
+    [GeneratedRegex(@"{tabgroup ""(.*?)"" (.*?)}")]
+    private static partial Regex TabGroupRegex();
 }

@@ -13,7 +13,7 @@ The GitHub repo has several related projects:
 | [ConvertToDocAzureFunctions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. **Deprecated** |
 | [ConvertAll](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertAll) | A CLI tool to walk a local clone of a Learn repo and create Word docs from each located module. |
 | [ConvertDocx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. |
-| [ConvertLearnToDoc.Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.Blazor) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through MSAL. |
+| [ConvertLearnToDoc.Blazor](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/src/ConvertLearnToDoc.Blazor) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub. |
 
 In addition, there are four libraries used by the above projects.
 
@@ -23,6 +23,7 @@ In addition, there are four libraries used by the above projects.
 | [GenMarkdown.DocFX.Extensions](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/GenMarkdown.DocFx.Extensions) | A library of [GenMarkdown](https://github.com/markjulmar/GenMarkdown) extensions to render DocFX extensions. |
 | [LearnDocUtils](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/LearnDocUtils) | The main conversion library. |
 | [Markdig.Renderer.Docx](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/Markdig.Renderer.Docx) | A Markdig library to read a Markdig document and turn it into a .docx file. |
+| [DocsToMarkdown](https://github.com/markjulmar/ConvertLearnToDoc/tree/main/lib/DocsToMarkdown) | A library that converts a Learn URL into Markdown. This is used to convert from Learn to Word or Markdown in the web tool. |
 
 ## Project dependencies
 
@@ -41,8 +42,8 @@ The project also depends on several NuGet packages:
 To try out the tools locally, clone the repository and navigate to the `src\ConvertDocx` project folder. Running the tool with no parameters will list the options:
 
 ```output
--i, --input           Required. Input file or folder.
--o, --output          Required. Output file or folder.
+Input File            Required. Input file or folder.
+Output FIle           Required. Output file or folder.
 -s, --singlePage      Output should be a single page (Markdown file).
 -g, --Organization    GitHub organization
 -r, --Repo            GitHub repo
@@ -58,8 +59,8 @@ To try out the tools locally, clone the repository and navigate to the `src\Conv
 
 | Option | Description |
 |--------|-------------|
-| `-i` | Specifies a local Learn module folder or docs Markdown page, URL to a Learn module/docs conceptual page, or a local .docx file. |
-| `-o` | Specifies a local folder or file to output a Learn module/docs page to, or a .docx filename. |
+| First parameter | Specifies a local Learn module folder or docs Markdown page, URL to a Learn module/docs conceptual page, or a local .docx file. |
+| Second parameter | Specifies a local folder or file to output a Learn module/docs page to, or a .docx filename. |
 | `-z` | If supplied and converting from Learn to .docx, this will zip the generated folder. |
 | `-g` | GitHub organization to get content from. This allows a fork of MicrosoftDocs to be used. |
 | `-r` | Repository to pull content from. If provided, the input parameter should a folder in this repo. |

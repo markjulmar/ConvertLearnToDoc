@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Blazor\ConvertLearnToDoc\Shared\ConvertLearnToDoc.Shared.csproj" />
+    <ProjectReference Include="..\ConvertLearnToDoc.Shared\ConvertLearnToDoc.Shared.csproj" />
     <ProjectReference Include="..\Markdig.Renderer.Docx\Markdig.Renderer.Docx.csproj" />
     <ProjectReference Include="..\Docx.Renderer.Markdown\Docx.Renderer.Markdown.csproj" />
   </ItemGroup>

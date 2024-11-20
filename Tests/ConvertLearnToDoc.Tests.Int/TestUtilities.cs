@@ -32,7 +32,8 @@ namespace ConvertLearnToDoc.Tests.Int
             if (File.Exists(outputDoc)) 
                 File.Delete(outputDoc);
 
-            return LearnToDocx.ConvertFromFolderAsync(inputFolder, outputDoc);
+            return LearnToDocx.ConvertFromFolderAsync("", inputFolder, outputDoc);
+
         }
 
         public static Task ConvertWordDocumentToLearnFolderAsync(string inputDoc, string outputFolder)
