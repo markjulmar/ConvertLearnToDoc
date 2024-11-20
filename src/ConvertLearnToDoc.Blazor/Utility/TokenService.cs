@@ -1,21 +1,17 @@
 using Microsoft.AspNetCore.Authentication;
 
-public class TokenService
+public class TokenService(IHttpContextAccessor httpContextAccessor)
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public TokenService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
     public async Task<string?> GetAccessTokenAsync()
     {
-        var authenticateResult = await _httpContextAccessor.HttpContext.AuthenticateAsync();
-        if (authenticateResult.Succeeded)
+        if (httpContextAccessor.HttpContext != null)
         {
-            var token = authenticateResult.Principal?.FindFirst("access_token")?.Value;
-            return token;
+            var authenticateResult = await httpContextAccessor.HttpContext.AuthenticateAsync();
+            if (authenticateResult.Succeeded)
+            {
+                var token = authenticateResult.Principal?.FindFirst("access_token")?.Value;
+                return token;
+            }
         }
         return null;
     }

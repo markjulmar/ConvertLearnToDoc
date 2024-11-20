@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConvertDocx", "..\ConvertDo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocsToMarkdown", "..\..\lib\DocsToMarkdown\DocsToMarkdown.csproj", "{0A28E87F-16CF-43DB-942D-39386FA0D83B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertDocsPageToMarkdown", "..\ConvertDocsPagesToMarkdown\ConvertDocsPageToMarkdown.csproj", "{C49470D0-1F06-4474-A590-7E3CAA3F5DDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A28E87F-16CF-43DB-942D-39386FA0D83B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C49470D0-1F06-4474-A590-7E3CAA3F5DDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C49470D0-1F06-4474-A590-7E3CAA3F5DDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C49470D0-1F06-4474-A590-7E3CAA3F5DDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C49470D0-1F06-4474-A590-7E3CAA3F5DDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,6 +77,7 @@ Global
 		{3D7868C8-8814-4EE1-8A5B-A542D8596B47} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
 		{D70DB996-7BF6-4AD2-A1F7-970648FA72CD} = {FFACD0C8-6379-40BD-AE9D-4FF7F31950F1}
 		{0A28E87F-16CF-43DB-942D-39386FA0D83B} = {B4D9033F-462E-431E-8689-2CFE05D2B7D2}
+		{C49470D0-1F06-4474-A590-7E3CAA3F5DDA} = {FFACD0C8-6379-40BD-AE9D-4FF7F31950F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A26BF863-A2E9-437E-86D6-BA6A21CD5A49}

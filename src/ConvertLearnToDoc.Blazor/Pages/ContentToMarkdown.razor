@@ -1,6 +1,6 @@
 ﻿@attribute [Authorize]
 
-@page "/"
+@page "/learnToMarkdown"
 
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager NavigationManager
@@ -8,12 +8,11 @@
 
 <PageTitle>Learn to Word</PageTitle>
 <HeadContent>
-    <meta name="description" content="Convert Microsoft Learn articles or training modules into Word documents."/>
+    <meta name="description" content="Convert Microsoft Learn articles or training modules into Markdown files."/>
     <meta name="author" content="markjulmar" />
 </HeadContent>
 
-<h3>Convert a Learn article or training module into a Word document</h3>
-
+<h3>Convert a Learn article or training module into Markdown <span class="badge bg-warning text-dark">Experimental</span></h3>
 <AlertBox ErrorText="@errorText" />
 
 <p>
@@ -87,7 +86,7 @@
             {
                 client.DefaultRequestHeaders.Add("Cookie", ".AspNetCore.Cookies=" + AccessToken);
             }
-            response = await client.PostAsJsonAsync("api/ContentConverter", request);
+            response = await client.PostAsJsonAsync("api/ContentConverter/toMarkdown", request);
         }
         finally
         {

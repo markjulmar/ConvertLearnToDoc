@@ -18,8 +18,7 @@ namespace LearnDocUtils
                 inputFile, outputFile, options);
         }
 
-        /*
-        public static async Task<List<string>> ConvertFromFileAsync(string inputFile, string outputFile, DocumentOptions options = null)
+        public static async Task<List<string>> ConvertFromFileAsync(string url, string inputFile, string outputFile, DocumentOptions options = null)
         {
             if (string.IsNullOrWhiteSpace(inputFile))
                 throw new ArgumentException($"'{nameof(inputFile)}' cannot be null or whitespace.", nameof(inputFile));
@@ -31,9 +30,8 @@ namespace LearnDocUtils
             if (string.IsNullOrEmpty(folder))
                 folder = Directory.GetCurrentDirectory();
 
-            return await Convert(LearnRepoService.Create(folder), inputFile, outputFile, options);
+            return await Convert(LearnRepoService.Create(folder), url, inputFile, outputFile, options);
         }
-        */
 
         private static async Task<List<string>> Convert(ILearnRepoService learnRepo, string url,
             string inputFile, string docxFile, DocumentOptions options)

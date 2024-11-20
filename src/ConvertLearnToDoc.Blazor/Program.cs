@@ -1,8 +1,11 @@
 using ConvertLearnToDoc.Utility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-//using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+#if USE_MS_AUTH
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+#else
 using Microsoft.AspNetCore.Authentication.OAuth;
+#endif
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
@@ -14,19 +17,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
+#if !DEBUG
 builder.Services.AddApplicationInsightsTelemetry();
+#endif
+
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
+#if !USE_MS_AUTH
 builder.Services.AddScoped<TokenService>();
+#endif
 
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.AddConsole();
+#if !DEBUG
 builder.Logging.AddApplicationInsights();
-builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Information);
+builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Warning);
+#endif
 
-var gitHubAppInfo = builder.Configuration.GetSection("GitHub");
-if (gitHubAppInfo == null)
-{
-    throw new Exception("GitHub section is missing in the configuration file.");
-}
+#if USE_MS_AUTH
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie()
+    .AddMicrosoftAccount(ms => {
+        ms.ClientId = builder.Configuration["AzureApp:ClientId"]!;
+        ms.ClientSecret = builder.Configuration["AzureApp:SecretKey"]!;
+        ms.SaveTokens = true;
+    });
+#else
+var gitHubAppInfo = builder.Configuration.GetSection("GitHub") 
+    ?? throw new Exception("GitHub section is missing in the configuration file.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -62,9 +80,10 @@ builder.Services.AddAuthentication(options =>
     options.UserInformationEndpoint = "https://api.github.com/user";
 
     options.Scope.Add("read:user");
-    // Only need to know the user's name and email.
-    //options.Scope.Add("repo");
-    //options.Scope.Add("read:org");
+#if USE_GITHUB_PAT
+    options.Scope.Add("repo");
+    options.Scope.Add("read:org");
+#endif
 
     options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
     options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
@@ -88,26 +107,21 @@ builder.Services.AddAuthentication(options =>
             context.RunClaimActions(user.RootElement);
 
             // Save the access token
-            context.Identity.AddClaim(new Claim("access_token", context.AccessToken));
-            var expiresAt = DateTime.UtcNow.AddSeconds(int.Parse(context.TokenResponse.ExpiresIn ?? "3600"));
-            context.Properties.StoreTokens(
-            [
-                new AuthenticationToken { Name = "access_token", Value = context.AccessToken },
-                new AuthenticationToken { Name = "expires_at", Value = expiresAt.ToString("o") }
-            ]);
-            context.Properties.ExpiresUtc = expiresAt;
+            if (context.AccessToken != null)
+            {
+                context.Identity!.AddClaim(new Claim("access_token", context.AccessToken));
+                var expiresAt = DateTime.UtcNow.AddSeconds(int.Parse(context.TokenResponse.ExpiresIn ?? "3600"));
+                context.Properties.StoreTokens(
+                [
+                    new AuthenticationToken { Name = "access_token", Value = context.AccessToken },
+                    new AuthenticationToken { Name = "expires_at", Value = expiresAt.ToString("o") }
+                ]);
+                context.Properties.ExpiresUtc = expiresAt;
+            }
         }
     };
 });
-/*
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie()
-    .AddMicrosoftAccount(ms => {
-        ms.ClientId = builder.Configuration["AzureApp:ClientId"]!;
-        ms.ClientSecret = builder.Configuration["AzureApp:SecretKey"]!;
-        ms.SaveTokens = true;
-    });
-*/
+#endif
 
 var app = builder.Build();
 
@@ -140,9 +154,12 @@ app.MapPost("/signout", async ctx =>
 
 app.MapGet("/signin", async ctx =>
 {
-    //await ctx.ChallengeAsync(MicrosoftAccountDefaults.AuthenticationScheme, 
-    //    new AuthenticationProperties { RedirectUri = "/signin-callback" });
+#if USE_MS_AUTH
+    await ctx.ChallengeAsync(MicrosoftAccountDefaults.AuthenticationScheme, 
+        new AuthenticationProperties { RedirectUri = "/signin-callback" });
+#else
     await ctx.ChallengeAsync("GitHub", new AuthenticationProperties { RedirectUri = "/signin-callback" });
+#endif
 });
 
 app.MapGet("/signin-callback", async ctx =>

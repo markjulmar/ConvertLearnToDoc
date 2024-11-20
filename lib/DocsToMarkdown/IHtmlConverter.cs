@@ -1,11 +1,19 @@
+using HtmlAgilityPack;
 using Julmar.DocsToMarkdown.Metadata;
 
 namespace Julmar.DocsToMarkdown;
 
 public interface IHtmlConverter
 {
-    public Action<string>? UnhandledTagCallback { get; set; }
-    public bool UseDocfxExtensions { get; set; }
-    public IDocsMetadata Metadata { get; }
-    IEnumerable<string> Process();
+    public static async Task<IHtmlConverter> LoadAsync(Uri url, HtmlConverterOptions? options = null)
+    {
+        var htmlDoc = await new HtmlWeb().LoadFromWebAsync(url.ToString());
+        return await new HtmlConverter(url, htmlDoc, options).Initialize();
+    }
+
+    public Uri Url { get; }
+    bool IsTrainingModulePage { get; }
+    IDocsMetadata Metadata { get; }
+    IEnumerable<string> GetMarkdown();
+    IAsyncEnumerable<IHtmlConverter> GetTrainingUnitsConverter();
 }

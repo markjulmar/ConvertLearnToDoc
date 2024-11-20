@@ -56,7 +56,7 @@ public class HtmlInlineRenderer : DocxObjectRenderer<HtmlInline>
                 break;
             default:
                 currentParagraph.AddText(html.Tag);
-                Console.WriteLine($"Encountered unsupported HTML tag: {tag}");
+                Console.Error.WriteLine($"Encountered unsupported HTML tag: {tag}");
                 break;
         }
     }

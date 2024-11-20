@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\lib\DocsToMarkdown\DocsToMarkdown.csproj" />
 		<ProjectReference Include="..\..\lib\LearnDocUtils\LearnDocUtils.csproj" />
 	</ItemGroup>
 

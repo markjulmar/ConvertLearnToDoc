@@ -71,9 +71,9 @@ public class MarkdownRenderer : IMarkdownRenderer
         else
         {
             if (element is UnknownBlock ub)
-                Console.WriteLine($"Missing renderer for unknown block type: {ub.Name}");
+                Console.Error.WriteLine($"Missing renderer for unknown block type: {ub.Name}");
             else
-                Console.WriteLine($"Missing renderer for {element.GetType().Name}");
+                Console.Error.WriteLine($"Missing renderer for {element.GetType().Name}");
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿@attribute [Authorize]
 
-@page "/"
+@page "/learnToDoc"
 
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager NavigationManager
@@ -12,8 +12,7 @@
     <meta name="author" content="markjulmar" />
 </HeadContent>
 
-<h3>Convert a Learn article or training module into a Word document</h3>
-
+<h3>Convert a Learn article or training module into a Word document <span class="badge bg-warning text-dark">Experimental</span></h3>
 <AlertBox ErrorText="@errorText" />
 
 <p>
@@ -87,7 +86,7 @@
             {
                 client.DefaultRequestHeaders.Add("Cookie", ".AspNetCore.Cookies=" + AccessToken);
             }
-            response = await client.PostAsJsonAsync("api/ContentConverter", request);
+            response = await client.PostAsJsonAsync("api/ContentConverter/toDoc", request);
         }
         finally
         {

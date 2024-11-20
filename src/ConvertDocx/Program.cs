@@ -1,7 +1,10 @@
 ﻿using CommandLine;
+using Julmar.DocsToMarkdown;
 using LearnDocUtils;
+#if USE_GITHUB_PAT
 using MSLearnRepos;
 using System.Diagnostics;
+#endif
 
 namespace ConvertDocx;
 
@@ -17,16 +20,26 @@ public static class Program
             return; // bad arguments or help.
 
         List<string> errors = null;
+        var tempFolder = Path.Combine(Path.GetTempPath(), "LearnDocs");
 
-        // Try to get a token from 1Password.
-        options.AccessToken ??= await ReadOpenAIToken();
+#if USE_GITHUB_PAT
+        // Try to get a token.
+        options.AccessToken ??= await GetGitHubToken;
         if (options.AccessToken == "") options.AccessToken = null;
+#endif
 
         try
         {
             // Input is a Docs or Learn URL -> DOCX
             if (options.InputFile!.StartsWith("http"))
             {
+                if (Path.GetFileName(options.OutputFile).IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    Console.Error.WriteLine($"Invalid characters in output filename: {options.OutputFile}.");
+                    return;
+                }
+
+#if USE_GITHUB_PAT
                 var metadata = await DocsMetadata.LoadFromUrlAsync(options.InputFile);
 
                 options.Organization = metadata.Organization ?? Constants.DocsOrganization;
@@ -64,6 +77,50 @@ public static class Program
                             EmbedNotebookContent = options.ConvertNotebooks
                         });
                 }
+#else
+                // Download the article or training module.
+                Console.WriteLine($"Downloading {options.InputFile}");
+                if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true);
+                Directory.CreateDirectory(tempFolder);
+
+                var downloader = new DocsConverter(tempFolder, new Uri(options.InputFile));
+                var createdFiles = await downloader.ConvertAsync(logger: tag => Console.Error.WriteLine($"Skipped: {tag.TrimStart().Substring(0,20)}"));
+                if (createdFiles.Count == 0)
+                {
+                    Console.Error.WriteLine("No files created.");
+                    return;
+                }
+
+                bool isModule = createdFiles.Any(f => f.Filename.EndsWith(".yml"));
+                var url = options.InputFile;
+                options.InputFile = isModule
+                    ? createdFiles.First(f => f.FileType == FileType.Folder).Filename
+                    : createdFiles.Single(f => f.FileType == FileType.Markdown).Filename;
+
+                if (!Path.HasExtension(options.OutputFile))
+                    options.OutputFile = Path.ChangeExtension(options.OutputFile, ".docx");
+
+                if (options.InputFile!.EndsWith(".md", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Console.WriteLine(
+                        $"ConvertDocx: converting Docs Markdown {options.InputFile} to {options.OutputFile}");
+                    errors = await SinglePageToDocx.ConvertFromFileAsync(url, 
+                        options.InputFile, options.OutputFile,
+                        new DocumentOptions { Debug = options.Debug, ZonePivot = options.ZonePivot });
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"ConvertDocx: converting Learn module {options.InputFile} to {options.OutputFile}");
+                    errors = await LearnToDocx.ConvertFromFolderAsync(url, 
+                        options.InputFile, options.OutputFile,
+                        new DocumentOptions
+                        {
+                            Debug = options.Debug, ZonePivot = options.ZonePivot,
+                            EmbedNotebookContent = options.ConvertNotebooks
+                        });
+                }
+#endif
             }
 
             // Input is a Word document to Markdown
@@ -105,11 +162,17 @@ public static class Program
             await Console.Error.WriteLineAsync(ex.ToString());
 #endif
         }
+        finally
+        {
+            if (Directory.Exists(tempFolder)) 
+                Directory.Delete(tempFolder, true);
+        }
 
         errors?.ForEach(Console.Error.WriteLine);
     }
 
-    static async Task<string> ReadOpenAIToken()
+#if USE_GITHUB_PAT
+    static async Task<string> GetGitHubToken()
     {
         var psi = new ProcessStartInfo("op")
         {
@@ -128,5 +191,6 @@ public static class Program
 
         return token?.TrimEnd();
     }
+#endif
 }
 

@@ -11,8 +11,12 @@ internal class Image() : BaseConverter("img", "image")
         Debug.Assert(CanConvert(htmlInput));
 
         var altText = htmlInput.Attributes["alt"].Value;
-        var source = htmlInput.Attributes["src"].Value;
+        var originalSource = htmlInput.Attributes["src"].Value;
+        var source = SimplifyRelativePath(converter, originalSource);
 
+        // Attempt to download.
+        converter.DownloadAsset(source, new Uri(converter.Url, originalSource));
+        
         string? lightBoxUrl = null;
         var parentNode = htmlInput.ParentNode;
         if (parentNode.Name.Equals("a", StringComparison.InvariantCultureIgnoreCase))

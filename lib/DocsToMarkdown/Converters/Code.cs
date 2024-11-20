@@ -37,7 +37,7 @@ internal class Code(): BaseConverter("code", "pre")
             return new StringBuilder("```")
                 .Append(className)
                 .AppendLine()
-                .AppendLine(code)
+                .AppendLine(code.TrimEnd('\r', '\n'))
                 .AppendLine("```")
                 .AppendLine()
                 .ToString();

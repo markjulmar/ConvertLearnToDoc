@@ -5,7 +5,7 @@ using Julmar.DocsToMarkdown.Metadata;
 
 namespace Julmar.DocsToMarkdown;
 
-internal sealed class HtmlConverter(HtmlDocument htmlDocument) : IHtmlConverter
+internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConverterOptions? options) : IHtmlConverter
 {
     private IDocsMetadata? _metadata;
     readonly List<IConverter> _converters = [
@@ -15,59 +15,48 @@ internal sealed class HtmlConverter(HtmlDocument htmlDocument) : IHtmlConverter
             new DivSpan()
         ];
 
-    public Action<string>? UnhandledTagCallback { get; set; } = null;
-    
-    public bool UseDocfxExtensions { get; set; }
     public IDocsMetadata Metadata => _metadata!;
-    public IConverter? GetConverterFor(HtmlNode node)
-    {
-        return _converters.FirstOrDefault(c => c.CanConvert(node));
-    }
 
-    public IEnumerable<string> Process()
-    {
-        return _metadata!.PageKind switch
-        {
-            // Article?
-            "conceptual" or "unit" => ProcessOneDocument(htmlDocument),
-            "module" => ProcessTrainingModule(htmlDocument),
-            _ => throw new NotSupportedException()
-        };
-    }
+    public bool IsTrainingModulePage => _metadata!.PageKind == "module";
 
-    private static IEnumerable<string> ProcessTrainingModule(HtmlDocument document)
+    private IConverter? GetConverterFor(HtmlNode node) 
+        => _converters.FirstOrDefault(c => c.CanConvert(node));
+
+    public Uri Url => url;
+
+    public async IAsyncEnumerable<IHtmlConverter> GetTrainingUnitsConverter()
     {
-        var url = document.DocumentNode.SelectSingleNode("//head/meta[@property='og:url']").GetAttributeValue("content", "");
-        if (string.IsNullOrEmpty(url))
-            throw new ArgumentException("Cannot find og:url meta tag to parse.");
-        
-        var unitList = document.GetElementbyId("unit-list");
-        if (unitList == null)
-            throw new ArgumentException("Cannot find unit-list div to parse.");
-        var units = unitList.Descendants("a").ToList();
-        foreach (var anchor in units)
+        if (!IsTrainingModulePage)
         {
-            var href = anchor.GetAttributeValue("href", "");
-            if (!string.IsNullOrWhiteSpace(href))
+            yield return this;
+        }
+        else
+        {
+            var unitList = htmlDocument.GetElementbyId("unit-list");
+            if (unitList == null)
+                throw new ArgumentException("Cannot find unit-list div to parse.");
+            var units = unitList.Descendants("a").ToList();
+            foreach (var uri in units
+                         .Select(unit => unit.GetAttributeValue("href", ""))
+                         .Where(href => !string.IsNullOrWhiteSpace(href))
+                         .Select(anchor => !anchor.StartsWith("http")
+                             ? new Uri(Url.AbsoluteUri.EndsWith('/') 
+                                        ? Url : new Uri(Url.AbsoluteUri + "/"), anchor)
+                             : new Uri(anchor)))
             {
-                var uri = !href.StartsWith("http")
-                    ? new Uri(new Uri(url), href)
-                    : new Uri(href);
-                var unitDoc = HtmlConverterFactory.Create(uri).Result;
-                foreach (var line in unitDoc.Process())
-                {
-                    yield return line;
-                }
-
-                yield return Environment.NewLine;
+                yield return await IHtmlConverter.LoadAsync(uri, options);
             }
         }
     }
-
-    private IEnumerable<string> ProcessOneDocument(HtmlDocument document)
+    
+    public IEnumerable<string> GetMarkdown()
     {
-        var root = document.DocumentNode.SelectSingleNode("//div[@class='content']") 
-                   ?? document.DocumentNode.SelectSingleNode("//div[@class='content ']");
+        // No data for modules.
+        if (Metadata.PageKind == "module")
+            yield break;
+        
+        var root = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content']") 
+                   ?? htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content ']");
         if (root == null)
             throw new ArgumentException("Cannot find content div to parse.");
         
@@ -80,14 +69,14 @@ internal sealed class HtmlConverter(HtmlDocument htmlDocument) : IHtmlConverter
             }
             else if (node.NodeType == HtmlNodeType.Element)
             {
-                UnhandledTagCallback?.Invoke(node.OuterHtml);
+                options?.UnhandledTagCallback?.Invoke(node.OuterHtml);
             }
         }
     }
-    
-    public string Convert(HtmlNode node) 
-        => GetConverterFor(node)?.Convert(this, node) ?? "";
 
+    internal bool UseDocfxExtensions => options?.UseDocfxExtensions ?? false;
+    internal string Convert(HtmlNode node) => GetConverterFor(node)?.Convert(this, node) ?? "";
+    internal void DownloadAsset(string source, Uri uri) => options?.DownloadAsset?.Invoke(source, uri);
     private static IConverter[] InlineConverters => [new Text(), new Bold(), new Emphasis(), new Anchor()];
     
     internal string ConvertChildren(HtmlNode htmlInput, params IConverter[] additionalConverters)
@@ -124,7 +113,7 @@ internal sealed class HtmlConverter(HtmlDocument htmlDocument) : IHtmlConverter
             if (!foundConverter)
             {
                 if (IsBlockElement(child))
-                    UnhandledTagCallback?.Invoke(child.OuterHtml);
+                    options?.UnhandledTagCallback?.Invoke(child.OuterHtml);
             }
         }
 

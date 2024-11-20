@@ -4,20 +4,25 @@ namespace Julmar.DocsToMarkdown.Metadata;
 
 public static class DocsMetadataFactory
 {
-    private const string Conceptual = "Conceptual";
-    
     public static async Task<IDocsMetadata> CreateAsync(HtmlDocument htmlDoc)
     {
         var pageType = htmlDoc.DocumentNode.SelectSingleNode("//head/meta[@name='page_type']").GetAttributeValue("content", "");
-        if (pageType == "conceptual")
-            return DocsMetadata.Create(htmlDoc);
-        if (pageType == "learn")
+        switch (pageType)
         {
-            var pageKind = htmlDoc.DocumentNode.SelectSingleNode("//head/meta[@name='page_kind']").GetAttributeValue("content", "");
-            if (pageKind == "unit")
-                return await UnitMetadata.Create(htmlDoc);
-            if (pageKind == "module")
-                return await ModuleMetadata.Create(htmlDoc);
+            case "conceptual":
+                return new DocsMetadata(htmlDoc);
+            case "learn":
+            {
+                var pageKind = htmlDoc.DocumentNode.SelectSingleNode("//head/meta[@name='page_kind']").GetAttributeValue("content", "");
+                switch (pageKind)
+                {
+                    case "unit":
+                        return await UnitMetadata.Create(htmlDoc);
+                    case "module":
+                        return await ModuleMetadata.Create(htmlDoc);
+                }
+                break;
+            }
         }
 
         throw new ArgumentException("Unable to determine the document type from the URL.", nameof(htmlDoc));
