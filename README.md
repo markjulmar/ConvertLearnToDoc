@@ -13,7 +13,7 @@ The GitHub repo has several related projects:
 | [ConvertDocx](src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. | **Active** |
 | [Blazor](archive/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. | **Deprecated** |
 | [ConvertLearnToDocWeb](archive/ConvertLearnToDocWeb) | A web portal version of the conversion tool. | **Deprecated** |
-| [ConvertToDocAzureFunctions](archive/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. | **Deprecated** |
+| [ConvertLearnToDoc.AzureFunctions](archive/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. | **Deprecated** |
 
 In addition, there are four libraries used by the above projects.
 
