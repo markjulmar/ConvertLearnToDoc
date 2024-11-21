@@ -100,7 +100,7 @@ In the case of 1 & 2, you have the option to edit the metadata. The app pulls ou
 
 ### Restrictions
 
-The Blazor app has a file size limit of 1Gb for the Word .docx file. This is captured in a variable in the [ArticleOrModuleRef.cs](https://github.com/markjulmar/ConvertLearnToDoc/blob/main/Blazor/ConvertLearnToDoc/Shared/ArticleOrModuleRef.cs):
+The Blazor app has a file size limit of 1Gb for the Word `.docx` file. This is captured in a variable in the [ArticleOrModuleRef.cs](./lib/ConvertLearnToDoc.Shared//ArticleOrModuleRef.cs):
 
 ```csharp
 private const int MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1gb max size
