@@ -175,6 +175,7 @@ public sealed class ParagraphRenderer : MarkdownObjectRenderer<DXParagraph>
 
         if (document.LastOrDefault() is Paragraph lastParagraph)
         {
+            // Cleanup any prior paragraph.
             RenderHelpers.CollapseEmptyTags(lastParagraph);
         }
 

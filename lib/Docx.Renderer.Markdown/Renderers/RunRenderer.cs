@@ -225,6 +225,13 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         }
         else
         {
+            if (paragraph.Count > 0 && 
+                paragraph.Last()?.GetType() != typeof(T))
+            {
+                // Tag mismatch -- collapse any spaces before this.
+                RenderHelpers.CollapseEmptyTags(paragraph);
+            }
+
             var t = typeof(T).Name switch
             {
                 nameof(BoldText) => new BoldText(text),
@@ -233,13 +240,10 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
                 nameof(InlineCode) => new InlineCode(text),
                 _ => new Text(text)
             };
-
+            
             paragraph.Add(t);
         }
-
-        RenderHelpers.CollapseEmptyTags(paragraph);
     }
-
     private static void AppendText(Paragraph paragraph, string text, string prefix, string suffix)
     {
         text = ConvertSpecialCharacters(text);
@@ -252,6 +256,8 @@ public class RunRenderer : MarkdownObjectRenderer<Run>
         }
         else
         {
+            // It's different -- collapse any tags.
+            RenderHelpers.CollapseEmptyTags(paragraph);
             paragraph.Add(new RawInline($"{prefix}{text}{suffix}"));
         }
     }

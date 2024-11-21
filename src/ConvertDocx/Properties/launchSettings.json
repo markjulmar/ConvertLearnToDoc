@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d \"https://learn.microsoft.com/en-us/azure/app-service/overview\" \"C:\\Users\\Mark\\OneDrive\\Desktop\\overview.docx\""
+      "commandLineArgs": "-d -s \"/users/mark/Desktop/test.docx\" \"/users/mark/Desktop/test.md\""
     }
   }
 }

@@ -3,6 +3,7 @@ using Julmar.DocsToMarkdown;
 using LearnDocUtils;
 using MSLearnRepos;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 
 namespace ConvertDocx;
 
@@ -28,7 +29,7 @@ public static class Program
                         ?? await GetGitHubToken();
                     if (string.IsNullOrEmpty(options.AccessToken))
                     {
-                        Console.Error.WriteLine("GitHub access token is required for the specified options.");
+                        await Console.Error.WriteLineAsync("GitHub access token is required for the specified options.");
                         return;
                     }
                 }
@@ -37,12 +38,14 @@ public static class Program
 
                 if (options.OutputFormat == OutputFormat.Docx)
                 {
+                    options.OutputFile = Path.ChangeExtension(options.OutputFile, ".docx");
                     errors = !string.IsNullOrEmpty(options.AccessToken) 
                         ? await ConvertFromRepoAsync(options) 
                         : await DownloadAndConvertAsync(options);
                 }
                 else
                 {
+                    options.OutputFile = Path.ChangeExtension(options.OutputFile, ".md");
                     await DownloadMarkdown(options);
                 }
 

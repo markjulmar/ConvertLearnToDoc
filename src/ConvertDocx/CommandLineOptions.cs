@@ -47,6 +47,8 @@ internal sealed class CommandLineOptions
     [Option('u', "UseGenericIds", HelpText = "Generate filenames and UIDs based on generic pattern ('unit-xy')")]
     public bool UseGenericIds { get; set; }
     
-    [Option('f', "OutputFormat", HelpText = "Output format for the conversion. Default is 'docx'.")]
+    [Option('f', "OutputFormat",
+        Default = OutputFormat.Docx,
+        HelpText = "Output format for the conversion. Default is 'docx'.")]
     public OutputFormat OutputFormat { get;set; }
 }
