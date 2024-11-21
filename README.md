@@ -13,14 +13,11 @@
 
 The GitHub repo has several related projects:
 
-| Project | Description | Status |
-|---------|-------------|--------|
-| [ConvertLearnToDoc](src/ConvertLearnToDoc) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub and logging through Azure LogAnalytics. | **Active** |
-| [ConvertAll](src/ConvertAll) | A CLI tool to walk a local clone of a MicrosoftDocs GitHub repository and create Word docs from each located training module. | **Active** |
-| [ConvertDocx](src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file. | **Active** |
-| [Blazor](archive/ConvertLearnToDoc) | A Blazor WebAssembly version of the conversion tool. | **Deprecated** |
-| [ConvertLearnToDocWeb](archive/ConvertLearnToDocWeb) | A web portal version of the conversion tool. | **Deprecated** |
-| [ConvertLearnToDoc.AzureFunctions](archive/ConvertLearnToDoc.AzureFunctions) | Azure functions to perform the document conversions, used by the above web project. | **Deprecated** |
+| Project | Description |
+|---------|-------------|
+| [ConvertLearnToDoc](src/ConvertLearnToDoc) | Blazor Server version of the conversion tool. This is the most current version and includes authentication through either MSA or GitHub and logging through Azure LogAnalytics.
+| [ConvertAll](src/ConvertAll) | A CLI tool to walk a local clone of a MicrosoftDocs GitHub repository and create Word docs from each located training module.
+| [ConvertDocx](src/ConvertDocx) | A CLI tool to convert a single Learn module or Docs page to a Word doc, or vice-versa. It can take a URL, GitHub details, or a local folder/file.
 
 In addition, there are four libraries used by the above projects.
 
