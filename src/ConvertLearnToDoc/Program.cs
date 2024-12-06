@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +82,7 @@ builder.Services.AddAuthentication(options =>
     options.UserInformationEndpoint = "https://api.github.com/user";
 
     options.Scope.Add("read:user");
+    options.Scope.Add("user:email"); // Require email
 #if USE_GITHUB_PAT
     options.Scope.Add("repo");
     options.Scope.Add("read:org");
@@ -106,6 +109,26 @@ builder.Services.AddAuthentication(options =>
 
             context.RunClaimActions(user.RootElement);
 
+            // Fetch the email if it's not provided
+            if (!user.RootElement.TryGetProperty("email", out var emailInfo)
+                 || string.IsNullOrEmpty(emailInfo.GetString()))
+            {
+                var emailRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/emails");
+                emailRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                emailRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+
+                var emailResponse = await context.Backchannel.SendAsync(emailRequest, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                emailResponse.EnsureSuccessStatusCode();
+
+                var emails = JsonDocument.Parse(await emailResponse.Content.ReadAsStringAsync());
+                var primaryEmail = emails.RootElement.EnumerateArray().FirstOrDefault(e => e.GetProperty("primary").GetBoolean()).GetProperty("email").GetString();
+
+                if (!string.IsNullOrEmpty(primaryEmail))
+                {
+                    context.Identity!.AddClaim(new Claim(ClaimTypes.Email, primaryEmail));
+                }
+            }
+
             // Save the access token
             if (context.AccessToken != null)
             {
@@ -123,7 +146,7 @@ builder.Services.AddAuthentication(options =>
 });
 #endif
 
-var app = builder.Build();
+        var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
