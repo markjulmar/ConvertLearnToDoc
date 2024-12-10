@@ -9,9 +9,11 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using System.Net.Http.Headers;
 using System.Text.Json;
+#if !DEBUG
+using Microsoft.Extensions.Logging.ApplicationInsights;
+#endif
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,7 +75,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddOAuth("GitHub", options =>
 {
-    options.ClientId = gitHubAppInfo["ClientId"] ?? throw new Exception("GitHub section missing ClientId.");;
+    options.ClientId = gitHubAppInfo["ClientId"] ?? throw new Exception("GitHub section missing ClientId.");
     options.ClientSecret = gitHubAppInfo["ClientSecret"] ?? throw new Exception("GitHub section missing ClientSecret.");
     options.CallbackPath = PathString.FromUriComponent(new Uri(gitHubAppInfo["CallbackUrl"] ?? throw new Exception("GitHub section missing CallbackUrl.")));
 
@@ -99,13 +101,13 @@ builder.Services.AddAuthentication(options =>
         OnCreatingTicket = async context =>
         {
             var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
 
             var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
             response.EnsureSuccessStatusCode();
 
-            var user = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var user = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
             context.RunClaimActions(user.RootElement);
 
@@ -146,7 +148,7 @@ builder.Services.AddAuthentication(options =>
 });
 #endif
 
-        var app = builder.Build();
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

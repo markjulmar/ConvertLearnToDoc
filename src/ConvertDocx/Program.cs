@@ -324,12 +324,17 @@ public static class Program
                 return token.TrimEnd();
             }
         }
+#if DEBUG
         catch (Exception ex)
         {
-#if DEBUG
             Console.Error.WriteLine($"Failed to retrieve GitHub token: {ex.Message}");
-#endif
         }
+#else
+        catch
+        {
+            // Ignore errors.
+        }
+#endif
 
         return null;
     }
