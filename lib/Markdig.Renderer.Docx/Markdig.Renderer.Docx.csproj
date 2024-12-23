@@ -7,7 +7,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Julmar.DxPlus" Version="1.4.0-preview" />
-		<PackageReference Include="Markdig" Version="0.38.0" />
+		<PackageReference Include="Markdig" Version="0.39.1" />
 		<PackageReference Include="Microsoft.DocAsCode.MarkdigEngine.Extensions" Version="2.67.5" />
 	</ItemGroup>
 
