@@ -180,7 +180,7 @@ app.MapPost("/signout", async ctx =>
 app.MapGet("/signin", async ctx =>
 {
 #if USE_MS_AUTH
-    await ctx.ChallengeAsync(MicrosoftAccountDefaults.AuthenticationScheme, 
+    await ctx.ChallengeAsync(MicrosoftAccountDefaults.AuthenticationScheme,
         new AuthenticationProperties { RedirectUri = "/signin-callback" });
 #else
     await ctx.ChallengeAsync("GitHub", new AuthenticationProperties { RedirectUri = "/signin-callback" });
@@ -198,7 +198,7 @@ app.MapGet("/signin-callback", async ctx =>
 
         if (isValid && user?.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(email))
         {
-            //var claimsIdentity = new ClaimsIdentity(new[] { 
+            //var claimsIdentity = new ClaimsIdentity(new[] {
             //    new Claim(ClaimTypes.Name, user.Identity.Name ?? "User"),
             //    new Claim(ClaimTypes.Email, email)
             //}, CookieAuthenticationDefaults.AuthenticationScheme);
