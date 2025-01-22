@@ -3,7 +3,6 @@ using Julmar.DocsToMarkdown;
 using LearnDocUtils;
 using MSLearnRepos;
 using System.Diagnostics;
-using System.Reflection.Metadata;
 
 namespace ConvertDocx;
 
@@ -164,7 +163,7 @@ public static class Program
 
             if (isModule)
             {
-                var outputFolder = Path.Combine(Path.ChangeExtension(options.OutputFile, "") ?? Directory.GetCurrentDirectory(), Path.GetFileName(inputFile));
+                var outputFolder = Path.Combine(Path.ChangeExtension(options.OutputFile, null) ?? Directory.GetCurrentDirectory(), Path.GetFileName(inputFile));
                 MoveOrCopyDirectory(inputFile, outputFolder);
                 Console.WriteLine($"Module \"{options.InputFile}\" downloaded to {outputFolder}");
             }

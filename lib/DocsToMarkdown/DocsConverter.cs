@@ -70,9 +70,17 @@ public class DocsConverter(string rootFolder, Uri url)
             CreatedFiles.Add(new FileEntry(includesFolder, FileType.Folder));
         }
 
+        // Need to append each unit to the index file.
+        await using var indexWriter = File.Open(indexFile, FileMode.Append, FileAccess.Write);
+        await using var indexStream = new StreamWriter(indexWriter);
+        await indexStream.WriteLineAsync("units:");
+        
         // Write each unit
         await foreach(var unit in converter.GetTrainingUnitsConverter())
         {
+            var uid = unit.Metadata.Values["uid"];
+            await indexStream.WriteLineAsync($"- {uid}");
+            
             // Write the YAML
             var filename = Path.ChangeExtension(unit.Url.Segments.Last().TrimEnd('/'), "yml");
             var yamlFile = Path.Combine(folder, filename);
@@ -89,6 +97,14 @@ public class DocsConverter(string rootFolder, Uri url)
             var mdFile = Path.Combine(includesFolder, mdFilename);
             await ProcessSinglePage(unit, mdFile, writeYaml: false);
         }
+        
+        // Finish up with badge info.
+        await indexStream.WriteLineAsync("badge:");
+        await indexStream.WriteLineAsync($"   uid: {converter.Metadata.Values["uid"].Trim()}.badge");
+
+        // Catch hidden modules.
+        if (converter.Metadata.Values.TryGetValue("ROBOTS", out var robots))
+            await indexStream.WriteLineAsync($"hidden: true");
     }
 
     private async Task ProcessSinglePage(IHtmlConverter converter, string filename, bool writeYaml = true)
@@ -110,8 +126,27 @@ public class DocsConverter(string rootFolder, Uri url)
         }
         
         // Write the Markdown content
+        bool pastHeader = writeYaml;
         foreach (var line in converter.GetMarkdown())
+        {
+            if (!pastHeader)
+            {
+                Debug.Assert(line.StartsWith('#'));
+                if (line.StartsWith('#'))
+                {
+                    pastHeader = true;
+                    int idx = line.IndexOf('\n');
+                    if (idx >= 0)
+                    {
+                        idx++; // skip newline
+                        await writer.WriteLineAsync(line[idx..]);
+                    }
+                }
+                continue;
+            }
+            
             await writer.WriteLineAsync(line);
+        }
         
         CreatedFiles.Add(new FileEntry(filename, FileType.Markdown));
     }

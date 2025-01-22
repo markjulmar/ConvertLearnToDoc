@@ -16,4 +16,7 @@ public interface IHtmlConverter
     IDocsMetadata Metadata { get; }
     IEnumerable<string> GetMarkdown();
     IAsyncEnumerable<IHtmlConverter> GetTrainingUnitsConverter();
+    string ParentPrefix { get; }
+    void PushParent(string parent);
+    string? PopParent();
 }

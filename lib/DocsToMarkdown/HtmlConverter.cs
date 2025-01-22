@@ -7,6 +7,7 @@ namespace Julmar.DocsToMarkdown;
 
 internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConverterOptions? options) : IHtmlConverter
 {
+    private readonly Stack<string> _parent = new();
     private IDocsMetadata? _metadata;
     readonly List<IConverter> _converters = [
             new Header(), new Anchor(), new Image(), new Paragraph(),
@@ -17,6 +18,9 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
 
     public IDocsMetadata Metadata => _metadata!;
 
+    public string ParentPrefix => new string(' ', 2 * _parent.Count);
+    public void PushParent(string parent) => _parent.Push(parent);
+    public string? PopParent() => _parent.TryPop(out var result) ? result : null;
     public bool IsTrainingModulePage => _metadata!.PageKind == "module";
 
     private IConverter? GetConverterFor(HtmlNode node) 
@@ -86,11 +90,11 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
         {
             bool foundConverter = false;
             var result = Convert(child);
-            if (!string.IsNullOrWhiteSpace(result))
+            if (!string.IsNullOrWhiteSpace(result) || result == " ")
             {
                 foundConverter = true;
                 sb.Append(result);
-                if (IsBlockElement(child))
+                if (IsBlockElement(child) && _parent.Count == 0)
                     sb.AppendLine();
             }
             else
@@ -100,12 +104,12 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
                     if (cvt.CanConvert(child))
                     {
                         result = cvt.Convert(this, child);
-                        if (!string.IsNullOrWhiteSpace(result))
+                        if (!string.IsNullOrWhiteSpace(result) || result == " ")
                         {
                             foundConverter = true;
                             sb.Append(result);
                             break;
-                        }
+                        } 
                     }
                 }
             }

@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -s \"/users/mark/Desktop/test.docx\" \"/users/mark/Desktop/test.md\""
+      "commandLineArgs": "-d -f Docx \"https://learn.microsoft.com/en-us/training/modules/understand-microsoft-approach-ai-k-12-education\" \"/users/mark/Desktop/test.docx\""
     }
   }
 }

@@ -17,7 +17,22 @@ internal class DivSpan() : BaseConverter("div", "span")
         { "zone", ZonePivotSection },
         { "has-pivot", ZonePivotSection},
         { "xp-tag-hexagon", IgnoreBlock },
+        { "embeddedvideo", EmbeddedVideo },
     };
+
+    private static string EmbeddedVideo(string className, HtmlConverter converter, HtmlNode htmlNode)
+    {
+        var frame = htmlNode.ChildNodes.FirstOrDefault(cn => cn.Name == "iframe");
+        if (frame != null)
+        {
+            var videoText = new StringBuilder($"> [!VIDEO {frame.GetAttributeValue("src", "")}]")
+                .AppendLine()
+                .ToString();
+            return converter.ParentPrefix != "" ? Environment.NewLine + videoText : videoText;
+        }
+
+        return string.Empty;
+    }
 
     private static string IgnoreBlock(string arg1, HtmlConverter arg2, HtmlNode arg3)
     {
@@ -30,7 +45,7 @@ internal class DivSpan() : BaseConverter("div", "span")
         var pivotName = htmlNode.GetAttributeValue("data-pivot", "");
         if (string.IsNullOrWhiteSpace(pivotName))
         {
-            return converter.ConvertChildren(htmlNode) ?? string.Empty;
+            return converter.ConvertChildren(htmlNode);
         }
 
         return new StringBuilder($"::: zone pivot=\"{pivotName}\"")

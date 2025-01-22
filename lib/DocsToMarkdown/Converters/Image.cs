@@ -33,7 +33,9 @@ internal class Image() : BaseConverter("img", "image")
         bool isIcon = htmlInput.Attributes.Contains("presentation") 
             && htmlInput.Attributes["presentation"].Value == "presentation";
 
-        bool isComplex = htmlInput.Attributes.Contains("aria-describedby"); 
+        bool isComplex = htmlInput.Attributes.Contains("aria-describedby");
+
+        string imageText = "";
         
         if (converter.UseDocfxExtensions)
         {
@@ -42,12 +44,12 @@ internal class Image() : BaseConverter("img", "image")
                             "type=\"content\"";
             var border = hasBorder ? "border=\"true\" " : "";
             var lightbox = lightBoxUrl != null ? $" lightbox=\"{lightBoxUrl}\"" : "";
-            return $":::image {type} {border}source=\"{source}\" alt-text=\"{altText}\"{lightbox}:::";
+            imageText = $":::image {type} {border}source=\"{source}\" alt-text=\"{altText}\"{lightbox}:::";
         }
 
-        if (lightBoxUrl != null)
+        else if (lightBoxUrl != null)
         {
-            return new StringBuilder("<a href=\"")
+            imageText = new StringBuilder("<a href=\"")
                 .Append(lightBoxUrl)
                 .Append("\">")
                 .Append("![")
@@ -58,6 +60,8 @@ internal class Image() : BaseConverter("img", "image")
                 .ToString();            
         }
         
-        return $"![{altText}]({source})";
+        else imageText = $"![{altText}]({source})";
+        
+        return converter.ParentPrefix != "" ? Environment.NewLine + imageText : imageText;
     }
 }
