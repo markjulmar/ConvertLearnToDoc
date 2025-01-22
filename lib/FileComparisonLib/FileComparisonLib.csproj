@@ -7,7 +7,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DiffPlex" Version="1.7.2" />
-		<PackageReference Include="YamlDotNet" Version="16.2.1" />
+		<PackageReference Include="YamlDotNet" Version="16.3.0" />
 	</ItemGroup>
 
 </Project>
