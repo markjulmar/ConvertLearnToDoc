@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,7 +7,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Julmar.DxPlus" Version="1.4.0-preview" />
-		<PackageReference Include="Markdig" Version="0.40.0" />
+		<PackageReference Include="Markdig" Version="0.41.0" />
 		<PackageReference Include="Microsoft.DocAsCode.MarkdigEngine.Extensions" Version="2.67.5" />
 	</ItemGroup>
 
