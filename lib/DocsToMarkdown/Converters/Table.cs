@@ -68,11 +68,11 @@ internal class Table(): BaseConverter("table")
             if (align != null)
             {
                 if (align.EndsWith("center", StringComparison.InvariantCultureIgnoreCase))
-                    separator.Append(':' + new string('-', text.Length-2) + ':' + '|');
+                    separator.Append(':' + new string('-', Math.Max(text.Length-2, 1)) + ':' + '|');
                 else if (align.EndsWith("right", StringComparison.InvariantCultureIgnoreCase))
-                    separator.Append(new string('-', text.Length-1) + ':' + '|');
+                    separator.Append(new string('-', Math.Max(text.Length-1, 1)) + ':' + '|');
                 else
-                    separator.Append(':' + new string('-', text.Length-1) + '|');
+                    separator.Append(':' + new string('-', Math.Max(text.Length-1, 1)) + '|');
             }
             else
             {

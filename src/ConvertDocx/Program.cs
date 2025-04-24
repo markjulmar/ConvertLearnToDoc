@@ -20,7 +20,7 @@ public static class Program
 
         try
         {
-            if (options.InputFile!.StartsWith("http"))
+            if (options.InputFile.StartsWith("http"))
             {
                 if (RequiresGitHubToken(options))
                 {
