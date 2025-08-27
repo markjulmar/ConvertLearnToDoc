@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using HtmlAgilityPack;
 
 namespace Julmar.DocsToMarkdown.Converters;
@@ -9,12 +8,18 @@ internal class Anchor() : BaseConverter("a")
     public override string Convert(HtmlConverter converter, HtmlNode htmlInput)
     {
         Debug.Assert(CanConvert(htmlInput));
-        // TODO -- look to data tags
-        
+
         var url = htmlInput.GetAttributeValue("href", "");
         if (string.IsNullOrEmpty(url)) // emit the tag directly if no URL.
             return htmlInput.OuterHtml;
 
+        var role = htmlInput.GetAttributeValue("role", "");
+        if (role == "tab")
+        {
+            Debug.Assert(false, "Tab role should be handled in TabConverter");
+            return string.Empty;
+        }
+        
         // Handle lightbox images.
         if (url.EndsWith("#lightbox", StringComparison.InvariantCultureIgnoreCase)
             && htmlInput.ChildNodes.Any(cn => cn.Name.Equals("img", StringComparison.CurrentCultureIgnoreCase)))

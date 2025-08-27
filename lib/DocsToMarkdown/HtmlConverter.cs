@@ -59,12 +59,12 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
         if (Metadata.PageKind == "module")
             yield break;
         
-        var root = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content']") 
-                   ?? htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content ']");
-        if (root == null)
+        var roots = htmlDocument.DocumentNode.SelectNodes("//div[@class='content']") 
+                   ?? htmlDocument.DocumentNode.SelectNodes("//div[@class='content ']");
+        if (roots == null)
             throw new ArgumentException("Cannot find content div to parse.");
         
-        foreach (var node in root.ChildNodes)
+        foreach (var node in roots.SelectMany(n => n.ChildNodes))
         {
             var result = Convert(node);
             if (!string.IsNullOrWhiteSpace(result))

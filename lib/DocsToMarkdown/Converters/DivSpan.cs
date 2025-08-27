@@ -18,8 +18,55 @@ internal class DivSpan() : BaseConverter("div", "span")
         { "has-pivot", ZonePivotSection},
         { "xp-tag-hexagon", IgnoreBlock },
         { "embeddedvideo", EmbeddedVideo },
+        { "tabGroup", TabGroup }
     };
 
+    private static string TabGroup(string className, HtmlConverter converter, HtmlNode htmlNode)
+    {
+        var list = htmlNode.ChildNodes.FirstOrDefault(n => n.NodeType == HtmlNodeType.Element && n.Name == "ul");
+        if (list == null)
+            return IgnoreBlock(className, converter, htmlNode);
+        
+        var sb = new StringBuilder();
+        foreach (var li in list.ChildNodes.Where(n => n.Name == "li"))
+        {
+            var anchor = li.ChildNodes.FirstOrDefault(n => n.NodeType == HtmlNodeType.Element && n.Name == "a");
+            if (anchor?.Name != "a" || anchor.GetAttributeValue("role","") != "tab" )
+                return IgnoreBlock(className, converter, htmlNode);
+
+            sb.Append(TabPanel(converter, htmlNode, anchor));
+        }
+
+        return sb.AppendLine("---").ToString();
+    }
+
+    private static string TabPanel(HtmlConverter converter, HtmlNode parentNode, HtmlNode anchor)
+    {
+        var data = anchor.GetAttributeValue("data-tab", "");
+        if (string.IsNullOrEmpty(data))
+            return string.Empty;
+
+        var section = parentNode.ChildNodes.FirstOrDefault(n =>
+            n.Name == "section" &&
+            n.GetAttributeValue("role", "").Equals("tabpanel", StringComparison.OrdinalIgnoreCase) &&
+            n.GetAttributeValue("data-tab", "") == data);
+        if (section == null)
+            return anchor.OuterHtml;
+        
+        var id = "#tab/" + data;
+
+        var sb = new StringBuilder();
+        var anchorText = System.Net.WebUtility.HtmlDecode(anchor.InnerText);
+        if (string.IsNullOrWhiteSpace(anchorText))
+            anchorText = id;
+
+        sb.AppendLine($"# [{anchorText}]({id})")
+            .AppendLine()
+            .Append(converter.ConvertChildren(section));
+        
+        return sb.ToString();
+    }
+    
     private static string EmbeddedVideo(string className, HtmlConverter converter, HtmlNode htmlNode)
     {
         var frame = htmlNode.ChildNodes.FirstOrDefault(cn => cn.Name == "iframe");

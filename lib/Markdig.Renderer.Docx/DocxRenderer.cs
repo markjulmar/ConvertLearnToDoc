@@ -272,13 +272,13 @@ public class DocxObjectRenderer : IDocxRenderer
             ".bmp" => "image/bmp",
             ".ico" => "image/x-icon",
             ".cur" => "image/x-icon",
-            ".png" => "image/png",
-            ".jpg" => "image/jpeg",
-            ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".svg" => "image/svg+xml",
-            ".tif" => "image/tiff",
-            ".tiff" => "image/tiff",
+            ".png" => ImageContentType.Png,
+            ".jpg" => ImageContentType.Jpg,
+            ".jpeg" => ImageContentType.Jpeg,
+            ".gif" => ImageContentType.Gif,
+            ".svg" => ImageContentType.Svg,
+            ".tif" => ImageContentType.Tiff,
+            ".tiff" => ImageContentType.Tiff,
             _ => null
         };
 
