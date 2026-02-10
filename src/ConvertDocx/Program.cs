@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Julmar.DocsToMarkdown;
 using LearnDocUtils;
 using MSLearnRepos;
@@ -146,7 +146,12 @@ public static class Program
             var downloader = new DocsConverter(tempFolder, new Uri(options.InputFile));
             var createdFiles = await downloader.ConvertAsync(!options.PreferPlainMarkdown, 
 #if DEBUG
-                tag => Console.Error.WriteLine($"Skipped: {tag.TrimStart().Substring(0, 20)}"));
+                tag =>
+                {
+                    var trimmed = tag.TrimStart();
+                    var prefix = trimmed.Length > 20 ? trimmed[..20] : trimmed;
+                    Console.Error.WriteLine($"Skipped: {prefix}");
+                });
 #else
                 null);
 #endif
@@ -245,7 +250,12 @@ public static class Program
             var downloader = new DocsConverter(tempFolder, new Uri(options.InputFile));
             var createdFiles = await downloader.ConvertAsync(!options.PreferPlainMarkdown, 
 #if DEBUG
-                tag => Console.Error.WriteLine($"Skipped: {tag.TrimStart().Substring(0, 20)}"));
+                tag =>
+                {
+                    var trimmed = tag.TrimStart();
+                    var prefix = trimmed.Length > 20 ? trimmed[..20] : trimmed;
+                    Console.Error.WriteLine($"Skipped: {prefix}");
+                });
 #else
                 null);
 #endif

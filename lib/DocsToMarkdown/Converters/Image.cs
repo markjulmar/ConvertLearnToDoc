@@ -44,7 +44,18 @@ internal class Image() : BaseConverter("img", "image")
                             "type=\"content\"";
             var border = hasBorder ? "border=\"true\" " : "";
             var lightbox = lightBoxUrl != null ? $" lightbox=\"{lightBoxUrl}\"" : "";
-            imageText = $":::image {type} {border}source=\"{source}\" alt-text=\"{altText}\"{lightbox}:::";
+
+            var captionText = LookAheadForImageCaptionText(htmlInput);
+
+            var sb = new StringBuilder(
+                $":::image {type} {border}source=\"{source}\" alt-text=\"{altText}\"{lightbox}:::");
+            if (captionText.Length > 0)
+            {
+                sb.AppendLine(captionText);
+                sb.Append(":::image-end:::");
+            }
+
+            imageText = sb.ToString();
         }
 
         else if (lightBoxUrl != null)
@@ -63,5 +74,16 @@ internal class Image() : BaseConverter("img", "image")
         else imageText = $"![{altText}]({source})";
         
         return converter.ParentPrefix != "" ? Environment.NewLine + imageText : imageText;
+    }
+
+    private static string LookAheadForImageCaptionText(HtmlNode htmlInput)
+    {
+        // <p><img src="test.png" alt="test"></p>
+        // <div class="visually-hidden"><p>
+        // Some Graphic.</p></div>
+        var testNode = htmlInput.ParentNode.NextSibling;
+        return testNode?.HasClass("visually-hidden") == true
+            ? testNode.InnerText.Replace("\n", Environment.NewLine)
+            : string.Empty;
     }
 }

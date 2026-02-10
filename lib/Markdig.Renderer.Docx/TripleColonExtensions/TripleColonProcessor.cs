@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using IContainer = DXPlus.IContainer;
 
 namespace Markdig.Renderer.Docx.TripleColonExtensions;
@@ -79,8 +79,10 @@ internal static class TripleColonProcessor
         if (extension.Container?.Count > 0 && type == "complex")
         {
             // Should be strictly text as this is for screen readers.
-            description = string.Join("\r\n", extension.Container.Select(b => (b as ParagraphBlock)?.Inline)
-                .SelectMany(ic => ic.Select(il => il.ToString())));
+            description = string.Join("\r\n", extension.Container
+                .Select(b => (b as ParagraphBlock)?.Inline)
+                .Where(inline => inline != null)
+                .SelectMany(inline => inline.Select(il => il.ToString())));
         }
 
         var drawing = owner.InsertImage(currentParagraph, extension.Container ?? (MarkdownObject)extension.Inlines, source, title, description, hasBorder?.ToLower()=="true");

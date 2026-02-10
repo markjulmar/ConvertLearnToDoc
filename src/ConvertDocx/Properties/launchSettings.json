@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-d -f Docx \"https://learn.microsoft.com/en-us/azure/dev-box/concept-what-are-dev-box-customizations?tabs=team-customizations/\" \"/users/mark/Desktop/test.docx\""
+      "commandLineArgs": "-f Docx \"https://learn.microsoft.com/training/modules/accessibility-build-foundation-inclusive-learning/\" \"/users/mark/Desktop/test.docx\""
     }
   }
 }

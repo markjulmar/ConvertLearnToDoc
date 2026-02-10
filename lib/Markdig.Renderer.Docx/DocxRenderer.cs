@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
+using System.Text;
 using Markdig.Extensions.Yaml;
 using Markdig.Renderer.Docx.Blocks;
 using Markdig.Renderer.Docx.Inlines;
@@ -245,8 +246,9 @@ public class DocxObjectRenderer : IDocxRenderer
             picture.Description = altText;
             currentParagraph.Add(picture);
 
-            if (!string.IsNullOrEmpty(title))
-                picture.Drawing.AddCaption(": " + title);
+            var captionText = SanitizeCaptionText(title);
+            if (!string.IsNullOrEmpty(captionText))
+                picture.Drawing.AddCaption(": " + captionText);
 
             return picture.Drawing;
         }
@@ -291,6 +293,21 @@ public class DocxObjectRenderer : IDocxRenderer
     }
 
     private static bool IsInternetUrl(string path) => path?.ToLower().StartsWith("http") == true;
+
+    private static string SanitizeCaptionText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        var builder = new StringBuilder(text.Length);
+        foreach (var ch in text)
+        {
+            builder.Append(char.IsControl(ch) ? ' ' : ch);
+        }
+
+        var cleaned = builder.ToString();
+        return string.Join(" ", cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
 
     /// <summary>
     /// Returns a specific embedded resource by name.

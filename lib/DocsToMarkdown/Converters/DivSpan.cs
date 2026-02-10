@@ -18,7 +18,8 @@ internal class DivSpan() : BaseConverter("div", "span")
         { "has-pivot", ZonePivotSection},
         { "xp-tag-hexagon", IgnoreBlock },
         { "embeddedvideo", EmbeddedVideo },
-        { "tabGroup", TabGroup }
+        { "tabGroup", TabGroup },
+        { "visually-hidden", IgnoreBlock}
     };
 
     private static string TabGroup(string className, HtmlConverter converter, HtmlNode htmlNode)
