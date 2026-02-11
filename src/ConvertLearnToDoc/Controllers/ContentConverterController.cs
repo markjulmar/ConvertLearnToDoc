@@ -86,7 +86,8 @@ public class ContentConverterController(
         Directory.CreateDirectory(tempFolder);
 
         var downloader = new DocsConverter(tempFolder, new Uri(request.Url));
-        var createdFiles = await downloader.ConvertAsync(logger: tag => logger.LogDebug("Skipped: {Tag}", tag.TrimStart().Substring(0,20)));
+        var createdFiles = await downloader.ConvertAsync(logger: tag =>
+            logger.LogDebug("Skipped: {Tag}", new string(tag.TrimStart().Take(20).ToArray())));
         if (createdFiles.Count == 0)
         {
             logger.LogError("ConvertLearnUrlToDocument: No files returned from ContentDownloader for {Url}", request.Url);
@@ -199,7 +200,8 @@ public class ContentConverterController(
             Directory.CreateDirectory(tempFolder);
 
             var downloader = new DocsConverter(tempFolder, new Uri(request.Url));
-            var createdFiles = await downloader.ConvertAsync(logger: tag => logger.LogDebug("Skipped: {Tag}", tag.TrimStart().Substring(0,20)));
+                var createdFiles = await downloader.ConvertAsync(logger: tag => 
+                    logger.LogDebug("Skipped: {Tag}", new string(tag.TrimStart().Take(20).ToArray())));
             if (createdFiles.Count == 0)
             {
                 logger.LogError("ConvertLearnUrlToMarkdown: No files returned from ContentDownloader for {Url}", request.Url);
