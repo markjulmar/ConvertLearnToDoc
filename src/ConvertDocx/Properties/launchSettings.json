@@ -2,7 +2,7 @@
   "profiles": {
     "ConvertDocToDocx": {
       "commandName": "Project",
-      "commandLineArgs": "-f Docx \"https://learn.microsoft.com/training/modules/accessibility-build-foundation-inclusive-learning/\" \"/users/mark/Desktop/test.docx\""
+      "commandLineArgs": "-f Docx \"https://learn.microsoft.com/training/modules/guide-assessment-copilot-microsoft-teams\" \"/users/mark/Desktop/test.docx\""
     }
   }
 }

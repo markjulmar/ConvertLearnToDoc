@@ -59,8 +59,11 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
         if (Metadata.PageKind == "module")
             yield break;
         
-        var roots = htmlDocument.DocumentNode.SelectNodes("//div[@class='content']") 
-                   ?? htmlDocument.DocumentNode.SelectNodes("//div[@class='content ']");
+        var roots = htmlDocument.DocumentNode.SelectNodes(
+            "//div[contains(concat(' ', normalize-space(@class), ' '), ' content ')]");
+
+        // Optional fallback if Learn changes wrapper markup again.
+        roots ??= htmlDocument.DocumentNode.SelectNodes("//main");
         if (roots == null)
             throw new ArgumentException("Cannot find content div to parse.");
         
