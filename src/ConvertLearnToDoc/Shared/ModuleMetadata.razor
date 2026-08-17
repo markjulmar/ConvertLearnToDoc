@@ -17,16 +17,16 @@
                     <div class="row">
                         <div class="col-4">
                             
-                            @if (visibleValues.Count > 0)
+                            @if (_visibleValues.Count > 0)
                             {
                             <div class="list-group scrolling-list" role="tablist">
-                                @for (var index = 0; index < visibleValues.Count; index++)
+                                @for (var index = 0; index < _visibleValues.Count; index++)
                                 {
                                     var value = index;
-                                    var (text, dictionary, _) = visibleValues[value];
-                                    var isMetadata = dictionary != yamlKeyValues;
+                                    var (text, dictionary, _) = _visibleValues[value];
+                                    var isMetadata = dictionary != _yamlKeyValues;
                                     <button type="button" @onclick="@(() => OnSelectKey(value))"
-                                            class="list-group-item list-group-item-action @(value == selectedIndex ? " active" : "")">
+                                            class="list-group-item list-group-item-action @(value == _selectedIndex ? " active" : "")">
                                         @if (isMetadata)
                                         {
                                             <span class="badge bg-warning text-dark me-2">metadata</span>
@@ -59,9 +59,9 @@
                             @{
                                 var selected = SelectedValue;
 
-                                if (selected == deletedValue)
+                                if (selected == _deletedValue)
                                 {
-                                    if (visibleValues.Count == 0)
+                                    if (_visibleValues.Count == 0)
                                     {
                                         <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 500px;">
                                             <p>Please add a value.</p>
@@ -77,7 +77,7 @@
 
                                 else if (IsBoolean(selected, out var booleanValue))
                                 {
-                                    var theKey = visibleValues[selectedIndex].key;
+                                    var theKey = _visibleValues[_selectedIndex].key;
 
                                     <div class="row">
                                         <div class="col-sm-1 col-form-label">
@@ -105,7 +105,7 @@
                                 }
                                 else if (selected is string textValue)
                                 {
-                                    var theKey = visibleValues[selectedIndex].key;
+                                    var theKey = _visibleValues[_selectedIndex].key;
 
                                     <div class="row">
                                         <div class="col-sm-1 col-form-label">
@@ -123,7 +123,7 @@
                                             <label for="theValue" class="form-label">Value:</label>
                                         </div>
                                         <div class="col-sm-11">
-                                            @if (IsMultiLine(visibleValues[selectedIndex].key, textValue))
+                                            @if (IsMultiLine(_visibleValues[_selectedIndex].key, textValue))
                                             {
                                                 <textarea id="theValue" class="form-control" rows="10" @onchange="OnChangeValue">
                                                 @textValue
@@ -140,7 +140,7 @@
                                 }
                                 else if (selected is List<object> theList)
                                 {
-                                    var theKey = visibleValues[selectedIndex].key;
+                                    var theKey = _visibleValues[_selectedIndex].key;
 
                                     <div class="row">
                                         <div class="col-sm-1 col-form-label">
@@ -161,7 +161,7 @@
                                     </div>
                                 }
 
-                                if (SelectedValue != deletedValue)
+                                if (SelectedValue != _deletedValue)
                                 {
                                     <div class="mt-2 d-flex flex-row-reverse ">
                                         <div class="form-check form-switch">
@@ -188,13 +188,15 @@
     const string MetadataPrefix = "metadata";
     const string NewKey = "new-key";
     const string NewValue = "new-value";
-    readonly object deletedValue = new();
-
-    bool isShowing;
+    readonly object _deletedValue = new();
+    bool _wasShowing;
+    Dictionary<object, object> _yamlKeyValues = null!;
+    List<(string text, Dictionary<object, object> dictionary, string key)> _visibleValues = null!;
+    int _selectedIndex;
 
     bool SelectedItemIsMetadata
     {
-        get => visibleValues[selectedIndex].dictionary != yamlKeyValues;
+        get => _visibleValues[_selectedIndex].dictionary != _yamlKeyValues;
         set
         {
             bool currentValue = SelectedItemIsMetadata;
@@ -204,20 +206,17 @@
             }
         }
     }
-    Dictionary<object, object> yamlKeyValues = null!;
-    List<(string text, Dictionary<object,object> dictionary, string key)> visibleValues = null!;
-    int selectedIndex = 0;
 
     object SelectedValue
     {
         get
         {
-            if (selectedIndex < 0)
+            if (_selectedIndex < 0)
             {
-                return deletedValue;
+                return _deletedValue;
             }
 
-            var value = visibleValues[selectedIndex];
+            var value = _visibleValues[_selectedIndex];
             return value.dictionary[value.key];
         }
     }
@@ -226,27 +225,33 @@
     public string Title { get; set; } = MetadataPrefix;
 
     [Parameter]
-    public bool IsShowing
+    public bool IsShowing { get; set; }
+
+    protected override async Task OnParametersSetAsync()
     {
-        get => isShowing;
-        set
+        if (!IsShowing)
         {
-            isShowing = value;
-            if (isShowing)
-            {
-                try
-                {
-                    yamlKeyValues = PersistenceUtilities.YamlStringToDictionary(Metadata)
-                                   ?? new Dictionary<object, object> { { NewKey, NewValue } };
-                    visibleValues = UnrollKeyValues();
-                }
-                catch
-                {
-                    // Ignore
-                    isShowing = false;
-                    _ = IsShowingChanged.InvokeAsync(IsShowing);
-                }
-            }
+            _wasShowing = false;
+            return;
+        }
+
+        if (_wasShowing)
+        {
+            return;
+        }
+
+        _wasShowing = true;
+
+        try
+        {
+            _yamlKeyValues = PersistenceUtilities.YamlStringToDictionary(Metadata)
+                           ?? new Dictionary<object, object> { { NewKey, NewValue } };
+            _visibleValues = UnrollKeyValues();
+        }
+        catch
+        {
+            _wasShowing = false;
+            await IsShowingChanged.InvokeAsync(false);
         }
     }
 
@@ -261,8 +266,8 @@
 
     private async Task OnClose()
     {
-        IsShowing = false;
-        await IsShowingChanged.InvokeAsync(IsShowing);
+        _wasShowing = false;
+        await IsShowingChanged.InvokeAsync(false);
     }
 
     private async Task OnOK()
@@ -270,17 +275,17 @@
         var mdDictionary = FindMetadataBlock(false);
         if (mdDictionary?.Count == 0)
         {
-            yamlKeyValues.Remove(MetadataPrefix);
+            _yamlKeyValues.Remove(MetadataPrefix);
         }
         else if (mdDictionary != null)
         {
             CleanValues(mdDictionary);
         }
 
-        CleanValues(yamlKeyValues);
+        CleanValues(_yamlKeyValues);
 
-        Metadata = PersistenceUtilities.DictionaryToYamlString(yamlKeyValues);
-        yamlKeyValues = new Dictionary<object, object>();
+        Metadata = PersistenceUtilities.DictionaryToYamlString(_yamlKeyValues);
+        _yamlKeyValues = new Dictionary<object, object>();
         await MetadataChanged.InvokeAsync(Metadata);
 
         await OnClose();
@@ -290,7 +295,7 @@
     {
         foreach (var item in dictionary.ToList())
         {
-            if (item.Value == deletedValue || (item.Value is string theText && string.IsNullOrWhiteSpace(theText)))
+            if (item.Value == _deletedValue || (item.Value is string theText && string.IsNullOrWhiteSpace(theText)))
                 dictionary.Remove(item.Key);
             else if (item.Value is List<object> theList)
             {
@@ -305,15 +310,15 @@
         }
     }
 
-    private bool IsMultiLine(string key, string value)
+    private static bool IsMultiLine(string key, string value)
     {
-        string[] multilineInput = { "abstract", "prerequisites", MetadataPrefix + ".description", "summary" };
+        string[] multilineInput = ["abstract", "prerequisites", MetadataPrefix + ".description", "summary"];
 
         return multilineInput.Contains(key, StringComparer.InvariantCultureIgnoreCase)
                || value.Contains('\r') || value.Contains('\n');
     }
 
-    private bool IsBoolean(object value, out bool result)
+    private static bool IsBoolean(object value, out bool result)
     {
         switch (value)
         {
@@ -334,11 +339,33 @@
 
     private List<(string text, Dictionary<object, object> dictionary, string key)> UnrollKeyValues()
     {
-        var allKeys = yamlKeyValues.Keys
+        var allKeys = _yamlKeyValues.Keys
             .Select(k => k.ToString())
             .Where(str => !string.IsNullOrWhiteSpace(str))
             .Cast<string>()
             .ToList();
+
+        string[] significantKeys = { "uid", "title", "summary", "abstract", "description" };
+        string[] ignoreKeys = { "units" };
+
+        var results = significantKeys.Select(IndexOf)
+            .Where(key => key != null)
+            .Cast<string>()
+            .Select(key => (ToTitleCase(key), yamlKeyValues: _yamlKeyValues, key))
+            .ToList();
+
+        results.AddRange(
+            (from item in allKeys
+                where !ignoreKeys.Contains(item, StringComparer.InvariantCultureIgnoreCase)
+                      && _yamlKeyValues[item] is not Dictionary<object, object>
+             select (ToTitleCase(item), yamlKeyValues: _yamlKeyValues, item))
+                .OrderBy(k => k));
+
+        var mdd = FindMetadataBlock(false);
+        if (mdd != null)
+            results.AddRange(mdd.Select(kvp => (ToTitleCase(kvp.Key.ToString()!), mdd, kvp.Key.ToString()!)));
+
+        return results;
 
         string? IndexOf(string lookFor) {
             var pos = allKeys.FindIndex(str => string.Compare(str, lookFor, StringComparison.InvariantCultureIgnoreCase) == 0);
@@ -347,31 +374,9 @@
             allKeys.RemoveAt(pos);
             return key;
         }
-
-        string[] significantKeys = { "uid", "title", "summary", "abstract", "description" };
-        string[] ignoreKeys = { "units" };
-
-        var results = significantKeys.Select(IndexOf)
-            .Where(key => key != null)
-            .Cast<string>()
-            .Select(key => (ToTitleCase(key), yamlKeyValues, key))
-            .ToList();
-
-        results.AddRange(
-            (from item in allKeys
-                where !ignoreKeys.Contains(item, StringComparer.InvariantCultureIgnoreCase)
-                      && yamlKeyValues[item] is not Dictionary<object, object>
-             select (ToTitleCase(item), yamlKeyValues, item))
-                .OrderBy(k => k));
-
-        var mdd = FindMetadataBlock(false);
-        if (mdd != null)
-            results.AddRange(mdd.Select(kvp => (ToTitleCase(kvp.Key.ToString()!), mdd, kvp.Key.ToString()!)));
-
-        return results;
     }
 
-    private string ToTitleCase(string text)
+    private static string ToTitleCase(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return text;
         return char.ToUpper(text[0]) + text[1..];
@@ -379,16 +384,16 @@
 
     private void OnSelectKey(int index)
     {
-        selectedIndex = index;
-        SelectedItemIsMetadata = visibleValues[selectedIndex].dictionary != yamlKeyValues;
+        _selectedIndex = index;
+        SelectedItemIsMetadata = _visibleValues[_selectedIndex].dictionary != _yamlKeyValues;
     }
 
     private async Task OnChangeLocation()
     {
-        var (text, theDictionary, key) = visibleValues[selectedIndex];
-        var willBeInMetadata = theDictionary == yamlKeyValues;
+        var (text, theDictionary, key) = _visibleValues[_selectedIndex];
+        var willBeInMetadata = theDictionary == _yamlKeyValues;
         var newDictionary = willBeInMetadata
-            ? FindMetadataBlock(true)! : yamlKeyValues;
+            ? FindMetadataBlock(true)! : _yamlKeyValues;
 
         if (newDictionary.ContainsKey(key))
         {
@@ -400,25 +405,25 @@
         theDictionary.Remove(key);
         newDictionary[key] = value;
 
-        visibleValues[selectedIndex] = (text, newDictionary, key);
+        _visibleValues[_selectedIndex] = (text, newDictionary, key);
     }
 
     private void OnChangeKey(ChangeEventArgs e)
     {
         var newKey = SanitizeYamlKey(e.Value?.ToString() ?? "");
-        var (_, theDictionary, oldKey) = visibleValues[selectedIndex];
+        var (_, theDictionary, oldKey) = _visibleValues[_selectedIndex];
         var value = theDictionary[oldKey];
 
         theDictionary.Remove(oldKey);
-        visibleValues.RemoveAt(selectedIndex);
+        _visibleValues.RemoveAt(_selectedIndex);
 
         newKey = CreateUniqueKey(theDictionary, newKey);
 
         theDictionary[newKey] = value;
-        visibleValues.Insert(selectedIndex, (ToTitleCase(newKey), theDictionary, newKey));
+        _visibleValues.Insert(_selectedIndex, (ToTitleCase(newKey), theDictionary, newKey));
     }
 
-    private string SanitizeYamlKey(string key)
+    private static string SanitizeYamlKey(string key)
     {
         var input = key.Where(ch => char.IsLetterOrDigit(ch) || ch is '-' or '.').ToArray();
         var result = new string(input);
@@ -427,7 +432,7 @@
 
     private Dictionary<object, object>? FindMetadataBlock(bool createIfNotExist)
     {
-        if (yamlKeyValues.TryGetValue(MetadataPrefix, out var value))
+        if (_yamlKeyValues.TryGetValue(MetadataPrefix, out var value))
         {
             if (value is Dictionary<object, object> dct)
                 return dct;
@@ -436,14 +441,14 @@
         if (createIfNotExist)
         {
             var md = new Dictionary<object, object>();
-            yamlKeyValues[MetadataPrefix] = md;
+            _yamlKeyValues[MetadataPrefix] = md;
             return md;
         }
 
         return null;
     }
 
-    private string CreateUniqueKey(Dictionary<object, object> dct, string startKey)
+    private static string CreateUniqueKey(Dictionary<object, object> dct, string startKey)
     {
         if (dct.ContainsKey(startKey))
         {
@@ -462,8 +467,8 @@
 
     private void OnChangeValue(ChangeEventArgs e)
     {
-        var (_, theDictionary, key) = visibleValues[selectedIndex];
-        theDictionary[key] = e.Value ?? deletedValue;
+        var (_, theDictionary, key) = _visibleValues[_selectedIndex];
+        theDictionary[key] = e.Value ?? _deletedValue;
     }
 
     private void OnAddTextValue() => AddValue(NewValue);
@@ -474,23 +479,23 @@
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
         
-        var key = CreateUniqueKey(yamlKeyValues, NewKey);
-        yamlKeyValues[key] = value;
-        visibleValues.Add((key, yamlKeyValues, key));
-        selectedIndex = visibleValues.Count - 1;
+        var key = CreateUniqueKey(_yamlKeyValues, NewKey);
+        _yamlKeyValues[key] = value;
+        _visibleValues.Add((key, _yamlKeyValues, key));
+        _selectedIndex = _visibleValues.Count - 1;
     }
 
     private async Task OnDeleteValue()
     {
-        var (text, dictionary, key) = visibleValues[selectedIndex];
+        var (text, dictionary, key) = _visibleValues[_selectedIndex];
         if (await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {text}?"))
         {
             dictionary.Remove(key);
-            visibleValues.RemoveAt(selectedIndex);
-            yamlKeyValues.Remove(key);
+            _visibleValues.RemoveAt(_selectedIndex);
+            _yamlKeyValues.Remove(key);
 
-            if (selectedIndex > visibleValues.Count - 1)
-                selectedIndex--;
+            if (_selectedIndex > _visibleValues.Count - 1)
+                _selectedIndex--;
         }
     }
 
