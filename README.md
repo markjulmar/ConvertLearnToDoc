@@ -98,6 +98,12 @@ There are four options to the Blazor app:
 
 In the case of 1 & 2, you have the option to edit the metadata. The app pulls out the metadata from the Word document and allows editing. It passes the edited metadata back when the document is converted.
 
+### Deploying the web app to Azure
+
+Save the Azure publish profile as `ConvertLearnToDocWeb.PublishSettings` in the repository root, then run `./deploy.sh`. The script requires the .NET SDK, `zip`, `curl`, `xmllint`, and `jq`. It publishes into a fresh temporary folder, uploads the package, and waits up to ten minutes for Azure's deployment result. A failed deployment returns a nonzero exit code and prints the deployment log URL.
+
+On the Windows App Service, keep `WEBSITE_NODE_DEFAULT_VERSION` on a supported version (currently `~24`). Azure's deployment tooling uses Node even though this application uses .NET; the old `6.9.1` setting causes deployment script generation to fail with `util_1.promisify is not a function`.
+
 ### Restrictions
 
 The Blazor app has a file size limit of 1Gb for the Word `.docx` file. This is captured in a variable in the [ArticleOrModuleRef.cs](./lib/ConvertLearnToDoc.Shared//ArticleOrModuleRef.cs):
