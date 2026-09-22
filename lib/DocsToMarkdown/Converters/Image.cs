@@ -10,10 +10,13 @@ internal class Image() : BaseConverter("img", "image")
     {
         Debug.Assert(CanConvert(htmlInput));
 
-        var altText = htmlInput.Attributes["alt"].Value;
-        var originalSource = htmlInput.Attributes["src"].Value;
+        var altText = htmlInput.Attributes["alt"]?.Value ?? string.Empty;
+        var originalSource = htmlInput.Attributes["src"]?.Value ?? "";
         var source = SimplifyRelativePath(converter, originalSource);
 
+        if (string.IsNullOrEmpty(source))
+            return string.Empty;
+        
         // Attempt to download.
         converter.DownloadAsset(source, new Uri(converter.Url, originalSource));
         

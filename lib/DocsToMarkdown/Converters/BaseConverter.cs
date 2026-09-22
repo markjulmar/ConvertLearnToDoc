@@ -34,6 +34,9 @@ internal abstract class BaseConverter : IConverter
 
     protected string SimplifyRelativePath(IHtmlConverter converter, string source)
     {
+        if (string.IsNullOrWhiteSpace(source))
+            return string.Empty;
+        
         if (source.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return source;
 
