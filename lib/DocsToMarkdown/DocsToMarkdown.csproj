@@ -16,4 +16,8 @@
       <PackageReference Include="Julmar.MSLearnCatalogAPI" Version="2.5.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <InternalsVisibleTo Include="ConvertLearnToDoc.UnitTests" />
+    </ItemGroup>
+
 </Project>

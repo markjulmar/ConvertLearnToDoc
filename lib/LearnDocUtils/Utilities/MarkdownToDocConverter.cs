@@ -47,7 +47,7 @@ public static class MarkdownToDocConverter
             .UseQuoteSectionNote(context)
             .UseRow(context)
             .UseNestedColumn(context)
-            .UseTripleColon(context)
+            .UseDocxTripleColon(context)
             .UseNoloc()
             .Build();
 

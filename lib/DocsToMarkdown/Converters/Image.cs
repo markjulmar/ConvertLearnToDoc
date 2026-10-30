@@ -33,8 +33,8 @@ internal class Image() : BaseConverter("img", "image")
         bool hasBorder = (parentNode.Attributes.Contains("class") 
                           && parentNode.Attributes["class"].Value == "mx-imgBorder");
 
-        bool isIcon = htmlInput.Attributes.Contains("presentation") 
-            && htmlInput.Attributes["presentation"].Value == "presentation";
+        bool isIcon = string.Equals(htmlInput.GetAttributeValue("role", ""),
+            "presentation", StringComparison.OrdinalIgnoreCase);
 
         bool isComplex = htmlInput.Attributes.Contains("aria-describedby");
 

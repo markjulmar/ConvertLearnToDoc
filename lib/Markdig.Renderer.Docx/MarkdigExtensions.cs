@@ -2,12 +2,19 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Markdig.Helpers;
+using Markdig.Renderer.Docx.TripleColonExtensions;
 using Block = Markdig.Syntax.Block;
 
 namespace Markdig.Renderer.Docx;
 
 public static class MarkdigExtensions
 {
+    public static MarkdownPipelineBuilder UseDocxTripleColon(this MarkdownPipelineBuilder pipeline, MarkdownContext context)
+    {
+        pipeline.Extensions.Add(new DocxTripleColonExtension(context));
+        return pipeline;
+    }
+
     public static IEnumerable<MarkdownObject> EnumerateBlocks(this ContainerBlock container)
     {
         foreach (var item in container)

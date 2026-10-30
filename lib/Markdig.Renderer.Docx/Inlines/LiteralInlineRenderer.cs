@@ -21,13 +21,8 @@ public class LiteralInlineRenderer : DocxObjectRenderer<LiteralInline>
 
         string text = Helpers.CleanText(literal.Content.ToString());
 
-        if (currentParagraph.Text.Length == 0)
-        {
-            currentParagraph.Text = text;
-        }
-        else
-        {
-            currentParagraph.AddText(text);
-        }
+        // An image-only paragraph has no text, but replacing Text would remove
+        // its drawing runs. Append so inline icons survive the following label.
+        currentParagraph.AddText(text);
     }
 }
